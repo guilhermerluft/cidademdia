@@ -1,0 +1,22 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CidadeEmDia.Api", "apps\api\src\CidadeEmDia.Api\CidadeEmDia.Api.csproj", "{C10E0001-0000-4000-8000-000000000001}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CidadeEmDia.Application", "apps\api\src\CidadeEmDia.Application\CidadeEmDia.Application.csproj", "{C10E0002-0000-4000-8000-000000000002}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CidadeEmDia.Domain", "apps\api\src\CidadeEmDia.Domain\CidadeEmDia.Domain.csproj", "{C10E0003-0000-4000-8000-000000000003}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CidadeEmDia.Infrastructure", "apps\api\src\CidadeEmDia.Infrastructure\CidadeEmDia.Infrastructure.csproj", "{C10E0004-0000-4000-8000-000000000004}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CidadeEmDia.UnitTests", "apps\api\tests\CidadeEmDia.UnitTests\CidadeEmDia.UnitTests.csproj", "{C10E0005-0000-4000-8000-000000000005}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CidadeEmDia.IntegrationTests", "apps\api\tests\CidadeEmDia.IntegrationTests\CidadeEmDia.IntegrationTests.csproj", "{C10E0006-0000-4000-8000-000000000006}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+EndGlobal
