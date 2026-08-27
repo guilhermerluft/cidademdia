@@ -5,6 +5,12 @@ REPO_ROOT="${REPO_ROOT:-/opt/cidademdia}"
 ENV_FILE="${ENV_FILE:-$REPO_ROOT/.env}"
 INFRA_DIR="$REPO_ROOT/infra"
 EF_VERSION="${EF_VERSION:-10.0.11}"
+MIGRATOR_NAME="cidademdia-migrator-$$"
+
+cleanup() {
+  docker rm -f "$MIGRATOR_NAME" >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
 
 if ! command -v docker >/dev/null 2>&1; then
   echo "Docker não encontrado."
@@ -52,22 +58,30 @@ if [ -z "$NETWORK" ]; then
   exit 1
 fi
 
-echo "==> Rede Docker: $NETWORK"
-echo "==> Aplicando migrations EF Core"
+echo "==> Rede privada do PostgreSQL: $NETWORK"
+echo "==> Preparando migrator com acesso externo para restore/NuGet"
 
-docker run --rm \
-  --network "$NETWORK" \
+# A rede backend é internal=true e, por design, não possui saída para a Internet.
+# O migrator nasce na bridge padrão para conseguir restaurar o dotnet-ef/NuGet e,
+# em seguida, recebe também a rede privada do PostgreSQL para executar a migration.
+docker run -d \
+  --name "$MIGRATOR_NAME" \
   --env-file "$ENV_FILE" \
   -v "$REPO_ROOT:/src" \
   -w /src \
   mcr.microsoft.com/dotnet/sdk:10.0 \
-  bash -lc "
-    set -euo pipefail
-    dotnet tool install --tool-path /tmp/dotnet-tools dotnet-ef --version $EF_VERSION >/dev/null
-    /tmp/dotnet-tools/dotnet-ef database update \\
-      --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \\
-      --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
-  "
+  bash -lc 'sleep infinity' >/dev/null
+
+docker network connect "$NETWORK" "$MIGRATOR_NAME"
+
+echo "==> Aplicando migrations EF Core"
+docker exec "$MIGRATOR_NAME" bash -lc "
+  set -euo pipefail
+  dotnet tool install --tool-path /tmp/dotnet-tools dotnet-ef --version $EF_VERSION >/dev/null
+  /tmp/dotnet-tools/dotnet-ef database update \\
+    --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \\
+    --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
+"
 
 echo "==> Migrations aplicadas"
 docker compose --env-file "$ENV_FILE" exec -T db sh -lc '
