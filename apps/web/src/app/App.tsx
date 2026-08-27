@@ -6,6 +6,23 @@ import * as authService from '../modules/auth/authService';
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
+function AuthBrandPanel() {
+  return (
+    <aside className="auth-brand-panel" aria-label="CidadeEmDia">
+      <div className="auth-brand-panel__content">
+        <Brand className="auth-brand-panel__brand" />
+        <span className="auth-brand-panel__eyebrow">Conectando cidadãos e gestão pública</span>
+        <span className="auth-brand-panel__accent" aria-hidden="true" />
+        <h2>Uma cidade melhor começa quando quem precisa é ouvido por quem pode resolver.</h2>
+        <p>
+          Registre demandas, acompanhe ocorrências e aproxime cidadãos e gestores em uma experiência simples,
+          transparente e conectada.
+        </p>
+      </div>
+    </aside>
+  );
+}
+
 export function App() {
   const { status, user, login, register, logout } = useAuth();
   const initialResetToken = new URLSearchParams(window.location.search).get('token') ?? '';
@@ -140,124 +157,128 @@ export function App() {
 
   return (
     <main className="auth-shell">
-      <Card className="auth-card" elevated>
-        <Brand className="auth-brand" />
+      <div className="auth-layout">
+        <AuthBrandPanel />
 
-        <div className="auth-intro">
-          <span className="auth-kicker">Conectando cidadãos e gestão pública</span>
-          <h1>{title}</h1>
-          <p>{description}</p>
-        </div>
+        <Card className="auth-card" elevated>
+          <Brand className="auth-brand" />
 
-        {(mode === 'login' || mode === 'register') && (
-          <div className="auth-tabs" role="tablist" aria-label="Autenticação">
-            <button
-              className={mode === 'login' ? 'auth-tab auth-tab--active' : 'auth-tab'}
-              type="button"
-              role="tab"
-              aria-selected={mode === 'login'}
-              onClick={() => changeMode('login')}
-            >
-              Entrar
-            </button>
-            <button
-              className={mode === 'register' ? 'auth-tab auth-tab--active' : 'auth-tab'}
-              type="button"
-              role="tab"
-              aria-selected={mode === 'register'}
-              onClick={() => changeMode('register')}
-            >
-              Criar conta
-            </button>
+          <div className="auth-intro">
+            <span className="auth-kicker">Conectando cidadãos e gestão pública</span>
+            <h1>{title}</h1>
+            <p>{description}</p>
           </div>
-        )}
 
-        <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === 'register' && (
-            <label>
-              Nome
-              <input
-                autoComplete="name"
-                minLength={2}
-                maxLength={160}
-                required
-                value={displayName}
-                onChange={(event) => setDisplayName(event.target.value)}
-              />
-            </label>
+          {(mode === 'login' || mode === 'register') && (
+            <div className="auth-tabs" role="tablist" aria-label="Autenticação">
+              <button
+                className={mode === 'login' ? 'auth-tab auth-tab--active' : 'auth-tab'}
+                type="button"
+                role="tab"
+                aria-selected={mode === 'login'}
+                onClick={() => changeMode('login')}
+              >
+                Entrar
+              </button>
+              <button
+                className={mode === 'register' ? 'auth-tab auth-tab--active' : 'auth-tab'}
+                type="button"
+                role="tab"
+                aria-selected={mode === 'register'}
+                onClick={() => changeMode('register')}
+              >
+                Criar conta
+              </button>
+            </div>
           )}
 
-          {mode !== 'reset' && (
-            <label>
-              E-mail
-              <input
-                autoComplete="email"
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-              />
-            </label>
-          )}
+          <form className="auth-form" onSubmit={handleSubmit}>
+            {mode === 'register' && (
+              <label>
+                Nome
+                <input
+                  autoComplete="name"
+                  minLength={2}
+                  maxLength={160}
+                  required
+                  value={displayName}
+                  onChange={(event) => setDisplayName(event.target.value)}
+                />
+              </label>
+            )}
 
-          {(mode === 'login' || mode === 'register' || mode === 'reset') && (
-            <label>
-              {mode === 'reset' ? 'Nova senha' : 'Senha'}
-              <input
-                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
-                type="password"
-                minLength={8}
-                maxLength={128}
-                required
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-              />
-            </label>
-          )}
+            {mode !== 'reset' && (
+              <label>
+                E-mail
+                <input
+                  autoComplete="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+            )}
 
-          {mode === 'reset' && (
-            <label>
-              Confirme a nova senha
-              <input
-                autoComplete="new-password"
-                type="password"
-                minLength={8}
-                maxLength={128}
-                required
-                value={confirmPassword}
-                onChange={(event) => setConfirmPassword(event.target.value)}
-              />
-            </label>
-          )}
+            {(mode === 'login' || mode === 'register' || mode === 'reset') && (
+              <label>
+                {mode === 'reset' ? 'Nova senha' : 'Senha'}
+                <input
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  type="password"
+                  minLength={8}
+                  maxLength={128}
+                  required
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </label>
+            )}
 
-          {message && <p className="auth-success" role="status">{message}</p>}
-          {error && <p className="auth-error" role="alert">{error}</p>}
+            {mode === 'reset' && (
+              <label>
+                Confirme a nova senha
+                <input
+                  autoComplete="new-password"
+                  type="password"
+                  minLength={8}
+                  maxLength={128}
+                  required
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                />
+              </label>
+            )}
 
-          <Button type="submit" size="lg" fullWidth disabled={submitting}>
-            {submitting
-              ? 'Aguarde...'
-              : mode === 'login'
-                ? 'Entrar'
-                : mode === 'register'
-                  ? 'Criar conta'
-                  : mode === 'forgot'
-                    ? 'Enviar link'
-                    : 'Redefinir senha'}
-          </Button>
+            {message && <p className="auth-success" role="status">{message}</p>}
+            {error && <p className="auth-error" role="alert">{error}</p>}
 
-          {mode === 'login' && (
-            <button className="auth-link" type="button" onClick={() => changeMode('forgot')}>
-              Esqueci minha senha
-            </button>
-          )}
+            <Button type="submit" size="lg" fullWidth disabled={submitting}>
+              {submitting
+                ? 'Aguarde...'
+                : mode === 'login'
+                  ? 'Entrar'
+                  : mode === 'register'
+                    ? 'Criar conta'
+                    : mode === 'forgot'
+                      ? 'Enviar link'
+                      : 'Redefinir senha'}
+            </Button>
 
-          {(mode === 'forgot' || mode === 'reset') && (
-            <button className="auth-link" type="button" onClick={() => changeMode('login')}>
-              Voltar para entrar
-            </button>
-          )}
-        </form>
-      </Card>
+            {mode === 'login' && (
+              <button className="auth-link" type="button" onClick={() => changeMode('forgot')}>
+                Esqueci minha senha
+              </button>
+            )}
+
+            {(mode === 'forgot' || mode === 'reset') && (
+              <button className="auth-link" type="button" onClick={() => changeMode('login')}>
+                Voltar para entrar
+              </button>
+            )}
+          </form>
+        </Card>
+      </div>
     </main>
   );
 }
