@@ -30,13 +30,13 @@ fi
 
 if ! getent ahostsv4 "$DOMAIN" >/dev/null 2>&1; then
   echo "DNS de $DOMAIN ainda não resolve."
-  echo "Crie um registro A apontando para $ORIGIN_IPV4 e deixe-o como DNS only durante a emissão inicial do certificado."
+  echo "Crie no provedor DNS um registro A para $DOMAIN apontando para $ORIGIN_IPV4."
   exit 1
 fi
 
 if ! getent ahostsv4 "$DOMAIN" | awk '{print $1}' | sort -u | grep -Fxq "$ORIGIN_IPV4"; then
   echo "$DOMAIN não resolve diretamente para $ORIGIN_IPV4."
-  echo "Durante a emissão inicial, deixe o registro Cloudflare como DNS only (nuvem cinza)."
+  echo "Confirme o registro A no provedor DNS antes de emitir o certificado."
   exit 1
 fi
 
@@ -69,4 +69,4 @@ curl -fsS "https://$DOMAIN/health/live"
 echo
 
 echo "Homologação publicada com TLS em https://$DOMAIN"
-echo "Agora o registro pode ser ativado no proxy da Cloudflare e o SSL/TLS deve ficar em Full (strict)."
+echo "Mantenha o registro A do domínio apontando diretamente para esta KVM enquanto este ambiente estiver ativo."
