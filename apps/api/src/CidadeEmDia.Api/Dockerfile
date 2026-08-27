@@ -1,7 +1,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet restore CidadeEmDia.sln
+RUN dotnet restore apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
 RUN dotnet publish apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
