@@ -1,5 +1,6 @@
 using CidadeEmDia.Application.Authentication;
 using CidadeEmDia.Application.Profiles;
+using CidadeEmDia.Application.Subaccounts;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,8 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordResetEmailSender, SmtpPasswordResetEmailSender>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<ISubaccountLimitProvider, ConfigurationSubaccountLimitProvider>();
+        services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
         return services;

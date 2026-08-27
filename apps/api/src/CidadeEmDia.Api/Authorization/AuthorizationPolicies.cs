@@ -8,6 +8,7 @@ public static class AuthorizationPolicies
     public const string ProfileRead = "profile.read";
     public const string ProfileUpdate = "profile.update";
     public const string MasterScope = "master.scope";
+    public const string SubaccountRole = "subaccount.role";
     public const string AdminAccess = "admin.access";
 
     public static IServiceCollection AddCidadeEmDiaAuthorization(this IServiceCollection services)
@@ -24,7 +25,12 @@ public static class AuthorizationPolicies
 
             options.AddPolicy(MasterScope, policy => policy
                 .RequireAuthenticatedUser()
+                .RequireRole(IdentityRoleKeys.Master)
                 .RequireClaim(IdentityClaimTypes.Permission, IdentityPermissionKeys.MasterScopeAccess));
+
+            options.AddPolicy(SubaccountRole, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireRole(IdentityRoleKeys.Subaccount));
 
             options.AddPolicy(AdminAccess, policy => policy
                 .RequireAuthenticatedUser()

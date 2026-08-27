@@ -78,6 +78,7 @@ api.MapGet("/status", () => Results.Ok(new
 api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapAdminEndpoints();
+api.MapSubaccountEndpoints();
 
 app.MapHealthChecks("/health/live", new()
 {
