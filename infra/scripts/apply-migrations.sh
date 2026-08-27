@@ -62,25 +62,37 @@ echo "==> Rede privada do PostgreSQL: $NETWORK"
 echo "==> Preparando migrator com acesso externo para restore/NuGet"
 
 # A rede backend é internal=true e, por design, não possui saída para a Internet.
-# O migrator nasce na bridge padrão para conseguir restaurar o dotnet-ef/NuGet e,
-# em seguida, recebe também a rede privada do PostgreSQL para executar a migration.
+# O migrator nasce na bridge padrão para restaurar ferramentas/pacotes. O repositório
+# é montado somente-leitura e copiado para /work, evitando bin/obj root-owned no host.
 docker run -d \
   --name "$MIGRATOR_NAME" \
   --env-file "$ENV_FILE" \
-  -v "$REPO_ROOT:/src" \
-  -w /src \
+  -v "$REPO_ROOT:/src:ro" \
+  -w /work \
   mcr.microsoft.com/dotnet/sdk:10.0 \
-  bash -lc 'sleep infinity' >/dev/null
+  bash -lc 'mkdir -p /work && cp -a /src/. /work/ && exec sleep infinity' >/dev/null
 
+echo "==> Restaurando ferramentas e dependências"
+docker exec "$MIGRATOR_NAME" bash -lc "
+  set -euo pipefail
+  cd /work
+  dotnet tool install --tool-path /tmp/dotnet-tools dotnet-ef --version $EF_VERSION >/dev/null
+  dotnet restore CidadeEmDia.sln
+  dotnet build CidadeEmDia.sln -c Release --no-restore
+"
+
+echo "==> Conectando migrator à rede privada"
 docker network connect "$NETWORK" "$MIGRATOR_NAME"
 
 echo "==> Aplicando migrations EF Core"
 docker exec "$MIGRATOR_NAME" bash -lc "
   set -euo pipefail
-  dotnet tool install --tool-path /tmp/dotnet-tools dotnet-ef --version $EF_VERSION >/dev/null
+  cd /work
   /tmp/dotnet-tools/dotnet-ef database update \\
     --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \\
-    --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
+    --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj \\
+    --configuration Release \\
+    --no-build
 "
 
 echo "==> Migrations aplicadas"
