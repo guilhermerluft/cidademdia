@@ -1,3 +1,5 @@
+using Xunit;
+
 namespace CidadeEmDia.UnitTests;
 
 public sealed class FoundationTests
