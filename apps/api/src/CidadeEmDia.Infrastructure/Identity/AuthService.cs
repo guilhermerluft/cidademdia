@@ -28,7 +28,11 @@ internal sealed class AuthService(
         if (await dbContext.Users.AnyAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken))
             return AuthResult.Failure("email_already_registered");
 
-        var role = await dbContext.Roles.FirstOrDefaultAsync(x => x.Key == IdentityRoleKeys.Citizen, cancellationToken);
+        var role = await dbContext.Roles
+            .Include(x => x.Permissions)
+                .ThenInclude(x => x.Permission)
+            .FirstOrDefaultAsync(x => x.Key == IdentityRoleKeys.Citizen, cancellationToken);
+
         if (role is null)
         {
             role = new Role(IdentityRoleKeys.Citizen, "Cidadão");
@@ -43,7 +47,12 @@ internal sealed class AuthService(
         dbContext.UserProfiles.Add(profile);
         dbContext.UserRoles.Add(userRole);
 
-        var session = CreateSession(user, profile, [role.Key], DateTimeOffset.UtcNow);
+        var roles = new[] { role.Key };
+        var permissions = role.Permissions
+            .Select(x => x.Permission.Key)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        var session = CreateSession(user, profile, roles, permissions, DateTimeOffset.UtcNow);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return AuthResult.Success(session);
@@ -62,8 +71,9 @@ internal sealed class AuthService(
 
         var now = DateTimeOffset.UtcNow;
         user.RegisterLogin(now);
-        var roles = user.Roles.Select(x => x.Role.Key).Distinct(StringComparer.Ordinal).ToArray();
-        var session = CreateSession(user, user.Profile, roles, now);
+        var roles = GetRoles(user);
+        var permissions = GetPermissions(user);
+        var session = CreateSession(user, user.Profile, roles, permissions, now);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return AuthResult.Success(session);
@@ -82,6 +92,8 @@ internal sealed class AuthService(
             .Include(x => x.User)
                 .ThenInclude(x => x.Roles)
                     .ThenInclude(x => x.Role)
+                        .ThenInclude(x => x.Permissions)
+                            .ThenInclude(x => x.Permission)
             .FirstOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
 
         if (token is null)
@@ -108,8 +120,9 @@ internal sealed class AuthService(
         token.Revoke(now, "rotated", newHash);
         dbContext.RefreshTokens.Add(new RefreshToken(token.UserId, newHash, newExpiresAt));
 
-        var roles = token.User.Roles.Select(x => x.Role.Key).Distinct(StringComparer.Ordinal).ToArray();
-        var (accessToken, accessExpiresAt) = jwtTokenIssuer.Issue(token.User, roles, now);
+        var roles = GetRoles(token.User);
+        var permissions = GetPermissions(token.User);
+        var (accessToken, accessExpiresAt) = jwtTokenIssuer.Issue(token.User, roles, permissions, now);
         await dbContext.SaveChangesAsync(cancellationToken);
 
         return AuthResult.Success(new AuthSession(
@@ -146,7 +159,7 @@ internal sealed class AuthService(
         if (user is null || !user.CanAuthenticate)
             return null;
 
-        var roles = user.Roles.Select(x => x.Role.Key).Distinct(StringComparer.Ordinal).ToArray();
+        var roles = GetRoles(user);
         return ToAuthenticatedUser(user, user.Profile, roles);
     }
 
@@ -233,14 +246,19 @@ internal sealed class AuthService(
         return PasswordResetResult.Success();
     }
 
-    private AuthSession CreateSession(User user, UserProfile? profile, IReadOnlyCollection<string> roles, DateTimeOffset now)
+    private AuthSession CreateSession(
+        User user,
+        UserProfile? profile,
+        IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions,
+        DateTimeOffset now)
     {
         var rawRefreshToken = RefreshTokenUtility.Generate();
         var refreshHash = RefreshTokenUtility.Hash(rawRefreshToken);
         var refreshExpiresAt = now.Add(jwtOptions.RefreshTokenLifetime);
         dbContext.RefreshTokens.Add(new RefreshToken(user.Id, refreshHash, refreshExpiresAt));
 
-        var (accessToken, accessExpiresAt) = jwtTokenIssuer.Issue(user, roles, now);
+        var (accessToken, accessExpiresAt) = jwtTokenIssuer.Issue(user, roles, permissions, now);
         return new AuthSession(
             accessToken,
             accessExpiresAt,
@@ -254,6 +272,8 @@ internal sealed class AuthService(
             .Include(x => x.Profile)
             .Include(x => x.Roles)
                 .ThenInclude(x => x.Role)
+                    .ThenInclude(x => x.Permissions)
+                        .ThenInclude(x => x.Permission)
             .FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken);
 
     private async Task RevokeActiveSessionsAsync(Guid userId, DateTimeOffset now, string reason, CancellationToken cancellationToken)
@@ -267,6 +287,19 @@ internal sealed class AuthService(
 
         await dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    private static string[] GetRoles(User user) => user.Roles
+        .Select(x => x.Role.Key)
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(x => x, StringComparer.Ordinal)
+        .ToArray();
+
+    private static string[] GetPermissions(User user) => user.Roles
+        .SelectMany(x => x.Role.Permissions)
+        .Select(x => x.Permission.Key)
+        .Distinct(StringComparer.Ordinal)
+        .OrderBy(x => x, StringComparer.Ordinal)
+        .ToArray();
 
     private static AuthenticatedUser ToAuthenticatedUser(User user, UserProfile? profile, IReadOnlyCollection<string> roles) =>
         new(user.Id, user.Email, profile?.DisplayName ?? user.Email, roles);

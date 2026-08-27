@@ -8,7 +8,11 @@ namespace CidadeEmDia.Infrastructure.Identity;
 
 internal sealed class JwtTokenIssuer(JwtOptions options)
 {
-    public (string Token, DateTimeOffset ExpiresAt) Issue(User user, IReadOnlyCollection<string> roles, DateTimeOffset now)
+    public (string Token, DateTimeOffset ExpiresAt) Issue(
+        User user,
+        IReadOnlyCollection<string> roles,
+        IReadOnlyCollection<string> permissions,
+        DateTimeOffset now)
     {
         var expiresAt = now.Add(options.AccessTokenLifetime);
         var claims = new List<Claim>
@@ -18,7 +22,13 @@ internal sealed class JwtTokenIssuer(JwtOptions options)
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N"))
         };
 
-        claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+        claims.AddRange(roles
+            .Distinct(StringComparer.Ordinal)
+            .Select(role => new Claim(ClaimTypes.Role, role)));
+
+        claims.AddRange(permissions
+            .Distinct(StringComparer.Ordinal)
+            .Select(permission => new Claim(IdentityClaimTypes.Permission, permission)));
 
         var credentials = new SigningCredentials(
             new SymmetricSecurityKey(Encoding.UTF8.GetBytes(options.SigningKey)),

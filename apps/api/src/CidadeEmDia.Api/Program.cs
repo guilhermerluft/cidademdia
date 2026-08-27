@@ -1,4 +1,5 @@
 using System.Text;
+using CidadeEmDia.Api.Authorization;
 using CidadeEmDia.Api.Endpoints;
 using CidadeEmDia.Api.Middleware;
 using CidadeEmDia.Application;
@@ -50,7 +51,7 @@ builder.Services
             RoleClaimType = System.Security.Claims.ClaimTypes.Role
         };
     });
-builder.Services.AddAuthorization();
+builder.Services.AddCidadeEmDiaAuthorization();
 builder.Services.AddHealthChecks()
     .AddDbContextCheck<AppDbContext>("postgres", tags: ["ready"]);
 
@@ -75,6 +76,8 @@ api.MapGet("/status", () => Results.Ok(new
     utc = DateTimeOffset.UtcNow
 }));
 api.MapAuthEndpoints();
+api.MapProfileEndpoints();
+api.MapAdminEndpoints();
 
 app.MapHealthChecks("/health/live", new()
 {
