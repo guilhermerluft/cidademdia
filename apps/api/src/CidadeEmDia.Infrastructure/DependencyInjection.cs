@@ -19,9 +19,12 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString, npgsql => npgsql.UseNetTopologySuite()));
 
         var jwtOptions = JwtOptions.FromConfiguration(configuration);
+        var passwordResetOptions = PasswordResetOptions.FromConfiguration(configuration);
         services.AddSingleton(jwtOptions);
+        services.AddSingleton(passwordResetOptions);
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<JwtTokenIssuer>();
+        services.AddSingleton<IPasswordResetEmailSender, SmtpPasswordResetEmailSender>();
         services.AddScoped<IAuthService, AuthService>();
 
         return services;

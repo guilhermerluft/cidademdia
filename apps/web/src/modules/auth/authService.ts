@@ -1,5 +1,5 @@
 import { api, refreshSessionRequest, setAccessToken } from '../../services/api';
-import type { AuthSession, LoginInput, RegisterInput } from './types';
+import type { AuthSession, ForgotPasswordInput, LoginInput, RegisterInput, ResetPasswordInput } from './types';
 
 export async function register(input: RegisterInput): Promise<AuthSession> {
   const { data } = await api.post<AuthSession>('/auth/register', input);
@@ -23,4 +23,13 @@ export async function logout(): Promise<void> {
   } finally {
     setAccessToken(null);
   }
+}
+
+export async function requestPasswordReset(input: ForgotPasswordInput): Promise<void> {
+  await api.post('/auth/password/forgot', input);
+}
+
+export async function resetPassword(input: ResetPasswordInput): Promise<void> {
+  await api.post('/auth/password/reset', input);
+  setAccessToken(null);
 }

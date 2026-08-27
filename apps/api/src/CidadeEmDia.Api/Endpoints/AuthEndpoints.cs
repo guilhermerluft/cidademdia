@@ -54,6 +54,22 @@ public static class AuthEndpoints
             return Results.NoContent();
         });
 
+        auth.MapPost("/password/forgot", async (ForgotPasswordRequest request, IAuthService authService, CancellationToken cancellationToken) =>
+        {
+            await authService.RequestPasswordResetAsync(request.Email, cancellationToken);
+            return Results.Accepted();
+        });
+
+        auth.MapPost("/password/reset", async (ResetPasswordRequest request, IAuthService authService, HttpContext context, CancellationToken cancellationToken) =>
+        {
+            var result = await authService.ResetPasswordAsync(request.Token, request.NewPassword, cancellationToken);
+            if (!result.Succeeded)
+                return MapPasswordResetFailure(result.ErrorCode);
+
+            DeleteRefreshCookie(context);
+            return Results.NoContent();
+        });
+
         auth.MapGet("/me", async (IAuthService authService, ClaimsPrincipal principal, CancellationToken cancellationToken) =>
         {
             var rawUserId = principal.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -73,6 +89,14 @@ public static class AuthEndpoints
         "email_already_registered" => Results.Conflict(new { error = errorCode }),
         "account_unavailable" => Results.Json(new { error = errorCode }, statusCode: StatusCodes.Status403Forbidden),
         _ => Results.Unauthorized()
+    };
+
+    private static IResult MapPasswordResetFailure(string? errorCode) => errorCode switch
+    {
+        "account_unavailable" => Results.Json(new { error = errorCode }, statusCode: StatusCodes.Status403Forbidden),
+        "invalid_input" => Results.BadRequest(new { error = errorCode }),
+        "invalid_or_expired_reset_token" => Results.BadRequest(new { error = errorCode }),
+        _ => Results.BadRequest(new { error = "invalid_password_reset" })
     };
 
     private static AuthSessionResponse ToResponse(AuthSession session) =>
@@ -103,6 +127,8 @@ public static class AuthEndpoints
 
     public sealed record RegisterRequest(string Email, string Password, string DisplayName);
     public sealed record LoginRequest(string Email, string Password);
+    public sealed record ForgotPasswordRequest(string Email);
+    public sealed record ResetPasswordRequest(string Token, string NewPassword);
     public sealed record AuthSessionResponse(string AccessToken, DateTimeOffset AccessTokenExpiresAt, AuthenticatedUserResponse User);
     public sealed record AuthenticatedUserResponse(Guid Id, string Email, string DisplayName, IReadOnlyCollection<string> Roles);
 }

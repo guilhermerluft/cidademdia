@@ -19,3 +19,12 @@ export interface LoginInput {
 export interface RegisterInput extends LoginInput {
   displayName: string;
 }
+
+export interface ForgotPasswordInput {
+  email: string;
+}
+
+export interface ResetPasswordInput {
+  token: string;
+  newPassword: string;
+}

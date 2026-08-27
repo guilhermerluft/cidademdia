@@ -127,12 +127,33 @@ button { cursor: pointer; }
   background: #e7eff1;
 }
 
-.auth-error {
+.auth-link {
+  border: 0;
+  padding: 0;
+  color: #2f6671;
+  background: transparent;
+  font-weight: 700;
+  text-align: center;
+}
+
+.auth-link:hover { text-decoration: underline; }
+
+.auth-error,
+.auth-success {
   padding: 12px 14px;
+  border-radius: 12px;
+}
+
+.auth-error {
   color: #8b2d2d !important;
   background: #fff1f1;
   border: 1px solid #f2cece;
-  border-radius: 12px;
+}
+
+.auth-success {
+  color: #285f48 !important;
+  background: #eef9f3;
+  border: 1px solid #cce8d8;
 }
 
 .auth-profile {

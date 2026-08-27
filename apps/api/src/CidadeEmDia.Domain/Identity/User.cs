@@ -24,6 +24,7 @@ public sealed class User : BaseEntity
     public UserProfile? Profile { get; private set; }
     public ICollection<UserRole> Roles { get; private set; } = new List<UserRole>();
     public ICollection<RefreshToken> RefreshTokens { get; private set; } = new List<RefreshToken>();
+    public ICollection<PasswordResetToken> PasswordResetTokens { get; private set; } = new List<PasswordResetToken>();
 
     public bool CanAuthenticate => Status is UserStatus.Active or UserStatus.Pending;
 

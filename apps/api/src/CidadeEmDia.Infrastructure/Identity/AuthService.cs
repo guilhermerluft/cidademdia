@@ -3,6 +3,7 @@ using CidadeEmDia.Application.Authentication;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace CidadeEmDia.Infrastructure.Identity;
 
@@ -10,7 +11,10 @@ internal sealed class AuthService(
     AppDbContext dbContext,
     IPasswordHasher passwordHasher,
     JwtTokenIssuer jwtTokenIssuer,
-    JwtOptions jwtOptions) : IAuthService
+    JwtOptions jwtOptions,
+    IPasswordResetEmailSender passwordResetEmailSender,
+    PasswordResetOptions passwordResetOptions,
+    ILogger<AuthService> logger) : IAuthService
 {
     public async Task<AuthResult> RegisterAsync(string email, string password, string displayName, CancellationToken cancellationToken = default)
     {
@@ -144,6 +148,89 @@ internal sealed class AuthService(
 
         var roles = user.Roles.Select(x => x.Role.Key).Distinct(StringComparer.Ordinal).ToArray();
         return ToAuthenticatedUser(user, user.Profile, roles);
+    }
+
+    public async Task RequestPasswordResetAsync(string email, CancellationToken cancellationToken = default)
+    {
+        email = email?.Trim() ?? string.Empty;
+        if (!IsValidEmail(email) || email.Length > 320)
+            return;
+
+        var normalizedEmail = email.ToUpperInvariant();
+        var user = await dbContext.Users
+            .Include(x => x.Profile)
+            .FirstOrDefaultAsync(x => x.NormalizedEmail == normalizedEmail, cancellationToken);
+
+        if (user is null || !user.CanAuthenticate)
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+        var previousTokens = await dbContext.PasswordResetTokens
+            .Where(x => x.UserId == user.Id && x.ConsumedAt == null && x.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var previousToken in previousTokens)
+            previousToken.Consume(now);
+
+        var rawToken = PasswordResetTokenUtility.Generate();
+        var resetToken = new PasswordResetToken(
+            user.Id,
+            PasswordResetTokenUtility.Hash(rawToken),
+            now.Add(passwordResetOptions.TokenLifetime));
+
+        dbContext.PasswordResetTokens.Add(resetToken);
+        await dbContext.SaveChangesAsync(cancellationToken);
+
+        try
+        {
+            await passwordResetEmailSender.SendPasswordResetAsync(
+                user.Email,
+                user.Profile?.DisplayName ?? user.Email,
+                rawToken,
+                cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            resetToken.Consume(DateTimeOffset.UtcNow);
+            await dbContext.SaveChangesAsync(CancellationToken.None);
+            logger.LogError(exception, "Password reset e-mail delivery failed for user {UserId}.", user.Id);
+        }
+    }
+
+    public async Task<PasswordResetResult> ResetPasswordAsync(string token, string newPassword, CancellationToken cancellationToken = default)
+    {
+        token = token?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(token) || token.Length > 512 || newPassword is null || newPassword.Length < 8 || newPassword.Length > 128)
+            return PasswordResetResult.Failure("invalid_input");
+
+        var now = DateTimeOffset.UtcNow;
+        var tokenHash = PasswordResetTokenUtility.Hash(token);
+        var resetToken = await dbContext.PasswordResetTokens
+            .Include(x => x.User)
+            .FirstOrDefaultAsync(x => x.TokenHash == tokenHash, cancellationToken);
+
+        if (resetToken is null || !resetToken.IsActive(now))
+            return PasswordResetResult.Failure("invalid_or_expired_reset_token");
+
+        if (!resetToken.User.CanAuthenticate)
+            return PasswordResetResult.Failure("account_unavailable");
+
+        resetToken.User.ChangePasswordHash(passwordHasher.Hash(newPassword));
+        resetToken.Consume(now);
+
+        var otherActiveResetTokens = await dbContext.PasswordResetTokens
+            .Where(x => x.UserId == resetToken.UserId && x.Id != resetToken.Id && x.ConsumedAt == null && x.ExpiresAt > now)
+            .ToListAsync(cancellationToken);
+
+        foreach (var otherResetToken in otherActiveResetTokens)
+            otherResetToken.Consume(now);
+
+        await RevokeActiveSessionsAsync(resetToken.UserId, now, "password_reset", cancellationToken);
+        return PasswordResetResult.Success();
     }
 
     private AuthSession CreateSession(User user, UserProfile? profile, IReadOnlyCollection<string> roles, DateTimeOffset now)

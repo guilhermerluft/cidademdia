@@ -18,3 +18,9 @@ public sealed record AuthResult(bool Succeeded, string? ErrorCode, AuthSession? 
     public static AuthResult Success(AuthSession session) => new(true, null, session);
     public static AuthResult Failure(string errorCode) => new(false, errorCode, null);
 }
+
+public sealed record PasswordResetResult(bool Succeeded, string? ErrorCode)
+{
+    public static PasswordResetResult Success() => new(true, null);
+    public static PasswordResetResult Failure(string errorCode) => new(false, errorCode);
+}
