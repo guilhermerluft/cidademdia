@@ -1,3 +1,5 @@
+using CidadeEmDia.Application.Authentication;
+using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -15,6 +17,12 @@ public static class DependencyInjection
 
         services.AddDbContext<AppDbContext>(options =>
             options.UseNpgsql(connectionString, npgsql => npgsql.UseNetTopologySuite()));
+
+        var jwtOptions = JwtOptions.FromConfiguration(configuration);
+        services.AddSingleton(jwtOptions);
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<JwtTokenIssuer>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

@@ -24,6 +24,10 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       DATABASE_CONNECTION: ${DATABASE_CONNECTION}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-https://homolog.cidademdia.com.br}
+      JWT_ISSUER: ${JWT_ISSUER:-CidadeEmDia}
+      JWT_AUDIENCE: ${JWT_AUDIENCE:-CidadeEmDia.Web}
+      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:?JWT_SIGNING_KEY is required}
     depends_on:
       db:
         condition: service_healthy
