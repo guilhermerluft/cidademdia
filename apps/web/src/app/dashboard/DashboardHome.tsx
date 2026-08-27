@@ -1,5 +1,6 @@
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import type { AuthenticatedUser } from '../../modules/auth/types';
+import { MasterTeamPanel } from './MasterTeamPanel';
 
 interface DashboardHomeProps {
   user: AuthenticatedUser;
@@ -105,7 +106,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
       <section className="dashboard-section" id="dashboard-actions" aria-labelledby="dashboard-actions-title">
         <SectionHeading
           title="Ações rápidas"
-          subtitle="Os módulos serão conectados a este painel seguindo o mesmo padrão visual."
+          subtitle="Acesse os principais recursos disponíveis para o seu perfil."
         />
 
         <div className="dashboard-action-grid">
@@ -132,7 +133,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
           </Card>
 
           {(isMaster || isAdmin) && (
-            <Card className="dashboard-action-card" interactive id="dashboard-team">
+            <Card className="dashboard-action-card" interactive id={isAdmin ? 'dashboard-admin' : undefined}>
               <CardBody>
                 <span className="dashboard-action-card__icon dashboard-action-card__icon--yellow" aria-hidden="true">03</span>
                 <div>
@@ -146,16 +147,16 @@ export function DashboardHome({ user }: DashboardHomeProps) {
         </div>
       </section>
 
+      {isMaster ? <MasterTeamPanel /> : null}
+
       <section className="dashboard-section dashboard-profile-section" id="dashboard-profile">
         <div>
           <span className="dashboard-profile-section__eyebrow">Seu perfil</span>
           <h2>Dados da conta sempre acessíveis</h2>
-          <p>O shell foi preparado para concentrar perfil, notificações e navegação sem perder a identidade visual do CidadeEmDia.</p>
+          <p>O shell concentra perfil, notificações e navegação sem perder a identidade visual do CidadeEmDia.</p>
         </div>
         <Badge variant="success">Sessão autenticada</Badge>
       </section>
-
-      {isAdmin ? <span id="dashboard-admin" aria-hidden="true" /> : null}
     </div>
   );
 }

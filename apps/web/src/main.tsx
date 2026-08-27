@@ -6,6 +6,7 @@ import { App } from './app/App';
 import { AuthProvider } from './modules/auth/AuthProvider';
 import './styles/global.css';
 import './styles/dashboard.css';
+import './styles/subaccounts.css';
 
 const queryClient = new QueryClient();
 
