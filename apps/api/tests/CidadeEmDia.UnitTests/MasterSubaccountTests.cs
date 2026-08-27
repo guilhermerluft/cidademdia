@@ -1,4 +1,5 @@
 using CidadeEmDia.Domain.Identity;
+using Xunit;
 
 namespace CidadeEmDia.UnitTests;
 
