@@ -3,6 +3,8 @@ import type { FormEvent } from 'react';
 import { Brand, Button, Card } from '../components/ui';
 import { useAuth } from '../modules/auth/AuthProvider';
 import * as authService from '../modules/auth/authService';
+import { DashboardHome } from './dashboard/DashboardHome';
+import { DashboardShell } from './layout/DashboardShell';
 
 type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
 
@@ -51,29 +53,9 @@ export function App() {
 
   if (status === 'authenticated' && user) {
     return (
-      <main className="auth-shell">
-        <Card className="auth-card auth-card--compact" elevated>
-          <Brand className="auth-brand" />
-          <span className="auth-kicker">Homologação</span>
-          <h1>Olá, {user.displayName}</h1>
-          <p className="auth-muted">Sessão autenticada com access token em memória e refresh seguro por cookie.</p>
-
-          <dl className="auth-profile">
-            <div>
-              <dt>E-mail</dt>
-              <dd>{user.email}</dd>
-            </div>
-            <div>
-              <dt>Perfil</dt>
-              <dd>{user.roles.join(', ') || 'Sem perfil'}</dd>
-            </div>
-          </dl>
-
-          <Button variant="soft" fullWidth onClick={() => void logout()}>
-            Sair
-          </Button>
-        </Card>
-      </main>
+      <DashboardShell user={user} onLogout={logout}>
+        <DashboardHome user={user} />
+      </DashboardShell>
     );
   }
 
