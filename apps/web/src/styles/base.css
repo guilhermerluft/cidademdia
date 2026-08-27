@@ -1,0 +1,146 @@
+html {
+  color-scheme: light;
+  background: var(--ced-color-canvas);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  color: var(--ced-color-text);
+  background: var(--ced-color-canvas);
+  font-family: var(--ced-font-family);
+  font-size: var(--ced-font-size-md);
+  line-height: var(--ced-line-height-base);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+a {
+  color: inherit;
+}
+
+img,
+picture,
+svg,
+video {
+  display: block;
+  max-width: 100%;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin-top: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  color: var(--ced-color-text-strong);
+  line-height: var(--ced-line-height-tight);
+}
+
+:focus-visible {
+  outline: 2px solid var(--ced-color-primary-600);
+  outline-offset: 3px;
+}
+
+::selection {
+  color: #fff;
+  background: var(--ced-color-primary-600);
+}
+
+.ced-container {
+  width: min(100%, calc(var(--ced-content-max) + (var(--ced-content-gutter) * 2)));
+  margin-inline: auto;
+  padding-inline: var(--ced-content-gutter);
+}
+
+.ced-section {
+  padding-block: clamp(2rem, 5vw, 4rem);
+}
+
+.ced-stack {
+  display: grid;
+  gap: var(--ced-space-4);
+}
+
+.ced-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ced-space-3);
+}
+
+.ced-grid {
+  display: grid;
+  gap: var(--ced-space-5);
+}
+
+.ced-muted {
+  color: var(--ced-color-text-muted);
+}
+
+.ced-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 768px) {
+  .ced-grid--2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ced-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

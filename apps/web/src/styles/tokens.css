@@ -1,0 +1,87 @@
+:root {
+  --ced-color-primary-50: #eef5ff;
+  --ced-color-primary-100: #d9e8ff;
+  --ced-color-primary-200: #b9d3ff;
+  --ced-color-primary-300: #8eb7ff;
+  --ced-color-primary-400: #5f95ff;
+  --ced-color-primary-500: #256ff5;
+  --ced-color-primary-600: #0b5ef7;
+  --ced-color-primary-700: #084bd2;
+  --ced-color-primary-800: #103e9f;
+  --ced-color-primary-900: #12367d;
+
+  --ced-color-navy-700: #142d72;
+  --ced-color-navy-800: #10245f;
+  --ced-color-navy-900: #0d1b63;
+
+  --ced-color-success-50: #eefbf3;
+  --ced-color-success-100: #d7f5e1;
+  --ced-color-success-600: #0aa34f;
+  --ced-color-success-700: #07833f;
+
+  --ced-color-warning-50: #fff8e8;
+  --ced-color-warning-100: #ffedbf;
+  --ced-color-warning-500: #ffb31a;
+  --ced-color-warning-600: #e89400;
+
+  --ced-color-danger-50: #fff1f2;
+  --ced-color-danger-100: #ffe1e4;
+  --ced-color-danger-600: #dc3545;
+  --ced-color-danger-700: #b42331;
+
+  --ced-color-info-50: #eef7ff;
+  --ced-color-info-100: #d8ebff;
+  --ced-color-info-600: #1474d4;
+
+  --ced-color-surface: #ffffff;
+  --ced-color-surface-soft: #f8faff;
+  --ced-color-canvas: #f4f7fb;
+  --ced-color-border: #e1e7f0;
+  --ced-color-border-strong: #cbd5e1;
+  --ced-color-text: #111827;
+  --ced-color-text-strong: #0b184f;
+  --ced-color-text-muted: #64748b;
+  --ced-color-text-soft: #94a3b8;
+  --ced-color-overlay: rgba(13, 27, 99, 0.48);
+
+  --ced-font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ced-font-size-xs: 0.75rem;
+  --ced-font-size-sm: 0.875rem;
+  --ced-font-size-md: 1rem;
+  --ced-font-size-lg: 1.125rem;
+  --ced-font-size-xl: 1.25rem;
+  --ced-font-size-2xl: 1.5rem;
+  --ced-font-size-3xl: clamp(1.85rem, 4vw, 2.5rem);
+  --ced-font-size-display: clamp(2.15rem, 5vw, 4rem);
+  --ced-line-height-tight: 1.12;
+  --ced-line-height-base: 1.55;
+
+  --ced-space-1: 0.25rem;
+  --ced-space-2: 0.5rem;
+  --ced-space-3: 0.75rem;
+  --ced-space-4: 1rem;
+  --ced-space-5: 1.25rem;
+  --ced-space-6: 1.5rem;
+  --ced-space-8: 2rem;
+  --ced-space-10: 2.5rem;
+  --ced-space-12: 3rem;
+  --ced-space-16: 4rem;
+
+  --ced-radius-sm: 10px;
+  --ced-radius-md: 14px;
+  --ced-radius-lg: 20px;
+  --ced-radius-xl: 28px;
+  --ced-radius-pill: 999px;
+
+  --ced-shadow-sm: 0 2px 10px rgba(22, 40, 88, 0.06);
+  --ced-shadow-md: 0 12px 30px rgba(22, 40, 88, 0.10);
+  --ced-shadow-lg: 0 24px 64px rgba(22, 40, 88, 0.14);
+
+  --ced-focus-ring: 0 0 0 4px rgba(11, 94, 247, 0.18);
+  --ced-transition-fast: 160ms ease;
+  --ced-transition-base: 220ms ease;
+
+  --ced-content-max: 1280px;
+  --ced-content-gutter: clamp(1rem, 3vw, 2rem);
+  --ced-bottom-nav-height: 72px;
+}

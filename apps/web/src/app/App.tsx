@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
+import { Brand, Button, Card } from '../components/ui';
 import { useAuth } from '../modules/auth/AuthProvider';
 import * as authService from '../modules/auth/authService';
 
@@ -21,11 +22,12 @@ export function App() {
   if (status === 'loading') {
     return (
       <main className="auth-shell">
-        <section className="auth-card auth-card--compact">
-          <span className="auth-eyebrow">CidadeEmDia</span>
+        <Card className="auth-card auth-card--compact" elevated aria-busy="true">
+          <Brand className="auth-brand" />
+          <span className="auth-kicker">Sessão segura</span>
           <h1>Carregando sessão</h1>
-          <p>Validando sua sessão segura.</p>
-        </section>
+          <p>Validando seu acesso à plataforma CidadeEmDia.</p>
+        </Card>
       </main>
     );
   }
@@ -33,8 +35,9 @@ export function App() {
   if (status === 'authenticated' && user) {
     return (
       <main className="auth-shell">
-        <section className="auth-card auth-card--compact">
-          <span className="auth-eyebrow">Homologação</span>
+        <Card className="auth-card auth-card--compact" elevated>
+          <Brand className="auth-brand" />
+          <span className="auth-kicker">Homologação</span>
           <h1>Olá, {user.displayName}</h1>
           <p className="auth-muted">Sessão autenticada com access token em memória e refresh seguro por cookie.</p>
 
@@ -49,10 +52,10 @@ export function App() {
             </div>
           </dl>
 
-          <button className="auth-button auth-button--secondary" type="button" onClick={() => void logout()}>
+          <Button variant="soft" fullWidth onClick={() => void logout()}>
             Sair
-          </button>
-        </section>
+          </Button>
+        </Card>
       </main>
     );
   }
@@ -137,9 +140,11 @@ export function App() {
 
   return (
     <main className="auth-shell">
-      <section className="auth-card">
+      <Card className="auth-card" elevated>
+        <Brand className="auth-brand" />
+
         <div className="auth-intro">
-          <span className="auth-eyebrow">CidadeEmDia</span>
+          <span className="auth-kicker">Conectando cidadãos e gestão pública</span>
           <h1>{title}</h1>
           <p>{description}</p>
         </div>
@@ -149,6 +154,8 @@ export function App() {
             <button
               className={mode === 'login' ? 'auth-tab auth-tab--active' : 'auth-tab'}
               type="button"
+              role="tab"
+              aria-selected={mode === 'login'}
               onClick={() => changeMode('login')}
             >
               Entrar
@@ -156,6 +163,8 @@ export function App() {
             <button
               className={mode === 'register' ? 'auth-tab auth-tab--active' : 'auth-tab'}
               type="button"
+              role="tab"
+              aria-selected={mode === 'register'}
               onClick={() => changeMode('register')}
             >
               Criar conta
@@ -224,7 +233,7 @@ export function App() {
           {message && <p className="auth-success" role="status">{message}</p>}
           {error && <p className="auth-error" role="alert">{error}</p>}
 
-          <button className="auth-button" type="submit" disabled={submitting}>
+          <Button type="submit" size="lg" fullWidth disabled={submitting}>
             {submitting
               ? 'Aguarde...'
               : mode === 'login'
@@ -234,7 +243,7 @@ export function App() {
                   : mode === 'forgot'
                     ? 'Enviar link'
                     : 'Redefinir senha'}
-          </button>
+          </Button>
 
           {mode === 'login' && (
             <button className="auth-link" type="button" onClick={() => changeMode('forgot')}>
@@ -248,7 +257,7 @@ export function App() {
             </button>
           )}
         </form>
-      </section>
+      </Card>
     </main>
   );
 }
