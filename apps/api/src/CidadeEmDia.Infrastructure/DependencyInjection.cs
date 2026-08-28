@@ -34,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ISubaccountLimitProvider, ConfigurationSubaccountLimitProvider>();
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
+        services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
         return services;
