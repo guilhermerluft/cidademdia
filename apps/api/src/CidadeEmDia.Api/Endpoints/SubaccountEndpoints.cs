@@ -31,6 +31,14 @@ public static class SubaccountEndpoints
             if (!TryGetCurrentUserId(principal, out var masterUserId))
                 return Results.Unauthorized();
 
+            var team = await service.ListAsync(masterUserId, cancellationToken);
+            var sameEmailPendingInvitation = team.Invitations.Any(x =>
+                string.Equals(x.Email.Trim(), request.Email?.Trim(), StringComparison.OrdinalIgnoreCase));
+            var reservedCapacity = team.ActiveCount + team.PendingInvitationCount - (sameEmailPendingInvitation ? 1 : 0);
+
+            if (team.Limit is int limit && reservedCapacity >= limit)
+                return Results.Conflict(new { error = "subaccount_limit_reached" });
+
             var result = await service.AddAsync(
                 masterUserId,
                 request.Email,
