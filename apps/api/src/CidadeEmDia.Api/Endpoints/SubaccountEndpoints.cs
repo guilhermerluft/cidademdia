@@ -88,6 +88,7 @@ public static class SubaccountEndpoints
         master.MapDelete("/{linkId:guid}", async (
             Guid linkId,
             IMasterSubaccountService service,
+            ISubaccountAccessStateService accessStateService,
             ClaimsPrincipal principal,
             CancellationToken cancellationToken) =>
         {
@@ -95,7 +96,14 @@ public static class SubaccountEndpoints
                 return Results.Unauthorized();
 
             var result = await service.RevokeAsync(masterUserId, linkId, cancellationToken);
-            return result.Succeeded ? Results.NoContent() : MapResult(result);
+            if (!result.Succeeded || result.Member is null)
+                return MapResult(result);
+
+            await accessStateService.RemoveGlobalRoleIfNoActiveLinksAsync(
+                result.Member.UserId,
+                cancellationToken);
+
+            return Results.NoContent();
         });
 
         var invitations = api.MapGroup("/subaccount-invitations");
@@ -139,6 +147,19 @@ public static class SubaccountEndpoints
 
         var subaccount = api.MapGroup("/subaccount")
             .RequireAuthorization(AuthorizationPolicies.SubaccountRole);
+
+        subaccount.MapGet("/contexts", async (
+            ISubaccountAccessStateService accessStateService,
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var subaccountUserId))
+                return Results.Unauthorized();
+
+            return Results.Ok(await accessStateService.ListActiveContextsAsync(
+                subaccountUserId,
+                cancellationToken));
+        });
 
         subaccount.MapGet("/masters/{masterUserId:guid}/context", async (
             Guid masterUserId,
