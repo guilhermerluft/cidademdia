@@ -97,6 +97,42 @@ public sealed class Occurrence : BaseEntity
         return target;
     }
 
+    public OccurrenceTarget AcceptMasterTarget(
+        Guid targetId,
+        Guid masterUserId,
+        DateTimeOffset acceptedAt)
+    {
+        var target = FindAssignedTarget(targetId, masterUserId);
+        target.Accept(acceptedAt);
+
+        if (Status == OccurrenceStatus.New)
+        {
+            TransitionTo(
+                OccurrenceStatus.Received,
+                masterUserId,
+                acceptedAt,
+                "Occurrence received after acceptance by an assigned Master.");
+        }
+        else
+        {
+            Touch();
+        }
+
+        return target;
+    }
+
+    public OccurrenceTarget RejectMasterTarget(
+        Guid targetId,
+        Guid masterUserId,
+        string rejectionReason,
+        DateTimeOffset rejectedAt)
+    {
+        var target = FindAssignedTarget(targetId, masterUserId);
+        target.Reject(rejectionReason, rejectedAt);
+        Touch();
+        return target;
+    }
+
     public void TransitionTo(
         OccurrenceStatus targetStatus,
         Guid changedByUserId,
@@ -162,6 +198,18 @@ public sealed class Occurrence : BaseEntity
         _serviceForecastHistory.Add(forecast);
         Touch();
         return forecast;
+    }
+
+    private OccurrenceTarget FindAssignedTarget(Guid targetId, Guid masterUserId)
+    {
+        if (targetId == Guid.Empty)
+            throw new DomainException("Occurrence target is required.");
+        if (masterUserId == Guid.Empty)
+            throw new DomainException("Occurrence target Master is required.");
+
+        return _targets.FirstOrDefault(target =>
+                target.Id == targetId && target.MasterUserId == masterUserId)
+            ?? throw new DomainException("Occurrence target is not assigned to this Master.");
     }
 
     private void EnsureNotBeforeCreation(DateTimeOffset eventAt)

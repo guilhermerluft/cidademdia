@@ -38,6 +38,7 @@ public static class DependencyInjection
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();
         services.AddScoped<IOccurrenceService, OccurrenceService>();
+        services.AddScoped<IOccurrenceTargetDecisionService, OccurrenceTargetDecisionService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
         return services;

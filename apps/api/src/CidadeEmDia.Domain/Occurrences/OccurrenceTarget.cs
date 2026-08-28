@@ -33,4 +33,47 @@ public sealed class OccurrenceTarget : BaseEntity
 
     public Occurrence Occurrence { get; private set; } = null!;
     public User MasterUser { get; private set; } = null!;
+
+    internal void Accept(DateTimeOffset acceptedAt)
+    {
+        EnsurePendingDecision();
+        EnsureDecisionNotBeforeSentAt(acceptedAt);
+
+        Status = OccurrenceTargetStatus.Accepted;
+        AcceptedAt = acceptedAt;
+        RejectedAt = null;
+        RejectionReason = null;
+        Touch();
+    }
+
+    internal void Reject(string rejectionReason, DateTimeOffset rejectedAt)
+    {
+        EnsurePendingDecision();
+        EnsureDecisionNotBeforeSentAt(rejectedAt);
+
+        if (string.IsNullOrWhiteSpace(rejectionReason))
+            throw new DomainException("Occurrence target rejection reason is required.");
+
+        var normalizedReason = rejectionReason.Trim();
+        if (normalizedReason.Length > 1000)
+            throw new DomainException("Occurrence target rejection reason must contain at most 1000 characters.");
+
+        Status = OccurrenceTargetStatus.Rejected;
+        RejectionReason = normalizedReason;
+        RejectedAt = rejectedAt;
+        AcceptedAt = null;
+        Touch();
+    }
+
+    private void EnsurePendingDecision()
+    {
+        if (Status != OccurrenceTargetStatus.Pending)
+            throw new DomainException("Occurrence target has already been decided.");
+    }
+
+    private void EnsureDecisionNotBeforeSentAt(DateTimeOffset decidedAt)
+    {
+        if (decidedAt < SentAt)
+            throw new DomainException("Occurrence target decision cannot predate target assignment.");
+    }
 }

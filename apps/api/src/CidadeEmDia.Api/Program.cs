@@ -80,6 +80,7 @@ api.MapProfileEndpoints();
 api.MapAdminEndpoints();
 api.MapSubaccountEndpoints();
 api.MapOccurrenceEndpoints();
+api.MapOccurrenceTargetDecisionEndpoints();
 
 app.MapHealthChecks("/health/live", new()
 {
