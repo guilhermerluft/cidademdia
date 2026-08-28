@@ -14,37 +14,63 @@ public sealed class Occurrence : BaseEntity
 
     public Occurrence(
         Guid authorUserId,
+        Guid categoryId,
         string title,
         string? description,
-        OccurrenceType type,
+        string addressText,
         OccurrenceLocation location,
-        DateTimeOffset registeredAt)
+        string? postalCode = null,
+        Guid? cityId = null,
+        string? stateCode = null,
+        string? externalProtocolNumber = null,
+        string? externalProtocolAgency = null)
     {
         if (authorUserId == Guid.Empty)
             throw new DomainException("Occurrence author is required.");
+        if (categoryId == Guid.Empty)
+            throw new DomainException("Occurrence category is required.");
         if (string.IsNullOrWhiteSpace(title))
             throw new DomainException("Occurrence title is required.");
+        if (string.IsNullOrWhiteSpace(addressText))
+            throw new DomainException("Occurrence address is required.");
 
         AuthorUserId = authorUserId;
+        CategoryId = categoryId;
         Title = title.Trim();
-        Description = string.IsNullOrWhiteSpace(description) ? null : description.Trim();
-        Type = type ?? throw new DomainException("Occurrence type is required.");
+        Description = NormalizeOptionalText(description);
+        AddressText = addressText.Trim();
         Location = location ?? throw new DomainException("Occurrence location is required.");
+        PostalCode = NormalizePostalCode(postalCode);
+        CityId = cityId;
+        StateCode = NormalizeStateCode(stateCode);
+        ExternalProtocolNumber = NormalizeOptionalText(externalProtocolNumber);
+        ExternalProtocolAgency = NormalizeOptionalText(externalProtocolAgency);
         PublicCode = OccurrencePublicCode.New();
-        Status = OccurrenceStatus.Open;
-        RegisteredAt = registeredAt;
+        Status = OccurrenceStatus.New;
 
-        _statusHistory.Add(new OccurrenceStatusChange(Status, authorUserId, registeredAt, null));
+        _statusHistory.Add(new OccurrenceStatusChange(
+            fromStatus: null,
+            toStatus: Status,
+            changedByUserId: authorUserId,
+            createdAt: CreatedAt,
+            reason: null));
     }
 
     public Guid AuthorUserId { get; private set; }
+    public Guid CategoryId { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string? Description { get; private set; }
-    public OccurrenceType Type { get; private set; } = null!;
-    public OccurrenceLocation Location { get; private set; } = null!;
     public OccurrencePublicCode PublicCode { get; private set; } = null!;
-    public OccurrenceStatus Status { get; private set; } = OccurrenceStatus.Open;
-    public DateTimeOffset RegisteredAt { get; private set; }
+    public string? ExternalProtocolNumber { get; private set; }
+    public string? ExternalProtocolAgency { get; private set; }
+    public OccurrenceStatus Status { get; private set; } = OccurrenceStatus.New;
+    public string? PostalCode { get; private set; }
+    public string AddressText { get; private set; } = string.Empty;
+    public Guid? CityId { get; private set; }
+    public string? StateCode { get; private set; }
+    public OccurrenceLocation Location { get; private set; } = null!;
+    public DateTimeOffset? ClosedAt { get; private set; }
+    public DateTimeOffset? CancelledAt { get; private set; }
 
     public IReadOnlyList<OccurrenceStatusChange> StatusHistory => _statusHistory.AsReadOnly();
     public IReadOnlyList<OccurrenceComplement> Complements => _complements.AsReadOnly();
@@ -55,23 +81,34 @@ public sealed class Occurrence : BaseEntity
         OccurrenceStatus targetStatus,
         Guid changedByUserId,
         DateTimeOffset changedAt,
-        string? note = null)
+        string? reason = null)
     {
         if (targetStatus is null)
             throw new DomainException("Target occurrence status is required.");
         if (changedByUserId == Guid.Empty)
             throw new DomainException("Status change actor is required.");
+        if (targetStatus == Status)
+            throw new DomainException("Occurrence is already in the requested status.");
+        if (Status.IsTerminal)
+            throw new DomainException($"Occurrence in status '{Status.Value}' cannot transition to another status.");
 
-        EnsureNotBeforeRegistration(changedAt);
+        EnsureNotBeforeCreation(changedAt);
 
-        if (!CanTransition(Status, targetStatus))
-        {
-            throw new DomainException(
-                $"Occurrence cannot transition from '{Status.Value}' to '{targetStatus.Value}'.");
-        }
-
+        var previousStatus = Status;
         Status = targetStatus;
-        _statusHistory.Add(new OccurrenceStatusChange(targetStatus, changedByUserId, changedAt, note));
+
+        if (targetStatus == OccurrenceStatus.Closed)
+            ClosedAt = changedAt;
+        else if (targetStatus == OccurrenceStatus.Cancelled)
+            CancelledAt = changedAt;
+
+        _statusHistory.Add(new OccurrenceStatusChange(
+            previousStatus,
+            targetStatus,
+            changedByUserId,
+            changedAt,
+            reason));
+
         Touch();
     }
 
@@ -80,7 +117,7 @@ public sealed class Occurrence : BaseEntity
         string content,
         DateTimeOffset createdAt)
     {
-        EnsureNotBeforeRegistration(createdAt);
+        EnsureNotBeforeCreation(createdAt);
 
         var complement = new OccurrenceComplement(authorUserId, content, createdAt);
         _complements.Add(complement);
@@ -94,7 +131,7 @@ public sealed class Occurrence : BaseEntity
         DateTimeOffset definedAt,
         string? note = null)
     {
-        EnsureNotBeforeRegistration(definedAt);
+        EnsureNotBeforeCreation(definedAt);
 
         var forecast = new OccurrenceServiceForecast(
             estimatedFor,
@@ -107,25 +144,38 @@ public sealed class Occurrence : BaseEntity
         return forecast;
     }
 
-    private void EnsureNotBeforeRegistration(DateTimeOffset eventAt)
+    private void EnsureNotBeforeCreation(DateTimeOffset eventAt)
     {
-        if (eventAt < RegisteredAt)
-            throw new DomainException("Occurrence events cannot predate the occurrence registration.");
+        if (eventAt < CreatedAt)
+            throw new DomainException("Occurrence events cannot predate the occurrence creation.");
     }
 
-    private static bool CanTransition(
-        OccurrenceStatus currentStatus,
-        OccurrenceStatus targetStatus)
+    private static string? NormalizeOptionalText(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
+    private static string? NormalizePostalCode(string? value)
     {
-        if (currentStatus == OccurrenceStatus.Open)
-        {
-            return targetStatus == OccurrenceStatus.InProgress
-                || targetStatus == OccurrenceStatus.Cancelled;
-        }
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
 
-        if (currentStatus == OccurrenceStatus.InProgress)
-            return targetStatus == OccurrenceStatus.Resolved;
+        var digits = new string(value.Where(char.IsDigit).ToArray());
 
-        return false;
+        if (digits.Length != 8)
+            throw new DomainException("Occurrence postal code must contain 8 digits.");
+
+        return digits;
+    }
+
+    private static string? NormalizeStateCode(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+
+        var normalized = value.Trim().ToUpperInvariant();
+
+        if (normalized.Length != 2 || normalized.Any(character => !char.IsLetter(character)))
+            throw new DomainException("Occurrence state code must contain 2 letters.");
+
+        return normalized;
     }
 }

@@ -4,16 +4,24 @@ namespace CidadeEmDia.Domain.Occurrences;
 
 public sealed record OccurrenceStatus
 {
-    public static readonly OccurrenceStatus Open = new("OPEN");
-    public static readonly OccurrenceStatus InProgress = new("IN_PROGRESS");
-    public static readonly OccurrenceStatus Resolved = new("RESOLVED");
-    public static readonly OccurrenceStatus Cancelled = new("CANCELLED");
+    public static readonly OccurrenceStatus New = new("NOVA");
+    public static readonly OccurrenceStatus Received = new("RECEBIDA");
+    public static readonly OccurrenceStatus UnderReview = new("EM_ANALISE");
+    public static readonly OccurrenceStatus InProgress = new("EM_ANDAMENTO");
+    public static readonly OccurrenceStatus AwaitingInformation = new("AGUARDANDO_INFORMACAO");
+    public static readonly OccurrenceStatus Resolved = new("RESOLVIDA");
+    public static readonly OccurrenceStatus Closed = new("ENCERRADA");
+    public static readonly OccurrenceStatus Cancelled = new("CANCELADA");
 
     private static readonly OccurrenceStatus[] DefinedStatuses =
     [
-        Open,
+        New,
+        Received,
+        UnderReview,
         InProgress,
+        AwaitingInformation,
         Resolved,
+        Closed,
         Cancelled
     ];
 
@@ -23,8 +31,9 @@ public sealed record OccurrenceStatus
     }
 
     public string Value { get; }
+    public bool IsTerminal => this == Closed || this == Cancelled;
 
-    public static OccurrenceStatus From(string value)
+    public static OccurrenceStatus From(string? value)
     {
         var normalized = value?.Trim().ToUpperInvariant();
         var status = DefinedStatuses.FirstOrDefault(item => item.Value == normalized);

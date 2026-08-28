@@ -4,6 +4,10 @@ namespace CidadeEmDia.Domain.Occurrences;
 
 public sealed class OccurrenceComplement
 {
+    private OccurrenceComplement()
+    {
+    }
+
     internal OccurrenceComplement(Guid authorUserId, string content, DateTimeOffset createdAt)
     {
         if (authorUserId == Guid.Empty)
@@ -17,8 +21,8 @@ public sealed class OccurrenceComplement
         CreatedAt = createdAt;
     }
 
-    public Guid Id { get; }
-    public Guid AuthorUserId { get; }
-    public string Content { get; }
-    public DateTimeOffset CreatedAt { get; }
+    public Guid Id { get; private set; }
+    public Guid AuthorUserId { get; private set; }
+    public string Content { get; private set; } = string.Empty;
+    public DateTimeOffset CreatedAt { get; private set; }
 }

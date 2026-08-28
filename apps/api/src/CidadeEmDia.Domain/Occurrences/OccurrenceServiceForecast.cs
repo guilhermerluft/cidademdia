@@ -4,6 +4,10 @@ namespace CidadeEmDia.Domain.Occurrences;
 
 public sealed class OccurrenceServiceForecast
 {
+    private OccurrenceServiceForecast()
+    {
+    }
+
     internal OccurrenceServiceForecast(
         DateTimeOffset estimatedFor,
         Guid definedByUserId,
@@ -22,9 +26,9 @@ public sealed class OccurrenceServiceForecast
         Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
     }
 
-    public Guid Id { get; }
-    public DateTimeOffset EstimatedFor { get; }
-    public Guid DefinedByUserId { get; }
-    public DateTimeOffset DefinedAt { get; }
-    public string? Note { get; }
+    public Guid Id { get; private set; }
+    public DateTimeOffset EstimatedFor { get; private set; }
+    public Guid DefinedByUserId { get; private set; }
+    public DateTimeOffset DefinedAt { get; private set; }
+    public string? Note { get; private set; }
 }

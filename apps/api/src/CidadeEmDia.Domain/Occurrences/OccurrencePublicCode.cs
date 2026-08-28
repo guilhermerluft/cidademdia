@@ -22,7 +22,7 @@ public sealed record OccurrencePublicCode
         return new OccurrencePublicCode(Convert.ToHexString(bytes));
     }
 
-    public static OccurrencePublicCode From(string value)
+    public static OccurrencePublicCode From(string? value)
     {
         var normalized = value?.Trim().ToUpperInvariant();
 
