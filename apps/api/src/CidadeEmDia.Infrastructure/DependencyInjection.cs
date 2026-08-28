@@ -1,7 +1,9 @@
 using CidadeEmDia.Application.Authentication;
+using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Application.Profiles;
 using CidadeEmDia.Application.Subaccounts;
 using CidadeEmDia.Infrastructure.Identity;
+using CidadeEmDia.Infrastructure.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,6 +37,7 @@ public static class DependencyInjection
         services.AddScoped<ISubaccountLimitProvider, ConfigurationSubaccountLimitProvider>();
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();
+        services.AddScoped<IOccurrenceService, OccurrenceService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
         return services;
