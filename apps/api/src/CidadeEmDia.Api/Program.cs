@@ -81,6 +81,7 @@ api.MapAdminEndpoints();
 api.MapSubaccountEndpoints();
 api.MapOccurrenceEndpoints();
 api.MapOccurrenceTargetDecisionEndpoints();
+api.MapOccurrenceLifecycleEndpoints();
 
 app.MapHealthChecks("/health/live", new()
 {

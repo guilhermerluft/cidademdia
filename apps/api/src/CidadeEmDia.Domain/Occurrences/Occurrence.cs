@@ -133,6 +133,24 @@ public sealed class Occurrence : BaseEntity
         return target;
     }
 
+    public void CancelByAuthor(
+        Guid authorUserId,
+        DateTimeOffset cancelledAt,
+        string? reason = null)
+    {
+        if (authorUserId == Guid.Empty || authorUserId != AuthorUserId)
+            throw new DomainException("Only the occurrence author can cancel it.");
+
+        if (_targets.Count > 0)
+            throw new DomainException("Occurrence cannot be cancelled after it has been assigned to a Master.");
+
+        TransitionTo(
+            OccurrenceStatus.Cancelled,
+            authorUserId,
+            cancelledAt,
+            NormalizeOptionalText(reason));
+    }
+
     public void TransitionTo(
         OccurrenceStatus targetStatus,
         Guid changedByUserId,
@@ -147,6 +165,8 @@ public sealed class Occurrence : BaseEntity
             throw new DomainException("Occurrence is already in the requested status.");
         if (Status.IsTerminal)
             throw new DomainException($"Occurrence in status '{Status.Value}' cannot transition to another status.");
+        if (!IsAllowedTransition(Status, targetStatus))
+            throw new DomainException($"Occurrence cannot transition from '{Status.Value}' to '{targetStatus.Value}'.");
 
         EnsureNotBeforeCreation(changedAt);
 
@@ -163,7 +183,7 @@ public sealed class Occurrence : BaseEntity
             targetStatus,
             changedByUserId,
             changedAt,
-            reason));
+            NormalizeOptionalText(reason)));
 
         Touch();
     }
@@ -211,6 +231,14 @@ public sealed class Occurrence : BaseEntity
                 target.Id == targetId && target.MasterUserId == masterUserId)
             ?? throw new DomainException("Occurrence target is not assigned to this Master.");
     }
+
+    private static bool IsAllowedTransition(OccurrenceStatus from, OccurrenceStatus to) =>
+        (from == OccurrenceStatus.New && (to == OccurrenceStatus.Received || to == OccurrenceStatus.Cancelled))
+        || (from == OccurrenceStatus.Received && to == OccurrenceStatus.UnderReview)
+        || (from == OccurrenceStatus.UnderReview && to == OccurrenceStatus.InProgress)
+        || (from == OccurrenceStatus.InProgress && to == OccurrenceStatus.AwaitingInformation)
+        || (from == OccurrenceStatus.AwaitingInformation && to == OccurrenceStatus.Resolved)
+        || (from == OccurrenceStatus.Resolved && to == OccurrenceStatus.Closed);
 
     private void EnsureNotBeforeCreation(DateTimeOffset eventAt)
     {
