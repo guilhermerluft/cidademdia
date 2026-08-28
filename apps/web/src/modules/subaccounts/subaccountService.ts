@@ -5,6 +5,7 @@ import type {
   MasterSubaccountInvitation,
   MasterSubaccountMember,
   MasterSubaccountTeam,
+  SubaccountContext,
   SubaccountInvitationPreview,
   UpdateSubaccountPermissionsInput,
 } from './types';
@@ -33,6 +34,11 @@ export async function previewSubaccountInvitation(token: string): Promise<Subacc
 
 export async function acceptSubaccountInvitation(input: AcceptSubaccountInvitationInput): Promise<void> {
   await api.post('/subaccount-invitations/accept', input);
+}
+
+export async function listSubaccountContexts(): Promise<SubaccountContext[]> {
+  const { data } = await api.get<SubaccountContext[]>('/subaccount/contexts');
+  return data;
 }
 
 export async function updateMasterSubaccountPermissions(
