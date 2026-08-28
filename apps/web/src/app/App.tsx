@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Brand, Button, Card } from '../components/ui';
@@ -6,6 +6,7 @@ import { useAuth } from '../modules/auth/AuthProvider';
 import * as authService from '../modules/auth/authService';
 import {
   acceptSubaccountInvitation,
+  listSubaccountContexts,
   previewSubaccountInvitation,
 } from '../modules/subaccounts/subaccountService';
 import {
@@ -81,6 +82,7 @@ export function App() {
   const [inviteToken] = useState(initialTokens.inviteToken);
   const [invitePreview, setInvitePreview] = useState<SubaccountInvitationPreview | null>(null);
   const [inviteLoading, setInviteLoading] = useState(Boolean(initialTokens.inviteToken));
+  const [subaccountAccessRevoked, setSubaccountAccessRevoked] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -115,6 +117,51 @@ export function App() {
     };
   }, [inviteToken, mode]);
 
+  useEffect(() => {
+    const shouldWatchSubaccountAccess =
+      status === 'authenticated' &&
+      user?.roles.includes('SUBACCOUNT') &&
+      !user.roles.includes('MASTER') &&
+      !user.roles.includes('ADMIN') &&
+      mode !== 'invite';
+
+    if (!shouldWatchSubaccountAccess) {
+      setSubaccountAccessRevoked(false);
+      return;
+    }
+
+    let active = true;
+
+    async function verifyAccess() {
+      try {
+        const contexts = await listSubaccountContexts();
+        if (active) setSubaccountAccessRevoked(contexts.length === 0);
+      } catch {
+        // A falha de rede não deve derrubar a sessão nem presumir revogação.
+      }
+    }
+
+    const handleFocus = () => void verifyAccess();
+    void verifyAccess();
+    const intervalId = window.setInterval(() => void verifyAccess(), 15000);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [mode, status, user]);
+
+  const dashboardUser = useMemo(() => {
+    if (!user || !subaccountAccessRevoked) return user;
+
+    return {
+      ...user,
+      roles: user.roles.filter((role) => role !== 'SUBACCOUNT'),
+    };
+  }, [subaccountAccessRevoked, user]);
+
   if (status === 'loading') {
     return (
       <main className="auth-shell">
@@ -128,10 +175,10 @@ export function App() {
     );
   }
 
-  if (status === 'authenticated' && user && mode !== 'invite') {
+  if (status === 'authenticated' && dashboardUser && mode !== 'invite') {
     return (
-      <DashboardShell user={user} onLogout={logout}>
-        <DashboardHome user={user} />
+      <DashboardShell user={dashboardUser} onLogout={logout}>
+        <DashboardHome user={dashboardUser} />
       </DashboardShell>
     );
   }
