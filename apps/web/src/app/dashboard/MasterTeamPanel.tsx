@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import {
   createMasterSubaccount,
+  inviteMasterSubaccount,
   listMasterSubaccounts,
   revokeMasterSubaccount,
   updateMasterSubaccountPermissions,
@@ -22,11 +23,13 @@ function getErrorCode(error: unknown) {
 function getErrorMessage(error: unknown) {
   switch (getErrorCode(error)) {
     case 'subaccount_user_not_found':
-      return 'Nenhuma conta foi encontrada com este e-mail. Nesta etapa, a pessoa precisa criar a conta antes de ser vinculada.';
+      return 'A conta ainda não existe. Não foi possível enviar o convite automaticamente.';
     case 'subaccount_limit_reached':
-      return 'O limite de subcontas da sua conta foi atingido.';
+      return 'O limite de subcontas e convites pendentes da sua conta foi atingido.';
     case 'subaccount_already_linked':
       return 'Esta pessoa já está vinculada à sua conta Master.';
+    case 'subaccount_user_already_registered':
+      return 'A conta foi criada enquanto o convite era preparado. Tente adicionar novamente.';
     case 'incompatible_account_role':
       return 'Esta conta possui um perfil incompatível com o vínculo de subconta.';
     case 'subaccount_user_unavailable':
@@ -35,6 +38,8 @@ function getErrorMessage(error: unknown) {
       return 'Uma ou mais permissões selecionadas não são válidas.';
     case 'subaccount_revoked':
       return 'Esta subconta já foi revogada.';
+    case 'invitation_delivery_failed':
+      return 'O convite foi preparado, mas o e-mail não pôde ser enviado. Tente novamente em instantes.';
     default:
       return 'Não foi possível concluir a operação agora. Tente novamente.';
   }
@@ -47,6 +52,12 @@ function initials(displayName: string) {
 
 function permissionLabel(key: string) {
   return SUBACCOUNT_PERMISSION_OPTIONS.find((item) => item.key === key)?.label ?? key;
+}
+
+function formatExpiry(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'prazo indisponível';
+  return date.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
 function PermissionSelector({
@@ -112,11 +123,15 @@ export function MasterTeamPanel() {
     void loadTeam();
   }, [loadTeam]);
 
+  const usedCapacity = team ? team.activeCount + team.pendingInvitationCount : 0;
+
   const capacityLabel = useMemo(() => {
     if (!team) return 'Carregando equipe';
-    if (team.limit === null) return `${team.activeCount} subconta${team.activeCount === 1 ? '' : 's'} ativa${team.activeCount === 1 ? '' : 's'}`;
-    return `${team.activeCount} de ${team.limit} vagas utilizadas`;
-  }, [team]);
+    if (team.limit === null) {
+      return `${team.activeCount} ativa${team.activeCount === 1 ? '' : 's'} · ${team.pendingInvitationCount} convite${team.pendingInvitationCount === 1 ? '' : 's'}`;
+    }
+    return `${usedCapacity} de ${team.limit} vagas reservadas`;
+  }, [team, usedCapacity]);
 
   async function handleCreate(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -124,14 +139,28 @@ export function MasterTeamPanel() {
     setSuccess(null);
     setBusyAction('create');
 
+    const input = { email: email.trim(), permissions: newPermissions };
+
     try {
-      await createMasterSubaccount({ email: email.trim(), permissions: newPermissions });
+      await createMasterSubaccount(input);
+      setSuccess('Subconta vinculada com sucesso.');
       setEmail('');
       setNewPermissions([]);
-      setSuccess('Subconta vinculada com sucesso.');
       await loadTeam(false);
     } catch (requestError) {
-      setError(getErrorMessage(requestError));
+      if (getErrorCode(requestError) !== 'subaccount_user_not_found') {
+        setError(getErrorMessage(requestError));
+      } else {
+        try {
+          await inviteMasterSubaccount(input);
+          setSuccess('A pessoa ainda não possuía conta. Enviamos um convite para criar a conta e entrar na sua equipe.');
+          setEmail('');
+          setNewPermissions([]);
+          await loadTeam(false);
+        } catch (invitationError) {
+          setError(getErrorMessage(invitationError));
+        }
+      }
     } finally {
       setBusyAction(null);
     }
@@ -188,7 +217,7 @@ export function MasterTeamPanel() {
       <SectionHeading
         title="Equipe e permissões"
         subtitle="Defina exatamente o que cada subconta pode fazer em nome da sua conta Master."
-        action={<Badge variant={team?.limit !== null && team?.activeCount === team?.limit ? 'warning' : 'primary'}>{capacityLabel}</Badge>}
+        action={<Badge variant={team?.limit !== null && usedCapacity >= (team?.limit ?? Number.MAX_SAFE_INTEGER) ? 'warning' : 'primary'}>{capacityLabel}</Badge>}
       />
 
       {error && <p className="subaccount-feedback subaccount-feedback--error" role="alert">{error}</p>}
@@ -200,7 +229,7 @@ export function MasterTeamPanel() {
             <div className="master-team__card-heading">
               <span className="master-team__step">Nova subconta</span>
               <h3>Adicionar pessoa à equipe</h3>
-              <p>Use o e-mail de uma conta já cadastrada no CidadeEmDia e escolha as permissões iniciais.</p>
+              <p>Informe o e-mail e escolha as permissões. Se a pessoa ainda não tiver conta, o CidadeEmDia enviará um convite automaticamente.</p>
             </div>
 
             <form className="subaccount-form" onSubmit={handleCreate}>
@@ -226,7 +255,7 @@ export function MasterTeamPanel() {
               </fieldset>
 
               <Button type="submit" size="lg" fullWidth disabled={busyAction === 'create'}>
-                {busyAction === 'create' ? 'Adicionando...' : 'Adicionar subconta'}
+                {busyAction === 'create' ? 'Processando...' : 'Adicionar ou convidar'}
               </Button>
             </form>
           </CardBody>
@@ -237,7 +266,7 @@ export function MasterTeamPanel() {
             <div className="master-team__card-heading master-team__card-heading--row">
               <div>
                 <span className="master-team__step">Equipe atual</span>
-                <h3>Subcontas vinculadas</h3>
+                <h3>Subcontas e convites</h3>
               </div>
               <button className="subaccount-refresh" type="button" onClick={() => void loadTeam()} disabled={loading}>
                 Atualizar
@@ -248,17 +277,37 @@ export function MasterTeamPanel() {
               <div className="subaccount-state" aria-busy="true">
                 <span className="subaccount-spinner" aria-hidden="true" />
                 <strong>Carregando equipe</strong>
-                <small>Buscando os vínculos e permissões mais recentes.</small>
+                <small>Buscando os vínculos, convites e permissões mais recentes.</small>
               </div>
-            ) : !team || team.members.length === 0 ? (
+            ) : !team || (team.members.length === 0 && team.invitations.length === 0) ? (
               <div className="subaccount-state">
                 <span className="subaccount-empty-icon" aria-hidden="true">+</span>
-                <strong>Nenhuma subconta vinculada</strong>
+                <strong>Nenhuma subconta ou convite</strong>
                 <small>Adicione a primeira pessoa usando o formulário ao lado.</small>
               </div>
             ) : (
               <div className="subaccount-list">
-                {team.members.map((member) => {
+                {team?.invitations.map((invitation) => (
+                  <article className="subaccount-member" key={invitation.invitationId}>
+                    <div className="subaccount-member__summary">
+                      <div className="subaccount-member__avatar" aria-hidden="true">✉</div>
+                      <div className="subaccount-member__identity">
+                        <strong>Convite enviado</strong>
+                        <span>{invitation.email}</span>
+                      </div>
+                      <Badge variant="warning">Pendente</Badge>
+                    </div>
+
+                    <div className="subaccount-member__permissions" aria-label="Permissões do convite">
+                      {invitation.permissions.length > 0
+                        ? invitation.permissions.map((permission) => <span key={permission}>{permissionLabel(permission)}</span>)
+                        : <span className="subaccount-member__no-permission">Sem permissões operacionais</span>}
+                    </div>
+                    <small>Expira em {formatExpiry(invitation.expiresAt)}</small>
+                  </article>
+                ))}
+
+                {team?.members.map((member) => {
                   const active = member.status === 'ACTIVE';
                   const editing = editingLinkId === member.linkId;
                   const saving = busyAction === `permissions:${member.linkId}`;

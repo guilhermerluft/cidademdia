@@ -8,6 +8,19 @@ public interface IMasterSubaccountService
         string email,
         IReadOnlyCollection<string> permissions,
         CancellationToken cancellationToken = default);
+    Task<SubaccountInvitationResult> InviteAsync(
+        Guid masterUserId,
+        string email,
+        IReadOnlyCollection<string> permissions,
+        CancellationToken cancellationToken = default);
+    Task<SubaccountInvitationPreview?> PreviewInvitationAsync(
+        string rawToken,
+        CancellationToken cancellationToken = default);
+    Task<SubaccountInvitationAcceptResult> AcceptInvitationAsync(
+        string rawToken,
+        string password,
+        string displayName,
+        CancellationToken cancellationToken = default);
     Task<MasterSubaccountResult> UpdatePermissionsAsync(
         Guid masterUserId,
         Guid linkId,

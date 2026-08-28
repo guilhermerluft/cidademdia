@@ -15,6 +15,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
     public DbSet<MasterSubaccount> MasterSubaccounts => Set<MasterSubaccount>();
     public DbSet<MasterSubaccountPermission> MasterSubaccountPermissions => Set<MasterSubaccountPermission>();
+    public DbSet<SubaccountInvitation> SubaccountInvitations => Set<SubaccountInvitation>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

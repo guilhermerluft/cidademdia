@@ -1,9 +1,9 @@
-name: Generate auth migration
+name: Generate subaccount invitation migration
 
 on:
   push:
     branches:
-      - feat/authentication-session-v2
+      - feat/subaccount-invitations
 
 permissions:
   contents: write
@@ -40,12 +40,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if compgen -G 'apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/*_AddPasswordReset.cs' > /dev/null; then
-            echo 'AddPasswordReset migration already exists.'
+          if compgen -G 'apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/*_AddSubaccountInvitations.cs' > /dev/null; then
+            echo 'AddSubaccountInvitations migration already exists.'
             exit 0
           fi
 
-          "$RUNNER_TEMP/dotnet-tools/dotnet-ef" migrations add AddPasswordReset \
+          "$RUNNER_TEMP/dotnet-tools/dotnet-ef" migrations add AddSubaccountInvitations \
             --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \
             --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj \
             --output-dir Persistence/Migrations
@@ -62,5 +62,5 @@ jobs:
 
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'chore(db): add password reset migration'
+          git commit -m 'chore(db): add subaccount invitations migration'
           git push origin HEAD:${GITHUB_REF_NAME}

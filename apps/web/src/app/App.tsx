@@ -1,12 +1,58 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { isAxiosError } from 'axios';
 import { Brand, Button, Card } from '../components/ui';
 import { useAuth } from '../modules/auth/AuthProvider';
 import * as authService from '../modules/auth/authService';
+import {
+  acceptSubaccountInvitation,
+  previewSubaccountInvitation,
+} from '../modules/subaccounts/subaccountService';
+import {
+  SUBACCOUNT_PERMISSION_OPTIONS,
+  type SubaccountInvitationPreview,
+} from '../modules/subaccounts/types';
 import { DashboardHome } from './dashboard/DashboardHome';
 import { DashboardShell } from './layout/DashboardShell';
 
-type AuthMode = 'login' | 'register' | 'forgot' | 'reset';
+type AuthMode = 'login' | 'register' | 'forgot' | 'reset' | 'invite';
+
+function readSensitiveTokens() {
+  const url = new URL(window.location.href);
+  const resetToken = url.searchParams.get('token') ?? '';
+  const inviteToken = url.searchParams.get('invite') ?? '';
+
+  if (resetToken || inviteToken) {
+    url.searchParams.delete('token');
+    url.searchParams.delete('invite');
+    const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+    window.history.replaceState({}, document.title, nextUrl || '/');
+  }
+
+  return { resetToken, inviteToken };
+}
+
+function invitationPermissionLabel(key: string) {
+  return SUBACCOUNT_PERMISSION_OPTIONS.find((item) => item.key === key)?.label ?? key;
+}
+
+function getInvitationErrorMessage(error: unknown) {
+  if (isAxiosError(error)) {
+    const data = error.response?.data as { error?: string } | undefined;
+    switch (data?.error) {
+      case 'email_already_registered':
+        return 'Este e-mail já possui uma conta. Entre normalmente e peça para a conta Master refazer o vínculo.';
+      case 'subaccount_limit_reached':
+        return 'A conta Master atingiu o limite de subcontas antes da conclusão deste convite.';
+      case 'master_unavailable':
+        return 'A conta Master que enviou este convite não está disponível.';
+      case 'invalid_or_expired_invitation':
+        return 'Este convite é inválido, já foi utilizado ou expirou.';
+    }
+  }
+
+  return 'Não foi possível aceitar o convite agora. Solicite um novo convite à conta Master.';
+}
 
 function AuthBrandPanel() {
   return (
@@ -27,9 +73,14 @@ function AuthBrandPanel() {
 
 export function App() {
   const { status, user, login, register, logout } = useAuth();
-  const initialResetToken = new URLSearchParams(window.location.search).get('token') ?? '';
-  const [mode, setMode] = useState<AuthMode>(initialResetToken ? 'reset' : 'login');
-  const [resetToken] = useState(initialResetToken);
+  const [initialTokens] = useState(readSensitiveTokens);
+  const [mode, setMode] = useState<AuthMode>(
+    initialTokens.inviteToken ? 'invite' : initialTokens.resetToken ? 'reset' : 'login',
+  );
+  const [resetToken] = useState(initialTokens.resetToken);
+  const [inviteToken] = useState(initialTokens.inviteToken);
+  const [invitePreview, setInvitePreview] = useState<SubaccountInvitationPreview | null>(null);
+  const [inviteLoading, setInviteLoading] = useState(Boolean(initialTokens.inviteToken));
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -37,6 +88,32 @@ export function App() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (mode !== 'invite' || !inviteToken) return;
+
+    let active = true;
+    setInviteLoading(true);
+    setError(null);
+
+    void previewSubaccountInvitation(inviteToken)
+      .then((preview) => {
+        if (!active) return;
+        setInvitePreview(preview);
+      })
+      .catch((requestError) => {
+        if (!active) return;
+        setInvitePreview(null);
+        setError(getInvitationErrorMessage(requestError));
+      })
+      .finally(() => {
+        if (active) setInviteLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [inviteToken, mode]);
 
   if (status === 'loading') {
     return (
@@ -51,7 +128,7 @@ export function App() {
     );
   }
 
-  if (status === 'authenticated' && user) {
+  if (status === 'authenticated' && user && mode !== 'invite') {
     return (
       <DashboardShell user={user} onLogout={logout}>
         <DashboardHome user={user} />
@@ -90,6 +167,27 @@ export function App() {
         return;
       }
 
+      if (mode === 'invite') {
+        if (!inviteToken || !invitePreview) {
+          setError('Este convite não está disponível. Solicite um novo convite à conta Master.');
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          setError('As senhas não coincidem.');
+          return;
+        }
+
+        await acceptSubaccountInvitation({ token: inviteToken, password, displayName });
+        setMode('login');
+        setPassword('');
+        setConfirmPassword('');
+        setDisplayName('');
+        setMessage('Conta criada e convite aceito. Entre com seu e-mail e a senha que você acabou de definir.');
+        setEmail(invitePreview.email);
+        return;
+      }
+
       if (!resetToken) {
         setError('Link de redefinição inválido. Solicite um novo e-mail.');
         return;
@@ -101,18 +199,19 @@ export function App() {
       }
 
       await authService.resetPassword({ token: resetToken, newPassword: password });
-      window.history.replaceState({}, document.title, '/');
       setMode('login');
       setPassword('');
       setConfirmPassword('');
       setMessage('Senha redefinida com sucesso. Entre com a nova senha.');
-    } catch {
+    } catch (requestError) {
       if (mode === 'register') {
         setError('Não foi possível criar a conta. Confira os dados e tente novamente.');
       } else if (mode === 'login') {
         setError('E-mail ou senha inválidos.');
       } else if (mode === 'forgot') {
         setError('Não foi possível processar a solicitação agora. Tente novamente em instantes.');
+      } else if (mode === 'invite') {
+        setError(getInvitationErrorMessage(requestError));
       } else {
         setError('O link é inválido ou expirou. Solicite uma nova redefinição de senha.');
       }
@@ -127,7 +226,9 @@ export function App() {
       ? 'Crie sua conta'
       : mode === 'forgot'
         ? 'Recupere sua senha'
-        : 'Crie uma nova senha';
+        : mode === 'invite'
+          ? 'Aceite o convite da equipe'
+          : 'Crie uma nova senha';
 
   const description = mode === 'login'
     ? 'Entre para acompanhar ocorrências e acessar os recursos do seu perfil.'
@@ -135,7 +236,9 @@ export function App() {
       ? 'Cadastre-se para começar a utilizar a nova plataforma.'
       : mode === 'forgot'
         ? 'Informe seu e-mail. Se a conta existir, enviaremos um link seguro de redefinição.'
-        : 'Escolha uma nova senha para concluir a recuperação da sua conta.';
+        : mode === 'invite'
+          ? 'Crie sua conta para entrar na equipe com as permissões definidas pela conta Master.'
+          : 'Escolha uma nova senha para concluir a recuperação da sua conta.';
 
   return (
     <main className="auth-shell">
@@ -174,8 +277,31 @@ export function App() {
             </div>
           )}
 
+          {mode === 'invite' && inviteLoading && (
+            <p className="auth-muted" role="status">Validando convite...</p>
+          )}
+
+          {mode === 'invite' && invitePreview && (
+            <dl className="auth-profile">
+              <div>
+                <dt>Conta Master</dt>
+                <dd>{invitePreview.masterDisplayName}</dd>
+              </div>
+              <div>
+                <dt>E-mail convidado</dt>
+                <dd>{invitePreview.email}</dd>
+              </div>
+              <div>
+                <dt>Permissões iniciais</dt>
+                <dd>{invitePreview.permissions.length > 0
+                  ? invitePreview.permissions.map(invitationPermissionLabel).join(', ')
+                  : 'Sem permissões operacionais'}</dd>
+              </div>
+            </dl>
+          )}
+
           <form className="auth-form" onSubmit={handleSubmit}>
-            {mode === 'register' && (
+            {(mode === 'register' || mode === 'invite') && (
               <label>
                 Nome
                 <input
@@ -189,7 +315,7 @@ export function App() {
               </label>
             )}
 
-            {mode !== 'reset' && (
+            {mode !== 'reset' && mode !== 'invite' && (
               <label>
                 E-mail
                 <input
@@ -202,9 +328,9 @@ export function App() {
               </label>
             )}
 
-            {(mode === 'login' || mode === 'register' || mode === 'reset') && (
+            {(mode === 'login' || mode === 'register' || mode === 'reset' || mode === 'invite') && (
               <label>
-                {mode === 'reset' ? 'Nova senha' : 'Senha'}
+                {mode === 'reset' || mode === 'invite' ? 'Nova senha' : 'Senha'}
                 <input
                   autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                   type="password"
@@ -217,7 +343,7 @@ export function App() {
               </label>
             )}
 
-            {mode === 'reset' && (
+            {(mode === 'reset' || mode === 'invite') && (
               <label>
                 Confirme a nova senha
                 <input
@@ -235,7 +361,12 @@ export function App() {
             {message && <p className="auth-success" role="status">{message}</p>}
             {error && <p className="auth-error" role="alert">{error}</p>}
 
-            <Button type="submit" size="lg" fullWidth disabled={submitting}>
+            <Button
+              type="submit"
+              size="lg"
+              fullWidth
+              disabled={submitting || (mode === 'invite' && (inviteLoading || !invitePreview))}
+            >
               {submitting
                 ? 'Aguarde...'
                 : mode === 'login'
@@ -244,7 +375,9 @@ export function App() {
                     ? 'Criar conta'
                     : mode === 'forgot'
                       ? 'Enviar link'
-                      : 'Redefinir senha'}
+                      : mode === 'invite'
+                        ? 'Criar conta e aceitar convite'
+                        : 'Redefinir senha'}
             </Button>
 
             {mode === 'login' && (
@@ -253,7 +386,7 @@ export function App() {
               </button>
             )}
 
-            {(mode === 'forgot' || mode === 'reset') && (
+            {(mode === 'forgot' || mode === 'reset' || mode === 'invite') && (
               <button className="auth-link" type="button" onClick={() => changeMode('login')}>
                 Voltar para entrar
               </button>

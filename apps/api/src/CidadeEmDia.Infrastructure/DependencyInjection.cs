@@ -22,11 +22,14 @@ public static class DependencyInjection
 
         var jwtOptions = JwtOptions.FromConfiguration(configuration);
         var passwordResetOptions = PasswordResetOptions.FromConfiguration(configuration);
+        var subaccountInvitationOptions = SubaccountInvitationOptions.FromConfiguration(configuration);
         services.AddSingleton(jwtOptions);
         services.AddSingleton(passwordResetOptions);
+        services.AddSingleton(subaccountInvitationOptions);
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<IPasswordResetEmailSender, SmtpPasswordResetEmailSender>();
+        services.AddSingleton<ISubaccountInvitationEmailSender, SmtpSubaccountInvitationEmailSender>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
         services.AddScoped<ISubaccountLimitProvider, ConfigurationSubaccountLimitProvider>();

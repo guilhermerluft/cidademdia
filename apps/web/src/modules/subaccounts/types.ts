@@ -48,10 +48,19 @@ export interface MasterSubaccountMember {
   permissions: string[];
 }
 
+export interface MasterSubaccountInvitation {
+  invitationId: string;
+  email: string;
+  permissions: string[];
+  expiresAt: string;
+}
+
 export interface MasterSubaccountTeam {
   limit: number | null;
   activeCount: number;
+  pendingInvitationCount: number;
   members: MasterSubaccountMember[];
+  invitations: MasterSubaccountInvitation[];
 }
 
 export interface CreateSubaccountInput {
@@ -61,4 +70,17 @@ export interface CreateSubaccountInput {
 
 export interface UpdateSubaccountPermissionsInput {
   permissions: string[];
+}
+
+export interface SubaccountInvitationPreview {
+  email: string;
+  masterDisplayName: string;
+  permissions: string[];
+  expiresAt: string;
+}
+
+export interface AcceptSubaccountInvitationInput {
+  token: string;
+  password: string;
+  displayName: string;
 }
