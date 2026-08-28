@@ -63,6 +63,12 @@ export interface MasterSubaccountTeam {
   invitations: MasterSubaccountInvitation[];
 }
 
+export interface SubaccountContext {
+  linkId: string;
+  masterUserId: string;
+  permissions: string[];
+}
+
 export interface CreateSubaccountInput {
   email: string;
   permissions: string[];
