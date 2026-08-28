@@ -1,4 +1,5 @@
 using CidadeEmDia.Domain.Identity;
+using CidadeEmDia.Domain.Occurrences;
 using Microsoft.EntityFrameworkCore;
 
 namespace CidadeEmDia.Infrastructure.Persistence;
@@ -16,6 +17,8 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MasterSubaccount> MasterSubaccounts => Set<MasterSubaccount>();
     public DbSet<MasterSubaccountPermission> MasterSubaccountPermissions => Set<MasterSubaccountPermission>();
     public DbSet<SubaccountInvitation> SubaccountInvitations => Set<SubaccountInvitation>();
+    public DbSet<OccurrenceCategory> OccurrenceCategories => Set<OccurrenceCategory>();
+    public DbSet<Occurrence> Occurrences => Set<Occurrence>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
