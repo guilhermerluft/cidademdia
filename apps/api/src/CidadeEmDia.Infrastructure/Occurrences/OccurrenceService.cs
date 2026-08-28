@@ -318,6 +318,8 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             return AddOccurrenceTargetResult.Failure("invalid_target", exception.Message);
         }
 
+        dbContext.OccurrenceTargets.Add(target);
+
         try
         {
             await dbContext.SaveChangesAsync(cancellationToken);
