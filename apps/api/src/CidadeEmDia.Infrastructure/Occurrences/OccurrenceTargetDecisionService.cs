@@ -125,6 +125,7 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
         }
 
         var decidedAt = DateTimeOffset.UtcNow;
+        var statusHistoryCountBeforeDecision = occurrence.StatusHistory.Count;
 
         try
         {
@@ -149,6 +150,9 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
 
             return OccurrenceTargetDecisionResult.Failure(errorCode, exception.Message);
         }
+
+        foreach (var statusChange in occurrence.StatusHistory.Skip(statusHistoryCountBeforeDecision))
+            dbContext.Entry(statusChange).State = EntityState.Added;
 
         try
         {
