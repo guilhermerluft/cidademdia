@@ -93,6 +93,60 @@ public sealed class OccurrenceTests
             Guid.NewGuid(), Guid.NewGuid(), "Buraco", null, "Rua A", CreateLocation(), stateCode: "R1"));
     }
 
+    [Fact]
+    public void Occurrence_allows_up_to_three_distinct_master_targets()
+    {
+        var occurrence = CreateOccurrence();
+        var sentAt = occurrence.CreatedAt.AddMinutes(1);
+
+        var first = occurrence.AddMasterTarget(Guid.NewGuid(), sentAt);
+        occurrence.AddMasterTarget(Guid.NewGuid(), sentAt.AddMinutes(1));
+        occurrence.AddMasterTarget(Guid.NewGuid(), sentAt.AddMinutes(2));
+
+        Assert.Equal(Occurrence.MaxTargetsPerOccurrence, occurrence.Targets.Count);
+        Assert.Equal(OccurrenceTargetStatus.Pending, first.Status);
+        Assert.Equal(sentAt, first.SentAt);
+    }
+
+    [Fact]
+    public void Occurrence_rejects_fourth_master_target()
+    {
+        var occurrence = CreateOccurrence();
+        var sentAt = occurrence.CreatedAt.AddMinutes(1);
+
+        occurrence.AddMasterTarget(Guid.NewGuid(), sentAt);
+        occurrence.AddMasterTarget(Guid.NewGuid(), sentAt.AddMinutes(1));
+        occurrence.AddMasterTarget(Guid.NewGuid(), sentAt.AddMinutes(2));
+
+        Assert.Throws<DomainException>(() => occurrence.AddMasterTarget(
+            Guid.NewGuid(),
+            sentAt.AddMinutes(3)));
+    }
+
+    [Fact]
+    public void Occurrence_rejects_duplicate_master_target()
+    {
+        var occurrence = CreateOccurrence();
+        var masterUserId = Guid.NewGuid();
+        var sentAt = occurrence.CreatedAt.AddMinutes(1);
+
+        occurrence.AddMasterTarget(masterUserId, sentAt);
+
+        Assert.Throws<DomainException>(() => occurrence.AddMasterTarget(
+            masterUserId,
+            sentAt.AddMinutes(1)));
+    }
+
+    [Fact]
+    public void Occurrence_target_cannot_predate_occurrence_creation()
+    {
+        var occurrence = CreateOccurrence();
+
+        Assert.Throws<DomainException>(() => occurrence.AddMasterTarget(
+            Guid.NewGuid(),
+            occurrence.CreatedAt.AddSeconds(-1)));
+    }
+
     [Theory]
     [InlineData("NOVA")]
     [InlineData("recebida")]

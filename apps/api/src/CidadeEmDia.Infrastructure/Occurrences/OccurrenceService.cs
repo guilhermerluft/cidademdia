@@ -1,9 +1,11 @@
+using System.Data;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace CidadeEmDia.Infrastructure.Occurrences;
 
@@ -24,6 +26,23 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             .Where(x => x.Status == OccurrenceCategoryStatus.Active)
             .Select(x => new OccurrenceCategoryItem(x.Id, x.Name, x.Slug, x.DisplayOrder))
             .ToArray();
+    }
+
+    public async Task<IReadOnlyList<EligibleMasterItem>> GetEligibleMastersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await dbContext.UserRoles
+            .AsNoTracking()
+            .Where(x =>
+                x.Role.Key == IdentityRoleKeys.Master
+                && x.User.Status == UserStatus.Active)
+            .Select(x => new EligibleMasterItem(
+                x.UserId,
+                x.User.Profile != null ? x.User.Profile.DisplayName : "Master"))
+            .Distinct()
+            .OrderBy(x => x.DisplayName)
+            .ThenBy(x => x.Id)
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<CreateOccurrenceResult> CreateAsync(
@@ -232,6 +251,142 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             : await ToDetailsAsync(occurrence, cancellationToken);
     }
 
+    public async Task<AddOccurrenceTargetResult> AddMasterTargetAsync(
+        Guid authorUserId,
+        Guid occurrenceId,
+        Guid masterUserId,
+        CancellationToken cancellationToken = default)
+    {
+        if (authorUserId == Guid.Empty || occurrenceId == Guid.Empty || masterUserId == Guid.Empty)
+            return AddOccurrenceTargetResult.Failure("invalid_target_input");
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var occurrence = await dbContext.Occurrences
+            .Include(x => x.Targets)
+            .FirstOrDefaultAsync(
+                x => x.Id == occurrenceId && x.AuthorUserId == authorUserId,
+                cancellationToken);
+
+        if (occurrence is null)
+            return AddOccurrenceTargetResult.Failure("occurrence_not_found");
+
+        var master = await dbContext.Users
+            .AsNoTracking()
+            .Where(x =>
+                x.Id == masterUserId
+                && x.Status == UserStatus.Active
+                && x.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master))
+            .Select(x => new EligibleMasterItem(
+                x.Id,
+                x.Profile != null ? x.Profile.DisplayName : "Master"))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (master is null)
+            return AddOccurrenceTargetResult.Failure(
+                "master_not_eligible",
+                "The selected user is not an active Master.");
+
+        if (occurrence.Targets.Any(target => target.MasterUserId == masterUserId))
+            return AddOccurrenceTargetResult.Failure(
+                "duplicate_target",
+                "This occurrence is already shared with the selected Master.");
+
+        if (occurrence.Targets.Count >= Occurrence.MaxTargetsPerOccurrence)
+            return AddOccurrenceTargetResult.Failure(
+                "target_limit_reached",
+                $"An occurrence can be shared with at most {Occurrence.MaxTargetsPerOccurrence} Masters.");
+
+        OccurrenceTarget target;
+        try
+        {
+            target = occurrence.AddMasterTarget(masterUserId, DateTimeOffset.UtcNow);
+        }
+        catch (DomainException exception)
+        {
+            return AddOccurrenceTargetResult.Failure("invalid_target", exception.Message);
+        }
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            return AddOccurrenceTargetResult.Failure(
+                "target_persistence_conflict",
+                "The target could not be persisted because the occurrence changed concurrently or the destination is duplicated.");
+        }
+        catch (PostgresException exception) when (exception.SqlState == "40001")
+        {
+            return AddOccurrenceTargetResult.Failure(
+                "target_persistence_conflict",
+                "The occurrence changed concurrently. Retry the operation.");
+        }
+
+        return AddOccurrenceTargetResult.Success(ToTargetItem(target, master.DisplayName));
+    }
+
+    public async Task<IReadOnlyList<OccurrenceTargetItem>?> GetTargetsAsync(
+        Guid requesterUserId,
+        Guid occurrenceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (requesterUserId == Guid.Empty || occurrenceId == Guid.Empty)
+            return null;
+
+        var occurrenceAuthorUserId = await dbContext.Occurrences
+            .AsNoTracking()
+            .Where(x => x.Id == occurrenceId)
+            .Select(x => (Guid?)x.AuthorUserId)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (!occurrenceAuthorUserId.HasValue)
+            return null;
+
+        var requesterIsAuthor = occurrenceAuthorUserId.Value == requesterUserId;
+        var requesterIsMaster = requesterIsAuthor || await dbContext.UserRoles
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.UserId == requesterUserId
+                    && x.Role.Key == IdentityRoleKeys.Master
+                    && x.User.Status == UserStatus.Active,
+                cancellationToken);
+
+        if (!requesterIsMaster)
+            return null;
+
+        var query = dbContext.OccurrenceTargets
+            .AsNoTracking()
+            .Where(x => x.OccurrenceId == occurrenceId);
+
+        if (!requesterIsAuthor)
+            query = query.Where(x => x.MasterUserId == requesterUserId);
+
+        var targets = await query
+            .OrderBy(x => x.SentAt)
+            .ThenBy(x => x.Id)
+            .Select(x => new OccurrenceTargetItem(
+                x.Id,
+                x.OccurrenceId,
+                x.MasterUserId,
+                x.MasterUser.Profile != null ? x.MasterUser.Profile.DisplayName : "Master",
+                x.Status.Value,
+                x.SentAt,
+                x.AcceptedAt,
+                x.RejectedAt,
+                x.ClosedAt))
+            .ToListAsync(cancellationToken);
+
+        if (!requesterIsAuthor && targets.Count == 0)
+            return null;
+
+        return targets;
+    }
+
     private async Task<Occurrence?> LoadOwnedOccurrenceAsync(
         System.Linq.Expressions.Expression<Func<Occurrence, bool>> predicate,
         CancellationToken cancellationToken)
@@ -258,6 +413,18 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
 
         return ToDetails(occurrence, categoryName);
     }
+
+    private static OccurrenceTargetItem ToTargetItem(OccurrenceTarget target, string masterDisplayName) =>
+        new(
+            target.Id,
+            target.OccurrenceId,
+            target.MasterUserId,
+            masterDisplayName,
+            target.Status.Value,
+            target.SentAt,
+            target.AcceptedAt,
+            target.RejectedAt,
+            target.ClosedAt);
 
     private static OccurrenceDetails ToDetails(Occurrence occurrence, string categoryName) =>
         new(

@@ -4,9 +4,12 @@ namespace CidadeEmDia.Domain.Occurrences;
 
 public sealed class Occurrence : BaseEntity
 {
+    public const int MaxTargetsPerOccurrence = 3;
+
     private readonly List<OccurrenceStatusChange> _statusHistory = [];
     private readonly List<OccurrenceComplement> _complements = [];
     private readonly List<OccurrenceServiceForecast> _serviceForecastHistory = [];
+    private readonly List<OccurrenceTarget> _targets = [];
 
     private Occurrence()
     {
@@ -75,7 +78,24 @@ public sealed class Occurrence : BaseEntity
     public IReadOnlyList<OccurrenceStatusChange> StatusHistory => _statusHistory.AsReadOnly();
     public IReadOnlyList<OccurrenceComplement> Complements => _complements.AsReadOnly();
     public IReadOnlyList<OccurrenceServiceForecast> ServiceForecastHistory => _serviceForecastHistory.AsReadOnly();
+    public IReadOnlyList<OccurrenceTarget> Targets => _targets.AsReadOnly();
     public DateTimeOffset? CurrentServiceForecast => _serviceForecastHistory.LastOrDefault()?.EstimatedFor;
+
+    public OccurrenceTarget AddMasterTarget(Guid masterUserId, DateTimeOffset sentAt)
+    {
+        EnsureNotBeforeCreation(sentAt);
+
+        if (_targets.Any(target => target.MasterUserId == masterUserId))
+            throw new DomainException("Occurrence is already shared with this Master.");
+
+        if (_targets.Count >= MaxTargetsPerOccurrence)
+            throw new DomainException($"Occurrence cannot have more than {MaxTargetsPerOccurrence} targets.");
+
+        var target = new OccurrenceTarget(Id, masterUserId, sentAt);
+        _targets.Add(target);
+        Touch();
+        return target;
+    }
 
     public void TransitionTo(
         OccurrenceStatus targetStatus,

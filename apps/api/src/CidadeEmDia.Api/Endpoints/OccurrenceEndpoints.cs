@@ -17,6 +17,14 @@ public static class OccurrenceEndpoints
             return Results.Ok(categories);
         });
 
+        occurrences.MapGet("/masters", async (
+            IOccurrenceService occurrenceService,
+            CancellationToken cancellationToken) =>
+        {
+            var masters = await occurrenceService.GetEligibleMastersAsync(cancellationToken);
+            return Results.Ok(masters);
+        });
+
         occurrences.MapPost("", async (
             CreateOccurrenceRequest request,
             IOccurrenceService occurrenceService,
@@ -51,6 +59,50 @@ public static class OccurrenceEndpoints
             }
 
             return MapCreateFailure(result, httpContext);
+        });
+
+        occurrences.MapPost("/{occurrenceId:guid}/targets", async (
+            Guid occurrenceId,
+            AddOccurrenceTargetRequest request,
+            IOccurrenceService occurrenceService,
+            ClaimsPrincipal principal,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await occurrenceService.AddMasterTargetAsync(
+                userId,
+                occurrenceId,
+                request.MasterUserId,
+                cancellationToken);
+
+            if (result.Succeeded && result.Target is not null)
+            {
+                return Results.Created(
+                    $"/api/v1/occurrences/{occurrenceId}/targets/{result.Target.Id}",
+                    result.Target);
+            }
+
+            return MapTargetFailure(result, httpContext);
+        });
+
+        occurrences.MapGet("/{occurrenceId:guid}/targets", async (
+            Guid occurrenceId,
+            IOccurrenceService occurrenceService,
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var targets = await occurrenceService.GetTargetsAsync(
+                userId,
+                occurrenceId,
+                cancellationToken);
+
+            return targets is null ? Results.NotFound() : Results.Ok(targets);
         });
 
         occurrences.MapGet("", async (
@@ -151,6 +203,31 @@ public static class OccurrenceEndpoints
                 result.ErrorDetail)
         };
 
+    private static IResult MapTargetFailure(AddOccurrenceTargetResult result, HttpContext httpContext) =>
+        result.ErrorCode switch
+        {
+            "occurrence_not_found" => Problem(
+                httpContext,
+                StatusCodes.Status404NotFound,
+                result.ErrorCode,
+                "The occurrence does not exist or does not belong to the authenticated user."),
+            "master_not_eligible" => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode,
+                result.ErrorDetail),
+            "duplicate_target" or "target_limit_reached" or "target_persistence_conflict" => Problem(
+                httpContext,
+                StatusCodes.Status409Conflict,
+                result.ErrorCode,
+                result.ErrorDetail),
+            _ => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode ?? "invalid_target",
+                result.ErrorDetail)
+        };
+
     private static IResult Problem(
         HttpContext httpContext,
         int statusCode,
@@ -181,4 +258,6 @@ public static class OccurrenceEndpoints
         string? StateCode,
         string? ExternalProtocolNumber,
         string? ExternalProtocolAgency);
+
+    public sealed record AddOccurrenceTargetRequest(Guid MasterUserId);
 }

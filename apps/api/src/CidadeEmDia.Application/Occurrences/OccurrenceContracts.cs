@@ -19,6 +19,21 @@ public sealed record OccurrenceCategoryItem(
     string Slug,
     int DisplayOrder);
 
+public sealed record EligibleMasterItem(
+    Guid Id,
+    string DisplayName);
+
+public sealed record OccurrenceTargetItem(
+    Guid Id,
+    Guid OccurrenceId,
+    Guid MasterUserId,
+    string MasterDisplayName,
+    string Status,
+    DateTimeOffset SentAt,
+    DateTimeOffset? AcceptedAt,
+    DateTimeOffset? RejectedAt,
+    DateTimeOffset? ClosedAt);
+
 public sealed record OccurrenceListItem(
     Guid Id,
     string PublicCode,
@@ -90,6 +105,19 @@ public sealed record CreateOccurrenceResult(
         new(true, occurrence, null, null);
 
     public static CreateOccurrenceResult Failure(string errorCode, string? errorDetail = null) =>
+        new(false, null, errorCode, errorDetail);
+}
+
+public sealed record AddOccurrenceTargetResult(
+    bool Succeeded,
+    OccurrenceTargetItem? Target,
+    string? ErrorCode,
+    string? ErrorDetail)
+{
+    public static AddOccurrenceTargetResult Success(OccurrenceTargetItem target) =>
+        new(true, target, null, null);
+
+    public static AddOccurrenceTargetResult Failure(string errorCode, string? errorDetail = null) =>
         new(false, null, errorCode, errorDetail);
 }
 

@@ -19,6 +19,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<SubaccountInvitation> SubaccountInvitations => Set<SubaccountInvitation>();
     public DbSet<OccurrenceCategory> OccurrenceCategories => Set<OccurrenceCategory>();
     public DbSet<Occurrence> Occurrences => Set<Occurrence>();
+    public DbSet<OccurrenceTarget> OccurrenceTargets => Set<OccurrenceTarget>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
