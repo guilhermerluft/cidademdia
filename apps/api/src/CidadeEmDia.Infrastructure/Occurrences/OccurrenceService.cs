@@ -31,18 +31,25 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
     public async Task<IReadOnlyList<EligibleMasterItem>> GetEligibleMastersAsync(
         CancellationToken cancellationToken = default)
     {
-        return await dbContext.UserRoles
+        var masters = await dbContext.Users
             .AsNoTracking()
             .Where(x =>
-                x.Role.Key == IdentityRoleKeys.Master
-                && x.User.Status == UserStatus.Active)
+                x.Status == UserStatus.Active
+                && x.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master))
+            .Select(x => new
+            {
+                x.Id,
+                DisplayName = x.Profile != null ? x.Profile.DisplayName : null
+            })
+            .ToListAsync(cancellationToken);
+
+        return masters
             .Select(x => new EligibleMasterItem(
-                x.UserId,
-                x.User.Profile != null ? x.User.Profile.DisplayName : "Master"))
-            .Distinct()
+                x.Id,
+                string.IsNullOrWhiteSpace(x.DisplayName) ? "Master" : x.DisplayName))
             .OrderBy(x => x.DisplayName)
             .ThenBy(x => x.Id)
-            .ToListAsync(cancellationToken);
+            .ToArray();
     }
 
     public async Task<CreateOccurrenceResult> CreateAsync(
@@ -279,9 +286,11 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
                 x.Id == masterUserId
                 && x.Status == UserStatus.Active
                 && x.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master))
-            .Select(x => new EligibleMasterItem(
+            .Select(x => new
+            {
                 x.Id,
-                x.Profile != null ? x.Profile.DisplayName : "Master"))
+                DisplayName = x.Profile != null ? x.Profile.DisplayName : null
+            })
             .FirstOrDefaultAsync(cancellationToken);
 
         if (master is null)
@@ -327,7 +336,9 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
                 "The occurrence changed concurrently. Retry the operation.");
         }
 
-        return AddOccurrenceTargetResult.Success(ToTargetItem(target, master.DisplayName));
+        return AddOccurrenceTargetResult.Success(ToTargetItem(
+            target,
+            string.IsNullOrWhiteSpace(master.DisplayName) ? "Master" : master.DisplayName));
     }
 
     public async Task<IReadOnlyList<OccurrenceTargetItem>?> GetTargetsAsync(
@@ -366,25 +377,55 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
         if (!requesterIsAuthor)
             query = query.Where(x => x.MasterUserId == requesterUserId);
 
-        var targets = await query
+        var rows = await query
             .OrderBy(x => x.SentAt)
             .ThenBy(x => x.Id)
-            .Select(x => new OccurrenceTargetItem(
+            .Select(x => new OccurrenceTargetProjection(
                 x.Id,
                 x.OccurrenceId,
                 x.MasterUserId,
-                x.MasterUser.Profile != null ? x.MasterUser.Profile.DisplayName : "Master",
-                x.Status.Value,
+                x.Status,
                 x.SentAt,
                 x.AcceptedAt,
                 x.RejectedAt,
                 x.ClosedAt))
             .ToListAsync(cancellationToken);
 
-        if (!requesterIsAuthor && targets.Count == 0)
+        if (!requesterIsAuthor && rows.Count == 0)
             return null;
 
-        return targets;
+        var masterUserIds = rows
+            .Select(x => x.MasterUserId)
+            .Distinct()
+            .ToArray();
+
+        var masterNames = masterUserIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await dbContext.Users
+                .AsNoTracking()
+                .Where(x => masterUserIds.Contains(x.Id))
+                .Select(x => new
+                {
+                    x.Id,
+                    DisplayName = x.Profile != null ? x.Profile.DisplayName : null
+                })
+                .ToDictionaryAsync(
+                    x => x.Id,
+                    x => string.IsNullOrWhiteSpace(x.DisplayName) ? "Master" : x.DisplayName!,
+                    cancellationToken);
+
+        return rows
+            .Select(x => new OccurrenceTargetItem(
+                x.Id,
+                x.OccurrenceId,
+                x.MasterUserId,
+                masterNames.GetValueOrDefault(x.MasterUserId, "Master"),
+                x.Status.Value,
+                x.SentAt,
+                x.AcceptedAt,
+                x.RejectedAt,
+                x.ClosedAt))
+            .ToArray();
     }
 
     private async Task<Occurrence?> LoadOwnedOccurrenceAsync(
@@ -521,4 +562,14 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
         string AddressText,
         DateTimeOffset CreatedAt,
         DateTimeOffset UpdatedAt);
+
+    private sealed record OccurrenceTargetProjection(
+        Guid Id,
+        Guid OccurrenceId,
+        Guid MasterUserId,
+        OccurrenceTargetStatus Status,
+        DateTimeOffset SentAt,
+        DateTimeOffset? AcceptedAt,
+        DateTimeOffset? RejectedAt,
+        DateTimeOffset? ClosedAt);
 }
