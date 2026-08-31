@@ -1,8 +1,10 @@
 using CidadeEmDia.Application.Authentication;
+using CidadeEmDia.Application.Billing;
 using CidadeEmDia.Application.Chat;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Application.Profiles;
 using CidadeEmDia.Application.Subaccounts;
+using CidadeEmDia.Infrastructure.Billing;
 using CidadeEmDia.Infrastructure.Chat;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Occurrences;
@@ -40,7 +42,10 @@ public static class DependencyInjection
         services.AddSingleton<ISubaccountInvitationEmailSender, SmtpSubaccountInvitationEmailSender>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
-        services.AddScoped<ISubaccountLimitProvider, ConfigurationSubaccountLimitProvider>();
+        services.AddScoped<IBillingCatalogService, BillingCatalogService>();
+        services.AddScoped<IBillingEntitlementService, BillingEntitlementService>();
+        services.AddScoped<IBillingSubscriptionService, BillingSubscriptionService>();
+        services.AddScoped<ISubaccountLimitProvider, BillingSubaccountLimitProvider>();
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();
         services.AddScoped<IOccurrenceService, OccurrenceService>();
@@ -53,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IOccurrenceAssignmentService, OccurrenceAssignmentService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddHostedService<IdentitySeedHostedService>();
+        services.AddHostedService<BillingCatalogSeedHostedService>();
 
         return services;
     }

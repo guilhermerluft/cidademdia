@@ -1,3 +1,4 @@
+using CidadeEmDia.Domain.Billing;
 using CidadeEmDia.Domain.Chat;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Domain.Occurrences;
@@ -27,6 +28,13 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ChatConversation> ChatConversations => Set<ChatConversation>();
     public DbSet<ChatParticipant> ChatParticipants => Set<ChatParticipant>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<Plan> Plans => Set<Plan>();
+    public DbSet<PlanCategory> PlanCategories => Set<PlanCategory>();
+    public DbSet<PlanOffer> PlanOffers => Set<PlanOffer>();
+    public DbSet<PlanVersion> PlanVersions => Set<PlanVersion>();
+    public DbSet<BillingCustomer> BillingCustomers => Set<BillingCustomer>();
+    public DbSet<Subscription> Subscriptions => Set<Subscription>();
+    public DbSet<UsageCounter> UsageCounters => Set<UsageCounter>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

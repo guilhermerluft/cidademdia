@@ -5,7 +5,8 @@ namespace CidadeEmDia.Domain.Identity;
 public enum MasterSubaccountStatus
 {
     Active = 1,
-    Revoked = 2
+    Revoked = 2,
+    SuspendedByPlan = 3
 }
 
 public sealed class MasterSubaccount : BaseEntity
@@ -36,14 +37,25 @@ public sealed class MasterSubaccount : BaseEntity
     public ICollection<MasterSubaccountPermission> Permissions { get; private set; } = new List<MasterSubaccountPermission>();
 
     public bool IsActive => Status == MasterSubaccountStatus.Active;
+    public bool IsSuspendedByPlan => Status == MasterSubaccountStatus.SuspendedByPlan;
 
     public void Revoke(DateTimeOffset now)
     {
-        if (!IsActive)
+        if (Status == MasterSubaccountStatus.Revoked)
             return;
 
         Status = MasterSubaccountStatus.Revoked;
         RevokedAt = now;
+        Touch();
+    }
+
+    public void SuspendByPlan()
+    {
+        if (!IsActive)
+            return;
+
+        Status = MasterSubaccountStatus.SuspendedByPlan;
+        RevokedAt = null;
         Touch();
     }
 

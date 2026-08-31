@@ -95,6 +95,7 @@ api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapAdminEndpoints();
 api.MapSubaccountEndpoints();
+api.MapBillingEndpoints();
 api.MapOccurrenceEndpoints();
 api.MapOccurrenceTargetDecisionEndpoints();
 api.MapOccurrenceLifecycleEndpoints();
