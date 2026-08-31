@@ -100,6 +100,7 @@ api.MapOccurrenceTargetDecisionEndpoints();
 api.MapOccurrenceLifecycleEndpoints();
 api.MapOccurrenceFollowUpEndpoints();
 api.MapOccurrenceSupportEndpoints();
+api.MapOccurrenceMediaEndpoints();
 api.MapChatEndpoints();
 
 app.MapHub<ChatHub>("/hubs/chat")

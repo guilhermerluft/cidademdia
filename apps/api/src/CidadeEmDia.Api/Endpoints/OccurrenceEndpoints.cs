@@ -27,7 +27,7 @@ public static class OccurrenceEndpoints
 
         occurrences.MapPost("", async (
             CreateOccurrenceRequest request,
-            IOccurrenceService occurrenceService,
+            IOccurrenceCreationService creationService,
             ClaimsPrincipal principal,
             HttpContext httpContext,
             CancellationToken cancellationToken) =>
@@ -35,7 +35,7 @@ public static class OccurrenceEndpoints
             if (!TryGetCurrentUserId(principal, out var userId))
                 return Results.Unauthorized();
 
-            var result = await occurrenceService.CreateAsync(
+            var result = await creationService.CreateAsync(
                 userId,
                 new CreateOccurrenceInput(
                     request.CategoryId,
@@ -49,6 +49,7 @@ public static class OccurrenceEndpoints
                     request.StateCode,
                     request.ExternalProtocolNumber,
                     request.ExternalProtocolAgency),
+                request.MediaIds,
                 cancellationToken);
 
             if (result.Succeeded && result.Occurrence is not null)
@@ -191,6 +192,16 @@ public static class OccurrenceEndpoints
                 StatusCodes.Status409Conflict,
                 result.ErrorCode,
                 "The occurrence category is inactive."),
+            "media_not_ready_or_owned" or "media_persistence_conflict" or "media_attach_not_allowed" => Problem(
+                httpContext,
+                StatusCodes.Status409Conflict,
+                result.ErrorCode,
+                result.ErrorDetail),
+            "invalid_media_selection" => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode,
+                result.ErrorDetail),
             "occurrence_persistence_conflict" => Problem(
                 httpContext,
                 StatusCodes.Status409Conflict,
@@ -257,7 +268,8 @@ public static class OccurrenceEndpoints
         Guid? CityId,
         string? StateCode,
         string? ExternalProtocolNumber,
-        string? ExternalProtocolAgency);
+        string? ExternalProtocolAgency,
+        IReadOnlyList<Guid>? MediaIds = null);
 
     public sealed record AddOccurrenceTargetRequest(Guid MasterUserId);
 }

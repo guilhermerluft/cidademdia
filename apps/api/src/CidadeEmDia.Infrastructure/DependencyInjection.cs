@@ -7,6 +7,7 @@ using CidadeEmDia.Infrastructure.Chat;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
+using CidadeEmDia.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,9 +28,12 @@ public static class DependencyInjection
         var jwtOptions = JwtOptions.FromConfiguration(configuration);
         var passwordResetOptions = PasswordResetOptions.FromConfiguration(configuration);
         var subaccountInvitationOptions = SubaccountInvitationOptions.FromConfiguration(configuration);
+        var r2Options = R2Options.FromConfiguration(configuration);
         services.AddSingleton(jwtOptions);
         services.AddSingleton(passwordResetOptions);
         services.AddSingleton(subaccountInvitationOptions);
+        services.AddSingleton(r2Options);
+        services.AddSingleton<R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<JwtTokenIssuer>();
         services.AddSingleton<IPasswordResetEmailSender, SmtpPasswordResetEmailSender>();
@@ -40,10 +44,12 @@ public static class DependencyInjection
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();
         services.AddScoped<IOccurrenceService, OccurrenceService>();
+        services.AddScoped<IOccurrenceCreationService, OccurrenceCreationService>();
         services.AddScoped<IOccurrenceTargetDecisionService, OccurrenceTargetDecisionService>();
         services.AddScoped<IOccurrenceLifecycleService, OccurrenceLifecycleService>();
         services.AddScoped<IOccurrenceFollowUpService, OccurrenceFollowUpService>();
         services.AddScoped<IOccurrenceSupportService, OccurrenceSupportService>();
+        services.AddScoped<IOccurrenceMediaService, OccurrenceMediaService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddHostedService<IdentitySeedHostedService>();
 

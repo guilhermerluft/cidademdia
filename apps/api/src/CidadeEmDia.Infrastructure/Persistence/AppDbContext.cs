@@ -22,6 +22,7 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<Occurrence> Occurrences => Set<Occurrence>();
     public DbSet<OccurrenceTarget> OccurrenceTargets => Set<OccurrenceTarget>();
     public DbSet<OccurrenceSupport> OccurrenceSupports => Set<OccurrenceSupport>();
+    public DbSet<OccurrenceMedia> OccurrenceMedia => Set<OccurrenceMedia>();
     public DbSet<ChatConversation> ChatConversations => Set<ChatConversation>();
     public DbSet<ChatParticipant> ChatParticipants => Set<ChatParticipant>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
