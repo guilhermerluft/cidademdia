@@ -283,12 +283,27 @@ internal sealed class OccurrenceMediaService(
             return true;
         }
 
-        return await dbContext.OccurrenceTargets
+        if (await dbContext.OccurrenceTargets
             .AsNoTracking()
             .AnyAsync(
                 target => target.OccurrenceId == occurrenceId
                     && target.MasterUserId == requesterUserId
                     && target.Status == OccurrenceTargetStatus.Accepted,
+                cancellationToken))
+        {
+            return true;
+        }
+
+        return await dbContext.OccurrenceTargetAssignments
+            .AsNoTracking()
+            .AnyAsync(
+                assignment => assignment.OccurrenceTarget.OccurrenceId == occurrenceId
+                    && assignment.OccurrenceTarget.Status == OccurrenceTargetStatus.Accepted
+                    && assignment.MasterSubaccount.SubaccountUserId == requesterUserId
+                    && assignment.MasterSubaccount.SubaccountUser.Status == UserStatus.Active
+                    && assignment.MasterSubaccount.Status == MasterSubaccountStatus.Active
+                    && assignment.MasterSubaccount.Permissions.Any(permission =>
+                        permission.Permission.Key == SubaccountPermissionKeys.OccurrenceReadTargeted),
                 cancellationToken);
     }
 

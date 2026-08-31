@@ -90,11 +90,13 @@ public static class OccurrenceLifecycleEndpoints
                 StatusCodes.Status404NotFound,
                 errorCode,
                 "The occurrence does not exist or is not available to the authenticated user."),
-            "admin_required" or "accepted_master_required" => Problem(
-                httpContext,
-                StatusCodes.Status403Forbidden,
-                errorCode,
-                errorDetail),
+            "admin_required"
+                or "accepted_master_required"
+                or "accepted_master_or_assigned_subaccount_required" => Problem(
+                    httpContext,
+                    StatusCodes.Status403Forbidden,
+                    errorCode,
+                    errorDetail),
             "occurrence_already_assigned"
                 or "cancellation_not_allowed"
                 or "status_transition_not_allowed"

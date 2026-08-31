@@ -69,12 +69,20 @@ internal sealed class OccurrenceLifecycleService(AppDbContext dbContext)
                 target.MasterUserId == requesterUserId
                 && target.Status == OccurrenceTargetStatus.Accepted);
 
-            if (!requesterIsAcceptedMaster
-                || !await IsActiveRoleAsync(requesterUserId, IdentityRoleKeys.Master, cancellationToken))
+            var requesterIsActiveAcceptedMaster = requesterIsAcceptedMaster
+                && await IsActiveRoleAsync(requesterUserId, IdentityRoleKeys.Master, cancellationToken);
+
+            var requesterIsAssignedSubaccount = !requesterIsActiveAcceptedMaster
+                && await CanAssignedSubaccountChangeStatusAsync(
+                    requesterUserId,
+                    occurrenceId,
+                    cancellationToken);
+
+            if (!requesterIsActiveAcceptedMaster && !requesterIsAssignedSubaccount)
             {
                 return OccurrenceLifecycleResult.Failure(
-                    "accepted_master_required",
-                    "Only an active Master with an accepted target can update the occurrence status.");
+                    "accepted_master_or_assigned_subaccount_required",
+                    "Only an accepted Master or an explicitly assigned subaccount with occurrence.status.change can update the occurrence status.");
             }
         }
 
@@ -212,6 +220,22 @@ internal sealed class OccurrenceLifecycleService(AppDbContext dbContext)
                 x => x.Id == userId
                     && x.Status == UserStatus.Active
                     && x.Roles.Any(userRole => userRole.Role.Key == roleKey),
+                cancellationToken);
+
+    private Task<bool> CanAssignedSubaccountChangeStatusAsync(
+        Guid subaccountUserId,
+        Guid occurrenceId,
+        CancellationToken cancellationToken) =>
+        dbContext.OccurrenceTargetAssignments
+            .AsNoTracking()
+            .AnyAsync(
+                assignment => assignment.OccurrenceTarget.OccurrenceId == occurrenceId
+                    && assignment.OccurrenceTarget.Status == OccurrenceTargetStatus.Accepted
+                    && assignment.MasterSubaccount.SubaccountUserId == subaccountUserId
+                    && assignment.MasterSubaccount.SubaccountUser.Status == UserStatus.Active
+                    && assignment.MasterSubaccount.Status == MasterSubaccountStatus.Active
+                    && assignment.MasterSubaccount.Permissions.Any(permission =>
+                        permission.Permission.Key == SubaccountPermissionKeys.OccurrenceStatusChange),
                 cancellationToken);
 
     private void MarkNewHistoryAsAdded(Occurrence occurrence, int historyCountBefore)

@@ -8,6 +8,7 @@ import './styles/global.css';
 import './styles/dashboard.css';
 import './styles/subaccounts.css';
 import './styles/occurrences.css';
+import './styles/assignments.css';
 
 const queryClient = new QueryClient();
 

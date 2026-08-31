@@ -1,5 +1,6 @@
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import type { AuthenticatedUser } from '../../modules/auth/types';
+import { OccurrenceAssignmentPanel } from '../../modules/occurrenceAssignments/OccurrenceAssignmentPanel';
 import { OccurrenceCenter } from '../../modules/occurrences/OccurrenceCenter';
 import { MasterTeamPanel } from './MasterTeamPanel';
 
@@ -151,7 +152,9 @@ export function DashboardHome({ user }: DashboardHomeProps) {
       </section>
 
       {isCitizen ? <OccurrenceCenter /> : null}
+      {isMaster ? <OccurrenceAssignmentPanel mode="master" /> : null}
       {isMaster ? <MasterTeamPanel /> : null}
+      {isSubaccount ? <OccurrenceAssignmentPanel mode="subaccount" /> : null}
 
       <section className="dashboard-section dashboard-profile-section" id="dashboard-profile">
         <div>

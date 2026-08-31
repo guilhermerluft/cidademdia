@@ -232,13 +232,16 @@ internal sealed class ChatService(AppDbContext dbContext) : IChatService
                 ? SubaccountPermissionKeys.ChatMessageSend
                 : SubaccountPermissionKeys.ChatRead;
 
-            subaccountAuthorized = await dbContext.MasterSubaccountPermissions
+            subaccountAuthorized = await dbContext.OccurrenceTargetAssignments
                 .AsNoTracking()
                 .AnyAsync(
-                    x => x.MasterSubaccount.MasterUserId == conversation.MasterUserId
-                        && x.MasterSubaccount.SubaccountUserId == requesterUserId
-                        && x.MasterSubaccount.Status == MasterSubaccountStatus.Active
-                        && x.Permission.Key == permissionKey,
+                    assignment => assignment.OccurrenceTargetId == conversation.OccurrenceTargetId
+                        && assignment.MasterSubaccount.MasterUserId == conversation.MasterUserId
+                        && assignment.MasterSubaccount.SubaccountUserId == requesterUserId
+                        && assignment.MasterSubaccount.Status == MasterSubaccountStatus.Active
+                        && assignment.MasterSubaccount.SubaccountUser.Status == UserStatus.Active
+                        && assignment.MasterSubaccount.Permissions.Any(permission =>
+                            permission.Permission.Key == permissionKey),
                     cancellationToken);
         }
 
@@ -247,8 +250,8 @@ internal sealed class ChatService(AppDbContext dbContext) : IChatService
             return ChatConversationResult.Failure(
                 "chat_access_denied",
                 requireSendPermission
-                    ? "The authenticated user cannot send messages in this conversation."
-                    : "The authenticated user cannot access this conversation.");
+                    ? "The authenticated user cannot send messages in this conversation without an active assignment and permission."
+                    : "The authenticated user cannot access this conversation without an active assignment and permission.");
         }
 
         if (!conversation.IsActive)
