@@ -40,6 +40,7 @@ public static class DependencyInjection
         services.AddScoped<IOccurrenceService, OccurrenceService>();
         services.AddScoped<IOccurrenceTargetDecisionService, OccurrenceTargetDecisionService>();
         services.AddScoped<IOccurrenceLifecycleService, OccurrenceLifecycleService>();
+        services.AddScoped<IOccurrenceFollowUpService, OccurrenceFollowUpService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
         return services;
