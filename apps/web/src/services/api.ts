@@ -27,6 +27,28 @@ export function getAccessToken() {
   return accessToken;
 }
 
+function getJwtExpirationMs(token: string): number | null {
+  try {
+    const payloadPart = token.split('.')[1];
+    if (!payloadPart) return null;
+
+    const normalized = payloadPart
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+    const padded = normalized.padEnd(
+      normalized.length + ((4 - (normalized.length % 4)) % 4),
+      '=',
+    );
+    const payload = JSON.parse(atob(padded)) as { exp?: number };
+
+    return typeof payload.exp === 'number'
+      ? payload.exp * 1000
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export async function refreshSessionRequest(): Promise<AuthSession | null> {
   if (refreshPromise) {
     return refreshPromise;
@@ -51,6 +73,25 @@ export async function refreshSessionRequest(): Promise<AuthSession | null> {
     });
 
   return refreshPromise;
+}
+
+export async function getRealtimeAccessToken(): Promise<string> {
+  const current = accessToken;
+  const expiresAt = current ? getJwtExpirationMs(current) : null;
+  const hasEnoughLifetime =
+    current !== null &&
+    (expiresAt === null || expiresAt - Date.now() > 30_000);
+
+  if (hasEnoughLifetime) {
+    return current;
+  }
+
+  const session = await refreshSessionRequest();
+  if (!session?.accessToken) {
+    throw new Error('Authentication session is not available for realtime connection.');
+  }
+
+  return session.accessToken;
 }
 
 api.interceptors.request.use((config) => {

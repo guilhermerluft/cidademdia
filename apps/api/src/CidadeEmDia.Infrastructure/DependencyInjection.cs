@@ -1,7 +1,9 @@
 using CidadeEmDia.Application.Authentication;
+using CidadeEmDia.Application.Chat;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Application.Profiles;
 using CidadeEmDia.Application.Subaccounts;
+using CidadeEmDia.Infrastructure.Chat;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
@@ -41,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IOccurrenceTargetDecisionService, OccurrenceTargetDecisionService>();
         services.AddScoped<IOccurrenceLifecycleService, OccurrenceLifecycleService>();
         services.AddScoped<IOccurrenceFollowUpService, OccurrenceFollowUpService>();
+        services.AddScoped<IChatService, ChatService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
         return services;

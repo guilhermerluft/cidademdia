@@ -1,6 +1,7 @@
 using System.Text;
 using CidadeEmDia.Api.Authorization;
 using CidadeEmDia.Api.Endpoints;
+using CidadeEmDia.Api.Hubs;
 using CidadeEmDia.Api.Middleware;
 using CidadeEmDia.Application;
 using CidadeEmDia.Infrastructure;
@@ -24,6 +25,7 @@ builder.Services.AddProblemDetails(options =>
 });
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddSignalR();
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("web", policy => policy
@@ -49,6 +51,20 @@ builder.Services
             ClockSkew = TimeSpan.FromSeconds(30),
             NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
             RoleClaimType = System.Security.Claims.ClaimTypes.Role
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                var accessToken = context.Request.Query["access_token"].ToString();
+                if (!string.IsNullOrWhiteSpace(accessToken)
+                    && context.HttpContext.Request.Path.StartsWithSegments("/hubs/chat"))
+                {
+                    context.Token = accessToken;
+                }
+
+                return Task.CompletedTask;
+            }
         };
     });
 builder.Services.AddCidadeEmDiaAuthorization();
@@ -83,6 +99,10 @@ api.MapOccurrenceEndpoints();
 api.MapOccurrenceTargetDecisionEndpoints();
 api.MapOccurrenceLifecycleEndpoints();
 api.MapOccurrenceFollowUpEndpoints();
+api.MapChatEndpoints();
+
+app.MapHub<ChatHub>("/hubs/chat")
+    .RequireAuthorization();
 
 app.MapHealthChecks("/health/live", new()
 {

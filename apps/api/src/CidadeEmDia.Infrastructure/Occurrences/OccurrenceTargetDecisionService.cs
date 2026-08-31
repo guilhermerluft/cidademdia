@@ -1,5 +1,6 @@
 using System.Data;
 using CidadeEmDia.Application.Occurrences;
+using CidadeEmDia.Domain.Chat;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Domain.Occurrences;
@@ -153,6 +154,28 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
 
         foreach (var statusChange in occurrence.StatusHistory.Skip(statusHistoryCountBeforeDecision))
             dbContext.Entry(statusChange).State = EntityState.Added;
+
+        if (accept)
+        {
+            var conversationExists = await dbContext.ChatConversations
+                .AsNoTracking()
+                .AnyAsync(
+                    x => x.OccurrenceTargetId == targetId,
+                    cancellationToken);
+
+            if (!conversationExists)
+            {
+                var conversation = new ChatConversation(
+                    occurrence.Id,
+                    target.Id,
+                    occurrence.AuthorUserId,
+                    target.MasterUserId,
+                    decidedAt);
+
+                dbContext.ChatConversations.Add(conversation);
+                dbContext.ChatParticipants.AddRange(conversation.Participants);
+            }
+        }
 
         try
         {

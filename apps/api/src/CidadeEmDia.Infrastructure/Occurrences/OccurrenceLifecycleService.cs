@@ -1,5 +1,6 @@
 using System.Data;
 using CidadeEmDia.Application.Occurrences;
+using CidadeEmDia.Domain.Chat;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Domain.Occurrences;
@@ -78,13 +79,14 @@ internal sealed class OccurrenceLifecycleService(AppDbContext dbContext)
         }
 
         var historyCountBefore = occurrence.StatusHistory.Count;
+        var changedAt = DateTimeOffset.UtcNow;
 
         try
         {
             occurrence.TransitionTo(
                 parsedStatus,
                 requesterUserId,
-                DateTimeOffset.UtcNow,
+                changedAt,
                 reason);
         }
         catch (DomainException exception)
@@ -93,6 +95,18 @@ internal sealed class OccurrenceLifecycleService(AppDbContext dbContext)
         }
 
         MarkNewHistoryAsAdded(occurrence, historyCountBefore);
+
+        if (parsedStatus == OccurrenceStatus.Closed)
+        {
+            var conversations = await dbContext.ChatConversations
+                .Where(x =>
+                    x.OccurrenceId == occurrenceId
+                    && x.Status == ChatConversationStatus.Active)
+                .ToListAsync(cancellationToken);
+
+            foreach (var conversation in conversations)
+                conversation.Close(changedAt);
+        }
 
         var persistenceFailure = await SaveAsync(transaction, cancellationToken);
         if (persistenceFailure is not null)
