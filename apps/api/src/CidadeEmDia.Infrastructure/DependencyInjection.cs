@@ -43,6 +43,7 @@ public static class DependencyInjection
         services.AddScoped<IOccurrenceTargetDecisionService, OccurrenceTargetDecisionService>();
         services.AddScoped<IOccurrenceLifecycleService, OccurrenceLifecycleService>();
         services.AddScoped<IOccurrenceFollowUpService, OccurrenceFollowUpService>();
+        services.AddScoped<IOccurrenceSupportService, OccurrenceSupportService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddHostedService<IdentitySeedHostedService>();
 
