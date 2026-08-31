@@ -7,6 +7,7 @@ import { AuthProvider } from './modules/auth/AuthProvider';
 import './styles/global.css';
 import './styles/dashboard.css';
 import './styles/subaccounts.css';
+import './styles/occurrences.css';
 
 const queryClient = new QueryClient();
 

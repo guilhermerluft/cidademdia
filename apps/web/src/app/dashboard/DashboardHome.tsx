@@ -1,5 +1,6 @@
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import type { AuthenticatedUser } from '../../modules/auth/types';
+import { OccurrenceCenter } from '../../modules/occurrences/OccurrenceCenter';
 import { MasterTeamPanel } from './MasterTeamPanel';
 
 interface DashboardHomeProps {
@@ -39,6 +40,8 @@ export function DashboardHome({ user }: DashboardHomeProps) {
   const firstName = user.displayName.trim().split(/\s+/)[0] || user.displayName;
   const isMaster = user.roles.includes('MASTER');
   const isAdmin = user.roles.includes('ADMIN');
+  const isSubaccount = user.roles.includes('SUBACCOUNT');
+  const isCitizen = !isMaster && !isAdmin && !isSubaccount;
 
   function scrollToActions() {
     document.getElementById('dashboard-actions')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -147,6 +150,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
         </div>
       </section>
 
+      {isCitizen ? <OccurrenceCenter /> : null}
       {isMaster ? <MasterTeamPanel /> : null}
 
       <section className="dashboard-section dashboard-profile-section" id="dashboard-profile">
