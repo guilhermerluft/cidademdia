@@ -218,17 +218,58 @@ public sealed class Subscription : BaseEntity
         Touch();
     }
 
-    public void MarkPastDue(DateTimeOffset failedAt)
+    public void ActivateInitialPeriod(
+        DateTimeOffset periodStart,
+        DateTimeOffset periodEnd)
     {
-        Status = SubscriptionStatus.PastDue;
-        PastDueAt = failedAt;
-        GracePeriodEndsAt = failedAt.AddDays(PastDueGraceDays);
+        if (periodEnd <= periodStart)
+            throw new ArgumentOutOfRangeException(
+                nameof(periodEnd));
+
+        StartedAt = periodStart;
+        CurrentPeriodStart = periodStart;
+        CurrentPeriodEnd = periodEnd;
+
+        Status = SubscriptionStatus.Active;
+        PastDueAt = null;
+        GracePeriodEndsAt = null;
+
         Touch();
     }
 
-    public bool AllowsAccess(DateTimeOffset at) =>
-        Status == SubscriptionStatus.Active ||
-        (Status == SubscriptionStatus.PastDue && GracePeriodEndsAt.HasValue && at < GracePeriodEndsAt.Value);
+    public void MarkPastDue(DateTimeOffset failedAt)
+    {
+        if (Status == SubscriptionStatus.PastDue &&
+            PastDueAt.HasValue &&
+            GracePeriodEndsAt.HasValue)
+        {
+            return;
+        }
+
+        Status = SubscriptionStatus.PastDue;
+        PastDueAt = failedAt;
+        GracePeriodEndsAt =
+            failedAt.AddDays(PastDueGraceDays);
+
+        Touch();
+    }
+
+    public bool AllowsAccess(DateTimeOffset at)
+    {
+        if (CancelAtPeriodEnd &&
+            at >= CurrentPeriodEnd)
+        {
+            return false;
+        }
+
+        return
+            Status == SubscriptionStatus.Active ||
+            (
+                Status == SubscriptionStatus.PastDue &&
+                GracePeriodEndsAt.HasValue &&
+                at < GracePeriodEndsAt.Value
+            );
+    }
 
     public void ScheduleChange(Guid planVersionId)
     {
@@ -241,6 +282,17 @@ public sealed class Subscription : BaseEntity
     {
         CancelAtPeriodEnd = true;
         PendingPlanVersionId = null;
+        Touch();
+    }
+
+    public void ClearCancellationRequest()
+    {
+        if (!CancelAtPeriodEnd)
+        {
+            return;
+        }
+
+        CancelAtPeriodEnd = false;
         Touch();
     }
 

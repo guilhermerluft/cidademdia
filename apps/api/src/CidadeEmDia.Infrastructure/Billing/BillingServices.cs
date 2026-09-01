@@ -184,8 +184,25 @@ internal sealed class BillingSubscriptionService(AppDbContext dbContext) : IBill
             customer.MarkSignupFeePaid(activatedAt);
         }
 
-        subscription.Activate();
-        await ReconcileSubaccountsAsync(masterUserId, subscription.PlanVersionId, cancellationToken);
+        var intervalMonths =
+            await dbContext.PlanVersions
+                .Where(x =>
+                    x.Id == subscription.PlanVersionId)
+                .Select(x =>
+                    x.PlanOffer
+                        .Category
+                        .BillingIntervalMonths)
+                .SingleAsync(
+                    cancellationToken);
+
+        subscription.ActivateInitialPeriod(
+            activatedAt,
+            activatedAt.AddMonths(intervalMonths));
+
+        await ReconcileSubaccountsAsync(
+            masterUserId,
+            subscription.PlanVersionId,
+            cancellationToken);
         await dbContext.SaveChangesAsync(cancellationToken);
         return BillingSubscriptionOperationResult.Success();
     }
