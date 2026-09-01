@@ -475,12 +475,10 @@ internal sealed class MercadoPagoWebhookService(
                 providerPayment.TransactionAmount);
 
         var reactivationAfterBoundary =
-            binding.IsCurrent &&
-            binding.TargetPlanVersionId.HasValue &&
-            binding.ScheduledFor.HasValue &&
-            binding.Subscription.CancelAtPeriodEnd &&
-            now >=
-                binding.Subscription.CurrentPeriodEnd;
+            await IsDelayedReactivationRetryAsync(
+                binding,
+                now,
+                cancellationToken);
 
         if (!binding.IsCurrent &&
             binding.IsScheduledReplacement &&
@@ -703,6 +701,62 @@ internal sealed class MercadoPagoWebhookService(
                         now,
                         cancellationToken));
         }
+    }
+
+    private async Task<bool> IsDelayedReactivationRetryAsync(
+        BillingProviderSubscription binding,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (!binding.IsCurrent ||
+            !binding.TargetPlanVersionId.HasValue ||
+            !binding.ScheduledFor.HasValue ||
+            !binding.Subscription.CancelAtPeriodEnd ||
+            now < binding.Subscription.CurrentPeriodEnd ||
+            string.Equals(
+                binding.ProviderStatus,
+                "canceled",
+                StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        var offerIds =
+            await dbContext.PlanVersions
+                .AsNoTracking()
+                .Where(
+                    x =>
+                        x.Id == binding.Subscription.PlanVersionId ||
+                        x.Id == binding.TargetPlanVersionId.Value)
+                .Select(
+                    x => new
+                    {
+                        x.Id,
+                        x.PlanOfferId
+                    })
+                .ToListAsync(
+                    cancellationToken);
+
+        var currentOfferId =
+            offerIds
+                .Where(
+                    x =>
+                        x.Id ==
+                            binding.Subscription.PlanVersionId)
+                .Select(x => x.PlanOfferId)
+                .FirstOrDefault();
+
+        var targetOfferId =
+            offerIds
+                .Where(
+                    x =>
+                        x.Id ==
+                            binding.TargetPlanVersionId.Value)
+                .Select(x => x.PlanOfferId)
+                .FirstOrDefault();
+
+        return currentOfferId != Guid.Empty &&
+               currentOfferId == targetOfferId;
     }
 
     private async Task PromoteScheduledReplacementAsync(
