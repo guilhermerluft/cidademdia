@@ -475,7 +475,12 @@ internal sealed class MercadoPagoWebhookService(
                 providerPayment.TransactionAmount);
 
         var reactivationAfterBoundary =
-            false;
+            binding.IsCurrent &&
+            binding.TargetPlanVersionId.HasValue &&
+            binding.ScheduledFor.HasValue &&
+            binding.Subscription.CancelAtPeriodEnd &&
+            now >=
+                binding.Subscription.CurrentPeriodEnd;
 
         if (!binding.IsCurrent &&
             binding.IsScheduledReplacement &&
@@ -668,6 +673,12 @@ internal sealed class MercadoPagoWebhookService(
                     periodStart.AddMonths(
                         intervalMonths);
 
+                if (reactivationAfterBoundary &&
+                    subscription.CancelAtPeriodEnd)
+                {
+                    subscription.ClearCancellationRequest();
+                }
+
                 await EnsureSucceededAsync(
                     billingSubscriptionService
                         .ApplyRenewalAsync(
@@ -675,15 +686,6 @@ internal sealed class MercadoPagoWebhookService(
                             periodStart,
                             periodEnd,
                             cancellationToken));
-
-                if (reactivationAfterBoundary &&
-                    subscription.CancelAtPeriodEnd)
-                {
-                    subscription.ClearCancellationRequest();
-
-                    await dbContext.SaveChangesAsync(
-                        cancellationToken);
-                }
             }
 
             return;
@@ -809,9 +811,36 @@ internal sealed class MercadoPagoWebhookService(
         string error,
         CancellationToken cancellationToken)
     {
+        var providerEventId =
+            paymentEvent.ProviderEventId;
+
         try
         {
-            paymentEvent.MarkFailed(error);
+            // Um webhook que falhou não pode aproveitar o SaveChanges
+            // de auditoria para persistir pagamento aprovado ou mutações
+            // de entitlement que ficaram somente no ChangeTracker.
+            dbContext.ChangeTracker.Clear();
+
+            var persistedEvent =
+                await dbContext.BillingPaymentEvents
+                    .FirstOrDefaultAsync(
+                        x =>
+                            x.Provider ==
+                                BillingProviders.MercadoPago &&
+                            x.ProviderEventId ==
+                                providerEventId,
+                        cancellationToken);
+
+            if (persistedEvent is null)
+            {
+                logger.LogError(
+                    "Mercado Pago webhook event {ProviderEventId} disappeared before failure audit.",
+                    providerEventId);
+
+                return;
+            }
+
+            persistedEvent.MarkFailed(error);
 
             await dbContext.SaveChangesAsync(
                 cancellationToken);
@@ -821,7 +850,7 @@ internal sealed class MercadoPagoWebhookService(
             logger.LogError(
                 exception,
                 "Failed to persist Mercado Pago webhook processing error for event {ProviderEventId}.",
-                paymentEvent.ProviderEventId);
+                providerEventId);
         }
     }
 
