@@ -233,6 +233,9 @@ internal sealed class InstitutionService(AppDbContext dbContext) : IInstitutionS
             ? representative?.OfficialEmail
             : command.ExpectedEmail;
 
+        if (representative is not null && string.IsNullOrWhiteSpace(expectedEmail))
+            return InstitutionInviteCreateResult.Failure("invite_expected_email_required");
+
         InstitutionInvite invite;
         try
         {
@@ -311,6 +314,9 @@ internal sealed class InstitutionService(AppDbContext dbContext) : IInstitutionS
 
         if (user is null || user.Status != UserStatus.Active)
             return InstitutionInviteClaimResult.Failure("invite_user_not_active");
+
+        if (!user.EmailConfirmedAt.HasValue)
+            return InstitutionInviteClaimResult.Failure("invite_email_not_verified");
 
         if (invite.ExpectedEmail is not null
             && !string.Equals(invite.ExpectedEmail, user.Email, StringComparison.OrdinalIgnoreCase))
