@@ -42,6 +42,24 @@ jobs:
       - name: Test
         run: dotnet test CidadeEmDia.sln -c Release --no-build --logger 'trx;LogFileName=test-results.trx'
 
+      - name: Preview Content migration
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet tool install --global dotnet-ef --version 10.0.11
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet ef migrations add AddContentPostsPlacements \
+            --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \
+            --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
+          MIGRATION_FILE="$(find apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations -maxdepth 1 -type f -name '*_AddContentPostsPlacements.cs' ! -name '*.Designer.cs' | head -n 1)"
+          echo '=== CONTENT_MIGRATION_FILE_BEGIN ==='
+          cat "$MIGRATION_FILE"
+          echo '=== CONTENT_MIGRATION_FILE_END ==='
+          echo '=== CONTENT_SNAPSHOT_DIFF_BEGIN ==='
+          git diff -- apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
+          echo '=== CONTENT_SNAPSHOT_DIFF_END ==='
+
   frontend:
     name: Frontend (Node 22)
     runs-on: ubuntu-latest
