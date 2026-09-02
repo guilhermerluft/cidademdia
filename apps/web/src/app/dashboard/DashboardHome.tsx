@@ -1,6 +1,7 @@
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import { AdminPanel } from '../../modules/admin/AdminPanel';
 import type { AuthenticatedUser } from '../../modules/auth/types';
+import { ChatInbox } from '../../modules/chat/ChatInbox';
 import { InstitutionDirectory } from '../../modules/institutions/InstitutionDirectory';
 import { OccurrenceAssignmentPanel } from '../../modules/occurrenceAssignments/OccurrenceAssignmentPanel';
 import { OccurrenceCenter } from '../../modules/occurrences/OccurrenceCenter';
@@ -164,6 +165,9 @@ export function DashboardHome({ user }: DashboardHomeProps) {
       {isMaster ? <OccurrenceAssignmentPanel mode="master" /> : null}
       {isMaster ? <MasterTeamPanel /> : null}
       {isSubaccount ? <OccurrenceAssignmentPanel mode="subaccount" /> : null}
+      {isCitizen ? <ChatInbox mode="citizen" /> : null}
+      {isMaster ? <ChatInbox mode="master" /> : null}
+      {isSubaccount ? <ChatInbox mode="subaccount" /> : null}
       {isAdmin ? <AdminPanel /> : null}
       {(isMaster || isAdmin) ? <PostManagementPanel /> : null}
       <PostFeed />

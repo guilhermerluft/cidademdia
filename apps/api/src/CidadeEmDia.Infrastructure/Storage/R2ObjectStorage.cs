@@ -13,6 +13,7 @@ internal sealed class R2ObjectStorage(R2Options options)
     public bool IsConfigured => options.IsConfigured;
     public long MaxImageBytes => options.MaxImageBytes;
     public long MaxVideoBytes => options.MaxVideoBytes;
+    public long MaxAudioBytes => options.MaxAudioBytes;
     public TimeSpan UploadUrlLifetime => options.UploadUrlLifetime;
     public TimeSpan ReadUrlLifetime => options.ReadUrlLifetime;
 

@@ -64,6 +64,7 @@ public sealed class ChatDomainTests
 
         Assert.Equal(clientMessageId, message.ClientMessageId);
         Assert.Equal("Mensagem de teste", message.Content);
+        Assert.False(message.TryGetAudioMetadata(out _));
     }
 
     [Fact]
@@ -74,6 +75,39 @@ public sealed class ChatDomainTests
             Guid.NewGuid(),
             Guid.NewGuid(),
             "   ",
+            DateTimeOffset.UtcNow));
+    }
+
+    [Fact]
+    public void Audio_message_keeps_private_media_metadata_in_internal_envelope()
+    {
+        var mediaId = Guid.NewGuid();
+        var message = ChatMessage.CreateAudio(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            mediaId,
+            "gravacao.webm",
+            "audio/webm",
+            12345,
+            DateTimeOffset.UtcNow);
+
+        Assert.True(message.TryGetAudioMetadata(out var audio));
+        Assert.Equal(mediaId, audio.MediaId);
+        Assert.Equal("gravacao.webm", audio.OriginalFileName);
+        Assert.Equal("audio/webm", audio.ContentType);
+        Assert.Equal(12345, audio.SizeBytes);
+        Assert.DoesNotContain("chat/audio/", message.Content, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Reserved_audio_envelope_cannot_be_sent_as_text()
+    {
+        Assert.Throws<DomainException>(() => new ChatMessage(
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            "\u001eCED_AUDIO_V1:{}",
             DateTimeOffset.UtcNow));
     }
 }

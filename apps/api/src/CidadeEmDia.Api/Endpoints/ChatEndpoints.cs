@@ -96,27 +96,121 @@ public static class ChatEndpoints
                 request.Content,
                 cancellationToken);
 
-            if (!result.Succeeded || result.Message is null)
-                return MapFailure(result.ErrorCode, result.ErrorDetail, httpContext);
+            return await MapSendResultAsync(
+                conversationId,
+                result,
+                hubContext,
+                httpContext,
+                cancellationToken);
+        });
 
-            if (!result.WasDuplicate)
-            {
-                await hubContext.Clients
-                    .Group(ChatHub.GroupName(conversationId))
-                    .SendAsync(
-                        "MessageReceived",
-                        result.Message,
-                        cancellationToken);
-            }
+        chat.MapPost("/conversations/{conversationId:guid}/audio/uploads", async (
+            Guid conversationId,
+            RequestChatAudioUpload request,
+            IChatService chatService,
+            ClaimsPrincipal principal,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
 
-            return result.WasDuplicate
-                ? Results.Ok(result.Message)
-                : Results.Created(
-                    $"/api/v1/chat/conversations/{conversationId}/messages?cursor={result.Message.Sequence}",
-                    result.Message);
+            var result = await chatService.RequestAudioUploadAsync(
+                userId,
+                conversationId,
+                request.FileName,
+                request.ContentType,
+                request.SizeBytes,
+                cancellationToken);
+
+            return result.Succeeded && result.Upload is not null
+                ? Results.Created(
+                    $"/api/v1/chat/conversations/{conversationId}/audio/uploads/{result.Upload.MediaId}",
+                    result.Upload)
+                : MapFailure(result.ErrorCode, result.ErrorDetail, httpContext);
+        });
+
+        chat.MapPost("/conversations/{conversationId:guid}/audio/{mediaId:guid}/confirm", async (
+            Guid conversationId,
+            Guid mediaId,
+            ConfirmChatAudioRequest request,
+            IChatService chatService,
+            IHubContext<ChatHub> hubContext,
+            ClaimsPrincipal principal,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await chatService.SendAudioAsync(
+                userId,
+                conversationId,
+                request.ClientMessageId,
+                mediaId,
+                request.FileName,
+                request.ContentType,
+                request.SizeBytes,
+                cancellationToken);
+
+            return await MapSendResultAsync(
+                conversationId,
+                result,
+                hubContext,
+                httpContext,
+                cancellationToken);
+        });
+
+        chat.MapGet("/conversations/{conversationId:guid}/messages/{messageId:guid}/audio/read-url", async (
+            Guid conversationId,
+            Guid messageId,
+            IChatService chatService,
+            ClaimsPrincipal principal,
+            HttpContext httpContext,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await chatService.GetAudioReadUrlAsync(
+                userId,
+                conversationId,
+                messageId,
+                cancellationToken);
+
+            return result.Succeeded && result.Audio is not null
+                ? Results.Ok(result.Audio)
+                : MapFailure(result.ErrorCode, result.ErrorDetail, httpContext);
         });
 
         return api;
+    }
+
+    private static async Task<IResult> MapSendResultAsync(
+        Guid conversationId,
+        ChatSendMessageResult result,
+        IHubContext<ChatHub> hubContext,
+        HttpContext httpContext,
+        CancellationToken cancellationToken)
+    {
+        if (!result.Succeeded || result.Message is null)
+            return MapFailure(result.ErrorCode, result.ErrorDetail, httpContext);
+
+        if (!result.WasDuplicate)
+        {
+            await hubContext.Clients
+                .Group(ChatHub.GroupName(conversationId))
+                .SendAsync(
+                    "MessageReceived",
+                    result.Message,
+                    cancellationToken);
+        }
+
+        return result.WasDuplicate
+            ? Results.Ok(result.Message)
+            : Results.Created(
+                $"/api/v1/chat/conversations/{conversationId}/messages?cursor={result.Message.Sequence}",
+                result.Message);
     }
 
     private static IResult MapFailure(
@@ -125,11 +219,11 @@ public static class ChatEndpoints
         HttpContext httpContext) =>
         errorCode switch
         {
-            "conversation_not_found" => Problem(
+            "conversation_not_found" or "chat_message_not_found" => Problem(
                 httpContext,
                 StatusCodes.Status404NotFound,
-                errorCode,
-                "The conversation does not exist."),
+                errorCode ?? "conversation_not_found",
+                errorDetail ?? "The requested chat resource does not exist."),
             "chat_access_denied" => Problem(
                 httpContext,
                 StatusCodes.Status403Forbidden,
@@ -141,6 +235,16 @@ public static class ChatEndpoints
                 errorCode,
                 errorDetail),
             "chat_message_conflict" => Problem(
+                httpContext,
+                StatusCodes.Status409Conflict,
+                errorCode,
+                errorDetail),
+            "storage_not_configured" => Problem(
+                httpContext,
+                StatusCodes.Status503ServiceUnavailable,
+                errorCode,
+                errorDetail),
+            "chat_audio_object_missing" or "chat_audio_verification_failed" or "chat_audio_storage_verification_failed" => Problem(
                 httpContext,
                 StatusCodes.Status409Conflict,
                 errorCode,
@@ -171,4 +275,15 @@ public static class ChatEndpoints
         Guid.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
 
     public sealed record SendChatMessageRequest(Guid ClientMessageId, string Content);
+
+    public sealed record RequestChatAudioUpload(
+        string FileName,
+        string ContentType,
+        long SizeBytes);
+
+    public sealed record ConfirmChatAudioRequest(
+        Guid ClientMessageId,
+        string FileName,
+        string ContentType,
+        long SizeBytes);
 }

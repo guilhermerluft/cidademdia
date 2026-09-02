@@ -25,6 +25,30 @@ public interface IChatService
         Guid clientMessageId,
         string content,
         CancellationToken cancellationToken = default);
+
+    Task<ChatAudioUploadResult> RequestAudioUploadAsync(
+        Guid requesterUserId,
+        Guid conversationId,
+        string fileName,
+        string contentType,
+        long sizeBytes,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatSendMessageResult> SendAudioAsync(
+        Guid requesterUserId,
+        Guid conversationId,
+        Guid clientMessageId,
+        Guid mediaId,
+        string fileName,
+        string contentType,
+        long sizeBytes,
+        CancellationToken cancellationToken = default);
+
+    Task<ChatAudioReadUrlResult> GetAudioReadUrlAsync(
+        Guid requesterUserId,
+        Guid conversationId,
+        Guid messageId,
+        CancellationToken cancellationToken = default);
 }
 
 public sealed record ChatConversationItem(
@@ -50,13 +74,21 @@ public sealed record ChatConversationResult(
         new(false, null, errorCode, errorDetail);
 }
 
+public sealed record ChatAudioAttachmentItem(
+    Guid MediaId,
+    string OriginalFileName,
+    string ContentType,
+    long SizeBytes);
+
 public sealed record ChatMessageItem(
     Guid Id,
     long Sequence,
     Guid ConversationId,
     Guid SenderUserId,
     Guid ClientMessageId,
-    string Content,
+    string Type,
+    string? Content,
+    ChatAudioAttachmentItem? Audio,
     DateTimeOffset SentAt);
 
 public sealed record ChatMessagePage(
@@ -89,4 +121,43 @@ public sealed record ChatSendMessageResult(
 
     public static ChatSendMessageResult Failure(string errorCode, string? errorDetail = null) =>
         new(false, null, false, errorCode, errorDetail);
+}
+
+public sealed record ChatAudioUploadItem(
+    Guid MediaId,
+    string ContentType,
+    long SizeBytes,
+    Uri UploadUrl,
+    DateTimeOffset UploadUrlExpiresAt);
+
+public sealed record ChatAudioUploadResult(
+    bool Succeeded,
+    ChatAudioUploadItem? Upload,
+    string? ErrorCode,
+    string? ErrorDetail)
+{
+    public static ChatAudioUploadResult Success(ChatAudioUploadItem upload) =>
+        new(true, upload, null, null);
+
+    public static ChatAudioUploadResult Failure(string errorCode, string? errorDetail = null) =>
+        new(false, null, errorCode, errorDetail);
+}
+
+public sealed record ChatAudioReadUrlItem(
+    Guid MessageId,
+    Guid MediaId,
+    Uri ReadUrl,
+    DateTimeOffset ReadUrlExpiresAt);
+
+public sealed record ChatAudioReadUrlResult(
+    bool Succeeded,
+    ChatAudioReadUrlItem? Audio,
+    string? ErrorCode,
+    string? ErrorDetail)
+{
+    public static ChatAudioReadUrlResult Success(ChatAudioReadUrlItem audio) =>
+        new(true, audio, null, null);
+
+    public static ChatAudioReadUrlResult Failure(string errorCode, string? errorDetail = null) =>
+        new(false, null, errorCode, errorDetail);
 }
