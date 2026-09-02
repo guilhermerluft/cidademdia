@@ -15,6 +15,10 @@ public interface IOccurrenceService
         Guid authorUserId,
         string? status,
         Guid? categoryId,
+        string? city,
+        decimal? latitude,
+        decimal? longitude,
+        decimal? radiusKm,
         int page,
         int pageSize,
         CancellationToken cancellationToken = default);
