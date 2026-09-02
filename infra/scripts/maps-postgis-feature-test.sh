@@ -103,17 +103,17 @@ POSTGIS_VERSION="$(dbq "SELECT extversion FROM pg_extension WHERE extname='postg
 LOCATION_TYPE="$(dbq "
   SELECT format_type(a.atttypid, a.atttypmod)
   FROM pg_attribute a
-  JOIN pg_class c ON c.oid=a.attrelid
-  WHERE c.relname='occurrences'
-    AND a.attname='location'
+  JOIN pg_class c ON c.oid = a.attrelid
+  WHERE c.relname = 'occurrences'
+    AND a.attname = 'location'
     AND a.attnum > 0;
 ")"
 GIST_INDEX="$(dbq "
   SELECT count(*)
   FROM pg_indexes
-  WHERE schemaname='public'
-    AND tablename='occurrences'
-    AND indexname='ix_occurrences_location_gist';
+  WHERE schemaname = 'public'
+    AND tablename = 'occurrences'
+    AND indexname = 'ix_occurrences_location_gist';
 ")"
 
 echo "postgis=$POSTGIS_VERSION"
@@ -139,7 +139,7 @@ echo "=== 4. BUILD / DEPLOY FEATURE ==="
 compose build api web
 compose up -d --no-deps api web
 
-# api/web recebem novos IPs ao serem recriados; force o nginx a resolver os upstreams novamente.
+# api/web podem receber novos IPs ao serem recriados; force o nginx a resolver os upstreams novamente.
 compose restart nginx
 sleep 3
 
@@ -193,11 +193,11 @@ echo "=== 7. USUÁRIO / JWT DE QA ==="
 ACTOR_ROW="$(dbq "
   SELECT id::text || '|' || email
   FROM users
-  WHERE status = 1
+  WHERE status = 'Active'
   ORDER BY last_login_at DESC NULLS LAST, created_at
   LIMIT 1;
 ")"
-test -n "$ACTOR_ROW" || fail "nenhum usuário ativo encontrado"
+test -n "$ACTOR_ROW" || fail "nenhum usuário Active encontrado"
 ACTOR_ID="${ACTOR_ROW%%|*}"
 ACTOR_EMAIL="${ACTOR_ROW#*|}"
 
