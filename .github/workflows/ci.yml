@@ -12,7 +12,7 @@ on:
       - main
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.ref }}
@@ -42,33 +42,33 @@ jobs:
       - name: Test
         run: dotnet test CidadeEmDia.sln -c Release --no-build --logger 'trx;LogFileName=test-results.trx'
 
-      - name: Preview Content migration
-        if: github.event_name == 'pull_request'
+      - name: Materialize Content migration
+        if: github.event_name == 'push' && github.ref_name == 'feat/content-publications-placements'
         shell: bash
         env:
           JWT_SIGNING_KEY: ci-only-signing-key-0123456789abcdef0123456789abcdef
           DATABASE_CONNECTION: Host=localhost;Port=5432;Database=cidademdia_ci;Username=ci;Password=ci
         run: |
           set -euo pipefail
+          if find apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations \
+            -maxdepth 1 -type f -name '*_AddContentPostsPlacements.cs' \
+            ! -name '*.Designer.cs' | grep -q .; then
+            echo 'Content migration already exists; nothing to materialize.'
+            exit 0
+          fi
+
           dotnet tool install --global dotnet-ef --version 10.0.11
           export PATH="$PATH:$HOME/.dotnet/tools"
+
           dotnet ef migrations add AddContentPostsPlacements \
             --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \
             --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
-          MIGRATION_FILE="$(find apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations -maxdepth 1 -type f -name '*_AddContentPostsPlacements.cs' ! -name '*.Designer.cs' | head -n 1)"
-          echo "MIGRATION_FILE_PATH=$MIGRATION_FILE"
 
-      - name: Upload generated Content migration
-        if: github.event_name == 'pull_request'
-        uses: actions/upload-artifact@v4
-        with:
-          name: content-migration-generated
-          path: |
-            apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/*_AddContentPostsPlacements.cs
-            apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/*_AddContentPostsPlacements.Designer.cs
-            apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/AppDbContextModelSnapshot.cs
-          if-no-files-found: error
-          retention-days: 1
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations
+          git commit -m 'feat(content): add posts media and placements migration'
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
   frontend:
     name: Frontend (Node 22)
