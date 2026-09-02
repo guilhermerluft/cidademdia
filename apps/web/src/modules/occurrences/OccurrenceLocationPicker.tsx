@@ -39,8 +39,13 @@ function loadGoogleMaps() {
   window.__cidademdiaGoogleMapsPromise = new Promise((resolve, reject) => {
     const existing = document.querySelector<HTMLScriptElement>('script[data-cidademdia-google-maps]');
     if (existing) {
-      existing.addEventListener('load', () => resolve(window.google));
-      existing.addEventListener('error', () => reject(new Error('Falha ao carregar Google Maps.')));
+      if (window.google?.maps) {
+        resolve(window.google);
+        return;
+      }
+
+      existing.addEventListener('load', () => resolve(window.google), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Falha ao carregar Google Maps.')), { once: true });
       return;
     }
 
@@ -48,7 +53,7 @@ function loadGoogleMaps() {
     script.dataset.cidademdiaGoogleMaps = 'true';
     script.async = true;
     script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places&language=pt-BR&region=BR&v=weekly`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async&libraries=places&language=pt-BR&region=BR&v=weekly`;
     script.onload = () => {
       if (window.google?.maps) resolve(window.google);
       else reject(new Error('Google Maps não inicializou corretamente.'));
@@ -63,7 +68,17 @@ function loadGoogleMaps() {
 function getAddressComponent(components: any[] | undefined, type: string, shortName = false) {
   const component = components?.find((item) => item.types?.includes(type));
   if (!component) return '';
-  return shortName ? component.short_name ?? '' : component.long_name ?? '';
+
+  if (shortName) {
+    return component.shortText ?? component.short_name ?? '';
+  }
+
+  return component.longText ?? component.long_name ?? '';
+}
+
+function readCoordinate(location: any, coordinate: 'lat' | 'lng') {
+  const value = location?.[coordinate];
+  return typeof value === 'function' ? value.call(location) : Number(value);
 }
 
 export function OccurrenceLocationPicker({
@@ -72,7 +87,8 @@ export function OccurrenceLocationPicker({
   onChange,
   onError,
 }: OccurrenceLocationPickerProps) {
-  const addressInputRef = useRef<HTMLInputElement | null>(null);
+  const autocompleteHostRef = useRef<HTMLDivElement | null>(null);
+  const autocompleteRef = useRef<any>(null);
   const mapElementRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<any>(null);
   const markerRef = useRef<any>(null);
@@ -81,20 +97,28 @@ export function OccurrenceLocationPicker({
   const [mapsError, setMapsError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
 
-  function applyGeocoderResult(result: any) {
-    const location = result?.geometry?.location;
+  function applyLocationResult(result: any) {
+    const location = result?.location ?? result?.geometry?.location;
     if (!location) return;
 
-    const latitude = location.lat();
-    const longitude = location.lng();
-    const postalCode = getAddressComponent(result.address_components, 'postal_code');
-    const stateCode = getAddressComponent(result.address_components, 'administrative_area_level_1', true);
+    const latitude = readCoordinate(location, 'lat');
+    const longitude = readCoordinate(location, 'lng');
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
 
-    onChange('addressText', result.formatted_address ?? value.addressText);
+    const components = result.addressComponents ?? result.address_components;
+    const formattedAddress = result.formattedAddress ?? result.formatted_address ?? value.addressText;
+    const postalCode = getAddressComponent(components, 'postal_code');
+    const stateCode = getAddressComponent(components, 'administrative_area_level_1', true);
+
+    onChange('addressText', formattedAddress);
     onChange('latitude', latitude.toFixed(6));
     onChange('longitude', longitude.toFixed(6));
     if (postalCode) onChange('postalCode', postalCode);
     if (stateCode) onChange('stateCode', stateCode.toUpperCase());
+
+    if (autocompleteRef.current && typeof formattedAddress === 'string') {
+      autocompleteRef.current.value = formattedAddress;
+    }
 
     const point = { lat: latitude, lng: longitude };
     mapRef.current?.panTo(point);
@@ -111,7 +135,7 @@ export function OccurrenceLocationPicker({
       });
 
       const result = response?.results?.[0];
-      if (result) applyGeocoderResult(result);
+      if (result) applyLocationResult(result);
     } catch {
       onChange('latitude', latitude.toFixed(6));
       onChange('longitude', longitude.toFixed(6));
@@ -123,15 +147,29 @@ export function OccurrenceLocationPicker({
     let active = true;
     let mapClickListener: any;
     let markerDragListener: any;
-    let placeListener: any;
+    let autocompleteInputListener: ((event: Event) => void) | undefined;
+    let autocompleteSelectListener: ((event: Event) => void) | undefined;
+    let autocompleteErrorListener: ((event: Event) => void) | undefined;
+    let autocomplete: any;
 
     void loadGoogleMaps()
-      .then((google) => {
-        if (!active || !mapElementRef.current || !addressInputRef.current) return;
+      .then(async (google) => {
+        if (!active || !mapElementRef.current || !autocompleteHostRef.current) return;
 
-        const latitude = Number(value.latitude.replace(',', '.'));
-        const longitude = Number(value.longitude.replace(',', '.'));
-        const hasPoint = Number.isFinite(latitude) && Number.isFinite(longitude);
+        const placesLibrary = await google.maps.importLibrary('places');
+        const PlaceAutocompleteElement = placesLibrary?.PlaceAutocompleteElement;
+        if (!PlaceAutocompleteElement) {
+          throw new Error('Google Places API (New) não está disponível para esta chave.');
+        }
+
+        const latitudeText = value.latitude.trim();
+        const longitudeText = value.longitude.trim();
+        const latitude = Number(latitudeText.replace(',', '.'));
+        const longitude = Number(longitudeText.replace(',', '.'));
+        const hasPoint = latitudeText.length > 0
+          && longitudeText.length > 0
+          && Number.isFinite(latitude)
+          && Number.isFinite(longitude);
         const center = hasPoint ? { lat: latitude, lng: longitude } : DEFAULT_CENTER;
 
         const map = new google.maps.Map(mapElementRef.current, {
@@ -149,26 +187,62 @@ export function OccurrenceLocationPicker({
         });
 
         const geocoder = new google.maps.Geocoder();
-        const autocomplete = new google.maps.places.Autocomplete(addressInputRef.current, {
-          componentRestrictions: { country: 'br' },
-          fields: ['address_components', 'formatted_address', 'geometry'],
-          types: ['geocode'],
+        autocomplete = new PlaceAutocompleteElement({
+          includedRegionCodes: ['br'],
+          placeholder: 'Digite e selecione um endereço',
+          requestedLanguage: 'pt-BR',
+          requestedRegion: 'BR',
         });
+        autocomplete.className = 'occurrence-map-picker__places-widget';
+        autocomplete.disabled = disabled;
+        autocomplete.value = value.addressText;
+
+        autocompleteInputListener = () => {
+          if (typeof autocomplete.value === 'string') {
+            onChange('addressText', autocomplete.value);
+          }
+        };
+
+        autocompleteSelectListener = (event: Event) => {
+          void (async () => {
+            try {
+              const placePrediction = (event as any).placePrediction;
+              const place = placePrediction?.toPlace?.();
+              if (!place) {
+                setMapsError('Não foi possível identificar o endereço selecionado. Use os campos manuais abaixo.');
+                return;
+              }
+
+              await place.fetchFields({
+                fields: ['formattedAddress', 'location', 'addressComponents'],
+              });
+
+              if (!place.location) {
+                setMapsError('Selecione um endereço com localização válida para confirmar o ponto no mapa.');
+                return;
+              }
+
+              setMapsError(null);
+              applyLocationResult(place);
+            } catch {
+              setMapsError('O Google Places não conseguiu carregar os detalhes do endereço. Use os campos manuais abaixo.');
+            }
+          })();
+        };
+
+        autocompleteErrorListener = () => {
+          setMapsError('O Google Places não conseguiu buscar endereços. Confira a Places API (New) ou use os campos manuais abaixo.');
+        };
+
+        autocomplete.addEventListener('input', autocompleteInputListener);
+        autocomplete.addEventListener('gmp-select', autocompleteSelectListener);
+        autocomplete.addEventListener('gmp-error', autocompleteErrorListener);
+        autocompleteHostRef.current.replaceChildren(autocomplete);
 
         mapRef.current = map;
         markerRef.current = marker;
         geocoderRef.current = geocoder;
-
-        placeListener = autocomplete.addListener('place_changed', () => {
-          const place = autocomplete.getPlace();
-          if (!place.geometry?.location) {
-            setMapsError('Selecione um endereço sugerido pelo Google para confirmar o ponto no mapa.');
-            return;
-          }
-
-          setMapsError(null);
-          applyGeocoderResult(place);
-        });
+        autocompleteRef.current = autocomplete;
 
         mapClickListener = map.addListener('click', (event: any) => {
           if (!event.latLng) return;
@@ -193,23 +267,45 @@ export function OccurrenceLocationPicker({
 
     return () => {
       active = false;
-      placeListener?.remove?.();
       mapClickListener?.remove?.();
       markerDragListener?.remove?.();
+
+      if (autocomplete) {
+        if (autocompleteInputListener) autocomplete.removeEventListener('input', autocompleteInputListener);
+        if (autocompleteSelectListener) autocomplete.removeEventListener('gmp-select', autocompleteSelectListener);
+        if (autocompleteErrorListener) autocomplete.removeEventListener('gmp-error', autocompleteErrorListener);
+        autocomplete.remove?.();
+      }
+
+      autocompleteRef.current = null;
     };
   }, []);
 
   useEffect(() => {
     if (!mapsReady) return;
 
-    const latitude = Number(value.latitude.replace(',', '.'));
-    const longitude = Number(value.longitude.replace(',', '.'));
+    const latitudeText = value.latitude.trim();
+    const longitudeText = value.longitude.trim();
+    if (!latitudeText || !longitudeText) return;
+
+    const latitude = Number(latitudeText.replace(',', '.'));
+    const longitude = Number(longitudeText.replace(',', '.'));
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
 
     const point = { lat: latitude, lng: longitude };
     markerRef.current?.setPosition(point);
     mapRef.current?.panTo(point);
   }, [mapsReady, value.latitude, value.longitude]);
+
+  useEffect(() => {
+    const autocomplete = autocompleteRef.current;
+    if (!autocomplete) return;
+
+    autocomplete.disabled = disabled;
+    if (typeof value.addressText === 'string' && autocomplete.value !== value.addressText) {
+      autocomplete.value = value.addressText;
+    }
+  }, [disabled, value.addressText]);
 
   function useCurrentLocation() {
     if (!navigator.geolocation) {
@@ -258,15 +354,24 @@ export function OccurrenceLocationPicker({
 
       <label className="occurrence-form__full">
         Endereço
-        <input
-          ref={addressInputRef}
-          required
-          value={value.addressText}
-          onChange={(event) => onChange('addressText', event.target.value)}
-          placeholder="Digite e selecione um endereço"
-          autoComplete="off"
-          disabled={disabled}
-        />
+        {mapsError ? (
+          <input
+            required
+            value={value.addressText}
+            onChange={(event) => onChange('addressText', event.target.value)}
+            placeholder="Rua, número, bairro e cidade"
+            autoComplete="street-address"
+            disabled={disabled}
+          />
+        ) : (
+          <div
+            ref={autocompleteHostRef}
+            className="occurrence-map-picker__autocomplete"
+            aria-busy={!mapsReady}
+          >
+            {!mapsReady ? <span>Carregando busca de endereços...</span> : null}
+          </div>
+        )}
       </label>
 
       <div
