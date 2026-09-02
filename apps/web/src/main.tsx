@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter } from 'react-router-dom';
 import { App } from './app/App';
 import { AuthProvider } from './modules/auth/AuthProvider';
+import '@fortawesome/fontawesome-free/css/all.min.css';
 import './styles/global.css';
 import './styles/dashboard.css';
 import './styles/subaccounts.css';
@@ -15,6 +16,7 @@ import './styles/institutions.css';
 import './styles/chat.css';
 import './modules/home/home.css';
 import './styles/responsive.css';
+import './modules/home/home-refinement.css';
 
 const queryClient = new QueryClient();
 
