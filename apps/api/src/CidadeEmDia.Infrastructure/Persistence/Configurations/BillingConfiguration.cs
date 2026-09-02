@@ -135,3 +135,297 @@ internal sealed class UsageCounterConfiguration : IEntityTypeConfiguration<Usage
         builder.HasOne(x => x.Subscription).WithMany(x => x.UsageCounters).HasForeignKey(x => x.SubscriptionId).OnDelete(DeleteBehavior.Cascade);
     }
 }
+
+internal sealed class BillingProviderSubscriptionConfiguration
+    : IEntityTypeConfiguration<BillingProviderSubscription>
+{
+    public void Configure(EntityTypeBuilder<BillingProviderSubscription> builder)
+    {
+        builder.ToTable("billing_provider_subscriptions");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.SubscriptionId)
+            .HasColumnName("subscription_id")
+            .IsRequired();
+
+        builder.Property(x => x.Provider)
+            .HasColumnName("provider")
+            .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(x => x.ProviderSubscriptionId)
+            .HasColumnName("provider_subscription_id")
+            .HasMaxLength(160)
+            .IsRequired();
+
+        builder.Property(x => x.ExternalReference)
+            .HasColumnName("external_reference")
+            .HasMaxLength(160)
+            .IsRequired();
+
+        builder.Property(x => x.CheckoutUrl)
+            .HasColumnName("checkout_url")
+            .HasMaxLength(1200)
+            .IsRequired();
+
+        builder.Property(x => x.ProviderStatus)
+            .HasColumnName("provider_status")
+            .HasMaxLength(48)
+            .IsRequired();
+
+        builder.Property(x => x.RecurringAmountCents)
+            .HasColumnName("recurring_amount_cents")
+            .IsRequired();
+
+        builder.Property(x => x.InitialAmountCents)
+            .HasColumnName("initial_amount_cents")
+            .IsRequired();
+
+        builder.Property(x => x.SignupFeeIncluded)
+            .HasColumnName("signup_fee_included")
+            .IsRequired();
+
+        builder.Property(x => x.FirstApprovedPaymentAt)
+            .HasColumnName("first_approved_payment_at");
+
+        builder.Property(x => x.RecurringAmountSynchronizedAt)
+            .HasColumnName("recurring_amount_synchronized_at");
+
+        builder.Property(x => x.IsCurrent)
+            .HasColumnName("is_current")
+            .HasDefaultValue(true)
+            .IsRequired();
+
+        builder.Property(x => x.EndedAt)
+            .HasColumnName("ended_at");
+
+        builder.Property(x => x.TargetPlanVersionId)
+            .HasColumnName("target_plan_version_id");
+
+        builder.Property(x => x.ScheduledFor)
+            .HasColumnName("scheduled_for");
+
+
+        builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .HasColumnName("updated_at")
+            .IsRequired();
+
+                builder.HasIndex(
+                x => new
+                {
+                    x.SubscriptionId,
+                    x.IsCurrent
+                })
+            .HasDatabaseName(
+                "UX_mp_binding_scheduled")
+            .HasFilter(
+                "is_current = false AND ended_at IS NULL AND target_plan_version_id IS NOT NULL")
+            .IsUnique();
+
+builder.HasIndex(x => x.SubscriptionId)
+            .HasDatabaseName(
+                "UX_mp_binding_subscription_current")
+            .HasFilter("is_current = true")
+            .IsUnique();
+
+        builder.HasIndex(x => new
+            {
+                x.Provider,
+                x.ProviderSubscriptionId
+            })
+            .IsUnique();
+
+        builder.HasIndex(
+            x => new
+            {
+                x.Provider,
+                x.ExternalReference
+            })
+            .HasDatabaseName(
+                "UX_mp_binding_externalref")
+            .IsUnique();
+
+                builder.HasIndex(
+                x => x.TargetPlanVersionId)
+            .HasDatabaseName(
+                "IX_mp_binding_target_plan");
+
+        builder.HasOne<PlanVersion>()
+            .WithMany()
+            .HasForeignKey(
+                x => x.TargetPlanVersionId)
+            .OnDelete(
+                DeleteBehavior.Restrict)
+            .HasConstraintName(
+                "FK_mp_binding_target_plan");
+
+builder.HasOne(x => x.Subscription)
+            .WithMany()
+            .HasForeignKey(x => x.SubscriptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class BillingPaymentConfiguration
+    : IEntityTypeConfiguration<BillingPayment>
+{
+    public void Configure(EntityTypeBuilder<BillingPayment> builder)
+    {
+        builder.ToTable("payments");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.SubscriptionId)
+            .HasColumnName("subscription_id")
+            .IsRequired();
+
+        builder.Property(x => x.Provider)
+            .HasColumnName("provider")
+            .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(x => x.ProviderPaymentId)
+            .HasColumnName("provider_payment_id")
+            .HasMaxLength(160)
+            .IsRequired();
+
+        builder.Property(x => x.ProviderAuthorizedPaymentId)
+            .HasColumnName("provider_authorized_payment_id")
+            .HasMaxLength(160);
+
+        builder.Property(x => x.AmountCents)
+            .HasColumnName("amount_cents")
+            .IsRequired();
+
+        builder.Property(x => x.Currency)
+            .HasColumnName("currency")
+            .HasMaxLength(8)
+            .IsRequired();
+
+        builder.Property(x => x.Status)
+            .HasColumnName("status")
+            .HasMaxLength(48)
+            .IsRequired();
+
+        builder.Property(x => x.StatusDetail)
+            .HasColumnName("status_detail")
+            .HasMaxLength(120);
+
+        builder.Property(x => x.ApprovedAt)
+            .HasColumnName("approved_at");
+
+        builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .HasColumnName("updated_at")
+            .IsRequired();
+
+        builder.HasIndex(x => new
+            {
+                x.Provider,
+                x.ProviderPaymentId
+            })
+            .IsUnique();
+
+        builder.HasIndex(x => new
+            {
+                x.Provider,
+                x.ProviderAuthorizedPaymentId
+            });
+
+        builder.HasIndex(x => x.SubscriptionId);
+
+        builder.HasOne(x => x.Subscription)
+            .WithMany()
+            .HasForeignKey(x => x.SubscriptionId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+internal sealed class BillingPaymentEventConfiguration
+    : IEntityTypeConfiguration<BillingPaymentEvent>
+{
+    public void Configure(EntityTypeBuilder<BillingPaymentEvent> builder)
+    {
+        builder.ToTable("payment_events");
+        builder.HasKey(x => x.Id);
+
+        builder.Property(x => x.Provider)
+            .HasColumnName("provider")
+            .HasMaxLength(32)
+            .IsRequired();
+
+        builder.Property(x => x.ProviderEventId)
+            .HasColumnName("provider_event_id")
+            .HasMaxLength(160)
+            .IsRequired();
+
+        builder.Property(x => x.Type)
+            .HasColumnName("type")
+            .HasMaxLength(80)
+            .IsRequired();
+
+        builder.Property(x => x.Action)
+            .HasColumnName("action")
+            .HasMaxLength(120);
+
+        builder.Property(x => x.ResourceId)
+            .HasColumnName("resource_id")
+            .HasMaxLength(200)
+            .IsRequired();
+
+        builder.Property(x => x.RequestId)
+            .HasColumnName("request_id")
+            .HasMaxLength(200)
+            .IsRequired();
+
+        builder.Property(x => x.LiveMode)
+            .HasColumnName("live_mode")
+            .IsRequired();
+
+        builder.Property(x => x.PayloadJson)
+            .HasColumnName("payload_json")
+            .HasColumnType("jsonb")
+            .IsRequired();
+
+        builder.Property(x => x.ReceivedAt)
+            .HasColumnName("received_at")
+            .IsRequired();
+
+        builder.Property(x => x.ProcessedAt)
+            .HasColumnName("processed_at");
+
+        builder.Property(x => x.ProcessingError)
+            .HasColumnName("processing_error")
+            .HasMaxLength(240);
+
+        builder.Property(x => x.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+
+        builder.Property(x => x.UpdatedAt)
+            .HasColumnName("updated_at")
+            .IsRequired();
+
+        builder.HasIndex(x => new
+            {
+                x.Provider,
+                x.ProviderEventId
+            })
+            .IsUnique();
+
+        builder.HasIndex(x => new
+            {
+                x.Provider,
+                x.Type,
+                x.ResourceId
+            });
+
+        builder.HasIndex(x => x.ProcessedAt);
+    }
+}

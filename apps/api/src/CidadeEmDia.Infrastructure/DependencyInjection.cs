@@ -5,6 +5,7 @@ using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Application.Profiles;
 using CidadeEmDia.Application.Subaccounts;
 using CidadeEmDia.Infrastructure.Billing;
+using CidadeEmDia.Infrastructure.Billing.MercadoPago;
 using CidadeEmDia.Infrastructure.Chat;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Occurrences;
@@ -31,10 +32,21 @@ public static class DependencyInjection
         var passwordResetOptions = PasswordResetOptions.FromConfiguration(configuration);
         var subaccountInvitationOptions = SubaccountInvitationOptions.FromConfiguration(configuration);
         var r2Options = R2Options.FromConfiguration(configuration);
+        var mercadoPagoOptions = MercadoPagoOptions.FromConfiguration(configuration);
         services.AddSingleton(jwtOptions);
         services.AddSingleton(passwordResetOptions);
         services.AddSingleton(subaccountInvitationOptions);
         services.AddSingleton(r2Options);
+        services.AddSingleton(mercadoPagoOptions);
+        services.AddSingleton<MercadoPagoWebhookSignatureValidator>();
+        services.AddHttpClient<
+            IMercadoPagoClient,
+            MercadoPagoClient>(
+            client =>
+            {
+                client.Timeout =
+                    TimeSpan.FromSeconds(15);
+            });
         services.AddSingleton<R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddSingleton<JwtTokenIssuer>();
@@ -45,6 +57,13 @@ public static class DependencyInjection
         services.AddScoped<IBillingCatalogService, BillingCatalogService>();
         services.AddScoped<IBillingEntitlementService, BillingEntitlementService>();
         services.AddScoped<IBillingSubscriptionService, BillingSubscriptionService>();
+        services.AddScoped<IBillingCheckoutService, MercadoPagoCheckoutService>();
+        services.AddScoped<
+            IBillingSubscriptionManagementService,
+            MercadoPagoSubscriptionManagementService>();
+        services.AddScoped<
+            IBillingProviderWebhookService,
+            MercadoPagoWebhookService>();
         services.AddScoped<ISubaccountLimitProvider, BillingSubaccountLimitProvider>();
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();

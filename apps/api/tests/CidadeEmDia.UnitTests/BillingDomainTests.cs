@@ -23,6 +23,69 @@ public sealed class BillingDomainTests
     }
 
     [Fact]
+    public void InitialActivation_ReanchorsPeriodToApprovedPayment()
+    {
+        var checkoutCreatedAt =
+            new DateTimeOffset(
+                2026,
+                9,
+                1,
+                12,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        var approvedAt =
+            new DateTimeOffset(
+                2026,
+                9,
+                4,
+                18,
+                30,
+                0,
+                TimeSpan.Zero);
+
+        var subscription =
+            new Subscription(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                checkoutCreatedAt,
+                checkoutCreatedAt.AddMonths(3));
+
+        subscription.ActivateInitialPeriod(
+            approvedAt,
+            approvedAt.AddMonths(3));
+
+        Assert.Equal(
+            approvedAt,
+            subscription.StartedAt);
+
+        Assert.Equal(
+            approvedAt,
+            subscription.CurrentPeriodStart);
+
+        Assert.Equal(
+            approvedAt.AddMonths(3),
+            subscription.CurrentPeriodEnd);
+
+        Assert.Equal(
+            SubscriptionStatus.Active,
+            subscription.Status);
+
+        var usageWindow =
+            subscription.GetMonthlyUsageWindow(
+                approvedAt.AddDays(15));
+
+        Assert.Equal(
+            approvedAt,
+            usageWindow.Start);
+
+        Assert.Equal(
+            approvedAt.AddMonths(1),
+            usageWindow.End);
+    }
+
+    [Fact]
     public void PastDue_AllowsTwoDayGraceThenBlocks()
     {
         var startedAt = new DateTimeOffset(2026, 8, 1, 0, 0, 0, TimeSpan.Zero);
@@ -35,6 +98,67 @@ public sealed class BillingDomainTests
         Assert.True(subscription.AllowsAccess(failedAt.AddDays(1)));
         Assert.False(subscription.AllowsAccess(failedAt.AddDays(2)));
         Assert.Equal(failedAt.AddDays(2), subscription.GracePeriodEndsAt);
+    }
+
+    [Fact]
+    public void PastDue_RepeatedFailureDoesNotExtendGrace()
+    {
+        var startedAt =
+            new DateTimeOffset(
+                2026,
+                8,
+                1,
+                0,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        var subscription =
+            new Subscription(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                startedAt,
+                startedAt.AddMonths(1));
+
+        subscription.Activate();
+
+        var firstFailure =
+            new DateTimeOffset(
+                2026,
+                8,
+                10,
+                12,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        subscription.MarkPastDue(
+            firstFailure);
+
+        var originalPastDueAt =
+            subscription.PastDueAt;
+
+        var originalGraceEnd =
+            subscription.GracePeriodEndsAt;
+
+        subscription.MarkPastDue(
+            firstFailure.AddDays(1));
+
+        Assert.Equal(
+            originalPastDueAt,
+            subscription.PastDueAt);
+
+        Assert.Equal(
+            originalGraceEnd,
+            subscription.GracePeriodEndsAt);
+
+        Assert.Equal(
+            firstFailure.AddDays(2),
+            subscription.GracePeriodEndsAt);
+
+        Assert.False(
+            subscription.AllowsAccess(
+                firstFailure.AddDays(2)));
     }
 
     [Fact]
@@ -116,4 +240,124 @@ public sealed class BillingDomainTests
         Assert.Equal(MasterSubaccountStatus.Revoked, revoked.Status);
         Assert.True(active.IsActive);
     }
+
+    [Fact]
+    public void RequestCancellation_DoesNotCancelPaidPeriodImmediately()
+    {
+        var startedAt =
+            new DateTimeOffset(
+                2026,
+                9,
+                1,
+                0,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        var periodEnd =
+            startedAt.AddMonths(1);
+
+        var subscription =
+            new Subscription(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                startedAt,
+                periodEnd);
+
+        subscription.Activate();
+
+        subscription.RequestCancellation();
+
+        Assert.Equal(
+            SubscriptionStatus.Active,
+            subscription.Status);
+
+        Assert.True(
+            subscription.CancelAtPeriodEnd);
+
+        Assert.Null(
+            subscription.CanceledAt);
+
+        Assert.Equal(
+            periodEnd,
+            subscription.CurrentPeriodEnd);
+
+        Assert.True(
+            subscription.AllowsAccess(
+                startedAt.AddDays(15)));
+    }
+
+
+    [Fact]
+    public void CancellationAtPeriodEnd_StopsAccessAtBoundary()
+    {
+        var startedAt =
+            new DateTimeOffset(
+                2026,
+                9,
+                1,
+                0,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        var periodEnd =
+            startedAt.AddMonths(1);
+
+        var subscription =
+            new Subscription(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                startedAt,
+                periodEnd);
+
+        subscription.Activate();
+        subscription.RequestCancellation();
+
+        Assert.True(
+            subscription.AllowsAccess(
+                periodEnd.AddTicks(-1)));
+
+        Assert.False(
+            subscription.AllowsAccess(
+                periodEnd));
+
+        Assert.False(
+            subscription.AllowsAccess(
+                periodEnd.AddDays(1)));
+    }
+
+
+    [Fact]
+    public void ClearCancellationRequest_RemovesPendingCancellation()
+    {
+        var startedAt =
+            new DateTimeOffset(
+                2026,
+                9,
+                1,
+                0,
+                0,
+                0,
+                TimeSpan.Zero);
+
+        var subscription =
+            new Subscription(
+                Guid.NewGuid(),
+                Guid.NewGuid(),
+                startedAt,
+                startedAt.AddMonths(1));
+
+        subscription.Activate();
+        subscription.RequestCancellation();
+
+        Assert.True(
+            subscription.CancelAtPeriodEnd);
+
+        subscription.ClearCancellationRequest();
+
+        Assert.False(
+            subscription.CancelAtPeriodEnd);
+    }
+
 }

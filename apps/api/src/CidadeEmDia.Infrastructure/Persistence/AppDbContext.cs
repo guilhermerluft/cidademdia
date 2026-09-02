@@ -35,6 +35,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<BillingCustomer> BillingCustomers => Set<BillingCustomer>();
     public DbSet<Subscription> Subscriptions => Set<Subscription>();
     public DbSet<UsageCounter> UsageCounters => Set<UsageCounter>();
+    public DbSet<BillingProviderSubscription> BillingProviderSubscriptions => Set<BillingProviderSubscription>();
+    public DbSet<BillingPayment> BillingPayments => Set<BillingPayment>();
+    public DbSet<BillingPaymentEvent> BillingPaymentEvents => Set<BillingPaymentEvent>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

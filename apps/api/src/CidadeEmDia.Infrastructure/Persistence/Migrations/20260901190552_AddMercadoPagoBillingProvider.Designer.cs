@@ -3,6 +3,7 @@ using System;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using NetTopologySuite.Geometries;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace CidadeEmDia.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260901190552_AddMercadoPagoBillingProvider")]
+    partial class AddMercadoPagoBillingProvider
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -225,10 +228,6 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTimeOffset?>("EndedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("ended_at");
-
                     b.Property<string>("ExternalReference")
                         .IsRequired()
                         .HasMaxLength(160)
@@ -242,12 +241,6 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                     b.Property<long>("InitialAmountCents")
                         .HasColumnType("bigint")
                         .HasColumnName("initial_amount_cents");
-
-                    b.Property<bool>("IsCurrent")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("boolean")
-                        .HasDefaultValue(true)
-                        .HasColumnName("is_current");
 
                     b.Property<string>("Provider")
                         .IsRequired()
@@ -275,10 +268,6 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("recurring_amount_synchronized_at");
 
-                    b.Property<DateTimeOffset?>("ScheduledFor")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("scheduled_for");
-
                     b.Property<bool>("SignupFeeIncluded")
                         .HasColumnType("boolean")
                         .HasColumnName("signup_fee_included");
@@ -287,10 +276,6 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("subscription_id");
 
-                    b.Property<Guid?>("TargetPlanVersionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("target_plan_version_id");
-
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -298,24 +283,13 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("SubscriptionId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_mp_binding_subscription_current")
-                        .HasFilter("is_current = true");
-
-                    b.HasIndex("TargetPlanVersionId")
-                        .HasDatabaseName("IX_mp_binding_target_plan");
+                        .IsUnique();
 
                     b.HasIndex("Provider", "ExternalReference")
-                        .IsUnique()
-                        .HasDatabaseName("UX_mp_binding_externalref");
+                        .IsUnique();
 
                     b.HasIndex("Provider", "ProviderSubscriptionId")
                         .IsUnique();
-
-                    b.HasIndex("SubscriptionId", "IsCurrent")
-                        .IsUnique()
-                        .HasDatabaseName("UX_mp_binding_scheduled")
-                        .HasFilter("is_current = false AND ended_at IS NULL AND target_plan_version_id IS NOT NULL");
 
                     b.ToTable("billing_provider_subscriptions", (string)null);
                 });
@@ -1605,12 +1579,6 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                         .HasForeignKey("SubscriptionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("CidadeEmDia.Domain.Billing.PlanVersion", null)
-                        .WithMany()
-                        .HasForeignKey("TargetPlanVersionId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .HasConstraintName("FK_mp_binding_target_plan");
 
                     b.Navigation("Subscription");
                 });
