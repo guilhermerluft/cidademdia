@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import { Brand, Button, Card } from '../components/ui';
 import { useAuth } from '../modules/auth/AuthProvider';
 import * as authService from '../modules/auth/authService';
+import { PublicHome } from '../modules/home/PublicHome';
 import {
   acceptSubaccountInvitation,
   listSubaccountContexts,
@@ -16,7 +17,7 @@ import {
 import { DashboardHome } from './dashboard/DashboardHome';
 import { DashboardShell } from './layout/DashboardShell';
 
-type AuthMode = 'login' | 'register' | 'forgot' | 'reset' | 'invite';
+type AuthMode = 'home' | 'login' | 'register' | 'forgot' | 'reset' | 'invite';
 
 function readSensitiveTokens() {
   const url = new URL(window.location.href);
@@ -76,7 +77,7 @@ export function App() {
   const { status, user, login, register, logout } = useAuth();
   const [initialTokens] = useState(readSensitiveTokens);
   const [mode, setMode] = useState<AuthMode>(
-    initialTokens.inviteToken ? 'invite' : initialTokens.resetToken ? 'reset' : 'login',
+    initialTokens.inviteToken ? 'invite' : initialTokens.resetToken ? 'reset' : 'home',
   );
   const [resetToken] = useState(initialTokens.resetToken);
   const [inviteToken] = useState(initialTokens.inviteToken);
@@ -189,6 +190,15 @@ export function App() {
     setMessage(null);
     setPassword('');
     setConfirmPassword('');
+  }
+
+  if (mode === 'home') {
+    return (
+      <PublicHome
+        onLogin={() => changeMode('login')}
+        onRegister={() => changeMode('register')}
+      />
+    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -436,6 +446,12 @@ export function App() {
             {(mode === 'forgot' || mode === 'reset' || mode === 'invite') && (
               <button className="auth-link" type="button" onClick={() => changeMode('login')}>
                 Voltar para entrar
+              </button>
+            )}
+
+            {(mode === 'login' || mode === 'register') && (
+              <button className="auth-link" type="button" onClick={() => changeMode('home')}>
+                Voltar para a página inicial
               </button>
             )}
           </form>
