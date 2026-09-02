@@ -174,7 +174,9 @@ public static class InstitutionEndpoints
             "institution_admin_required" =>
                 Results.Forbid(),
 
-            "invite_email_mismatch" or "invite_user_not_active" =>
+            "invite_email_mismatch"
+                or "invite_email_not_verified"
+                or "invite_user_not_active" =>
                 Results.StatusCode(StatusCodes.Status403Forbidden),
 
             "institution_persistence_conflict"
