@@ -1,5 +1,6 @@
 using CidadeEmDia.Domain.Billing;
 using CidadeEmDia.Domain.Chat;
+using CidadeEmDia.Domain.Content;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Domain.Occurrences;
 using Microsoft.EntityFrameworkCore;
@@ -28,6 +29,9 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<ChatConversation> ChatConversations => Set<ChatConversation>();
     public DbSet<ChatParticipant> ChatParticipants => Set<ChatParticipant>();
     public DbSet<ChatMessage> ChatMessages => Set<ChatMessage>();
+    public DbSet<Post> Posts => Set<Post>();
+    public DbSet<PostMedia> PostMedia => Set<PostMedia>();
+    public DbSet<PostPlacement> PostPlacements => Set<PostPlacement>();
     public DbSet<Plan> Plans => Set<Plan>();
     public DbSet<PlanCategory> PlanCategories => Set<PlanCategory>();
     public DbSet<PlanOffer> PlanOffers => Set<PlanOffer>();

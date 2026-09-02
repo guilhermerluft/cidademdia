@@ -1,12 +1,14 @@
 using CidadeEmDia.Application.Authentication;
 using CidadeEmDia.Application.Billing;
 using CidadeEmDia.Application.Chat;
+using CidadeEmDia.Application.Content;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Application.Profiles;
 using CidadeEmDia.Application.Subaccounts;
 using CidadeEmDia.Infrastructure.Billing;
 using CidadeEmDia.Infrastructure.Billing.MercadoPago;
 using CidadeEmDia.Infrastructure.Chat;
+using CidadeEmDia.Infrastructure.Content;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
@@ -44,8 +46,7 @@ public static class DependencyInjection
             MercadoPagoClient>(
             client =>
             {
-                client.Timeout =
-                    TimeSpan.FromSeconds(15);
+                client.Timeout = TimeSpan.FromSeconds(15);
             });
         services.AddSingleton<R2ObjectStorage>();
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
@@ -57,6 +58,7 @@ public static class DependencyInjection
         services.AddScoped<IBillingCatalogService, BillingCatalogService>();
         services.AddScoped<IBillingEntitlementService, BillingEntitlementService>();
         services.AddScoped<IBillingSubscriptionService, BillingSubscriptionService>();
+        services.AddScoped<IBillingPublicationUsageTracker, BillingPublicationUsageTracker>();
         services.AddScoped<IBillingCheckoutService, MercadoPagoCheckoutService>();
         services.AddScoped<
             IBillingSubscriptionManagementService,
@@ -76,6 +78,7 @@ public static class DependencyInjection
         services.AddScoped<IOccurrenceMediaService, OccurrenceMediaService>();
         services.AddScoped<IOccurrenceAssignmentService, OccurrenceAssignmentService>();
         services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IContentService, ContentService>();
         services.AddHostedService<IdentitySeedHostedService>();
         services.AddHostedService<BillingCatalogSeedHostedService>();
 

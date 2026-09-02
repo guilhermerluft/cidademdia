@@ -105,6 +105,7 @@ api.MapOccurrenceSupportEndpoints();
 api.MapOccurrenceMediaEndpoints();
 api.MapOccurrenceAssignmentEndpoints();
 api.MapChatEndpoints();
+api.MapContentEndpoints();
 
 app.MapHub<ChatHub>("/hubs/chat")
     .RequireAuthorization();
