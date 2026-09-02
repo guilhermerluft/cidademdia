@@ -121,11 +121,37 @@ public sealed record ContentPlacementListResult(
         new(false, null, errorCode);
 }
 
+public sealed record ContentManagedPostPage(
+    IReadOnlyCollection<ContentPostItem> Items,
+    int Page,
+    int PageSize,
+    int TotalItems);
+
+public sealed record ContentManagedPostListResult(
+    bool Succeeded,
+    ContentManagedPostPage? Page = null,
+    string? ErrorCode = null)
+{
+    public static ContentManagedPostListResult Success(
+        ContentManagedPostPage page) =>
+        new(true, page);
+
+    public static ContentManagedPostListResult Failure(
+        string errorCode) =>
+        new(false, null, errorCode);
+}
+
 public interface IContentService
 {
     Task<ContentPostResult> CreateDraftAsync(
         Guid requesterUserId,
         CreatePostDraftCommand command,
+        CancellationToken cancellationToken = default);
+
+    Task<ContentManagedPostListResult> ListManagedAsync(
+        Guid requesterUserId,
+        int page = 1,
+        int pageSize = 20,
         CancellationToken cancellationToken = default);
 
     Task<ContentMediaUploadResult> RequestMediaUploadAsync(
