@@ -95,7 +95,7 @@ export function AdminPanel() {
     setOverview(await getAdminOverview());
   }, []);
 
-  const loadTab = useCallback(async (target: AdminTab, term = search) => {
+  const loadTab = useCallback(async (target: AdminTab, term = '') => {
     setLoading(true);
     setError(null);
 
@@ -125,7 +125,7 @@ export function AdminPanel() {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, []);
 
   useEffect(() => {
     void (async () => {
