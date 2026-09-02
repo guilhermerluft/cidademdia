@@ -214,8 +214,9 @@ async function validate(viewport, screenshot, mobile) {
   await page.locator('.public-home__hero').waitFor({ state: 'visible' });
   await page.locator('#midias h2').waitFor({ state: 'visible' });
   await page.locator('#ocorrencias h2').waitFor({ state: 'visible' });
-  await page.getByText('Conheça os planos', { exact: true }).waitFor({ state: 'visible' });
-  await page.getByText('Como funciona', { exact: true }).first().waitFor({ state: 'visible' });
+  const heroActions = page.locator('.public-home__hero-actions');
+  await heroActions.getByText('Conheça os planos', { exact: true }).waitFor({ state: 'visible' });
+  await heroActions.getByText('Como funciona', { exact: true }).waitFor({ state: 'visible' });
 
   const title = await page.locator('#public-home-title').innerText();
   if (!title.includes('Uma cidade melhor') || !title.includes('pode resolver')) {
