@@ -25,6 +25,15 @@ export interface OccurrencePage {
   totalPages: number;
 }
 
+export interface OccurrenceGeoFilters {
+  status?: string;
+  categoryId?: string;
+  city?: string;
+  latitude?: number;
+  longitude?: number;
+  radiusKm?: number;
+}
+
 export interface OccurrenceDetails extends OccurrenceListItem {
   description: string | null;
   postalCode: string | null;

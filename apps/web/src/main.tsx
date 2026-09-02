@@ -8,6 +8,7 @@ import './styles/global.css';
 import './styles/dashboard.css';
 import './styles/subaccounts.css';
 import './styles/occurrences.css';
+import './styles/maps.css';
 import './styles/assignments.css';
 import './styles/posts.css';
 import './styles/institutions.css';

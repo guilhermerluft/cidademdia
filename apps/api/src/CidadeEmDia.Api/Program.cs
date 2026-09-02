@@ -123,6 +123,7 @@ api.MapInstitutionEndpoints();
 api.MapBillingEndpoints();
 api.MapMercadoPagoWebhookEndpoints();
 api.MapOccurrenceEndpoints();
+api.MapOccurrenceGeoEndpoints();
 api.MapOccurrenceTargetDecisionEndpoints();
 api.MapOccurrenceLifecycleEndpoints();
 api.MapOccurrenceFollowUpEndpoints();
