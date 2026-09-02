@@ -10,6 +10,7 @@ import './styles/subaccounts.css';
 import './styles/occurrences.css';
 import './styles/assignments.css';
 import './styles/posts.css';
+import './styles/institutions.css';
 
 const queryClient = new QueryClient();
 
