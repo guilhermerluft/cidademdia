@@ -28,6 +28,28 @@ public static class ContentEndpoints
                 : Results.BadRequest(new { error = result.ErrorCode });
         });
 
+        posts.MapGet("/manage", async (
+            int? page,
+            int? pageSize,
+            ClaimsPrincipal principal,
+            IContentService service,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await service.ListManagedAsync(
+                userId,
+                page ?? 1,
+                pageSize ?? 20,
+                cancellationToken);
+
+            return result.Succeeded
+                ? Results.Ok(result.Page)
+                : MapError(result.ErrorCode);
+        })
+        .RequireAuthorization(AuthorizationPolicies.ContentPublish);
+
         posts.MapPost("", async (
             CreatePostDraftRequest request,
             ClaimsPrincipal principal,
