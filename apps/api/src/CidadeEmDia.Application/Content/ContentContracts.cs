@@ -194,6 +194,5 @@ public interface IContentService
         string placementKey,
         string? cursor = null,
         int limit = 20,
-        string? publisherScope = null,
         CancellationToken cancellationToken = default);
 }
