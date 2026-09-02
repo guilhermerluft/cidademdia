@@ -7,6 +7,39 @@ public static class OccurrenceGeoEndpoints
 {
     public static RouteGroupBuilder MapOccurrenceGeoEndpoints(this RouteGroupBuilder api)
     {
+        api.MapGet("/public/occurrences", async (
+            IOccurrenceGeoSearchService geoSearchService,
+            HttpContext httpContext,
+            string? city,
+            decimal? latitude,
+            decimal? longitude,
+            decimal? radiusKm,
+            int? limit,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await geoSearchService.SearchPublicAsync(
+                new PublicOccurrenceSearchInput(
+                    city,
+                    latitude,
+                    longitude,
+                    radiusKm,
+                    limit ?? 6),
+                cancellationToken);
+
+            if (result.Succeeded)
+                return Results.Ok(new { items = result.Items });
+
+            return Results.Problem(
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Public occurrence search could not be processed.",
+                detail: result.ErrorDetail,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = result.ErrorCode ?? "invalid_public_occurrence_query",
+                    ["traceId"] = httpContext.TraceIdentifier
+                });
+        });
+
         api.MapGet("/occurrences/geo-search", async (
             IOccurrenceGeoSearchService geoSearchService,
             ClaimsPrincipal principal,
