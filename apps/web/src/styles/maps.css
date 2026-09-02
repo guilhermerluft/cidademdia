@@ -28,6 +28,24 @@
   color: var(--text-muted, #62757d);
 }
 
+.occurrence-map-picker__autocomplete {
+  display: grid;
+  min-height: 44px;
+  align-items: center;
+}
+
+.occurrence-map-picker__autocomplete > span {
+  color: var(--text-muted, #62757d);
+  font-size: 0.9rem;
+}
+
+.occurrence-map-picker__places-widget,
+.occurrence-map-picker__autocomplete > gmp-place-autocomplete {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+}
+
 .occurrence-map-picker__map {
   position: relative;
   display: grid;
@@ -100,12 +118,6 @@
 
 .occurrence-geo-filter__actions {
   justify-content: flex-end;
-}
-
-.pac-container {
-  z-index: 2000;
-  border-radius: 0.7rem;
-  font-family: inherit;
 }
 
 @media (max-width: 640px) {
