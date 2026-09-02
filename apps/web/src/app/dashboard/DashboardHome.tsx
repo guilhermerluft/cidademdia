@@ -1,4 +1,5 @@
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
+import { AdminPanel } from '../../modules/admin/AdminPanel';
 import type { AuthenticatedUser } from '../../modules/auth/types';
 import { InstitutionDirectory } from '../../modules/institutions/InstitutionDirectory';
 import { OccurrenceAssignmentPanel } from '../../modules/occurrenceAssignments/OccurrenceAssignmentPanel';
@@ -140,7 +141,12 @@ export function DashboardHome({ user }: DashboardHomeProps) {
           </Card>
 
           {(isMaster || isAdmin) && (
-            <Card className="dashboard-action-card" interactive id={isAdmin ? 'dashboard-admin' : undefined}>
+            <Card
+              className="dashboard-action-card"
+              interactive
+              id={isAdmin ? 'dashboard-admin' : undefined}
+              onClick={isAdmin ? () => document.getElementById('admin-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }) : undefined}
+            >
               <CardBody>
                 <span className="dashboard-action-card__icon dashboard-action-card__icon--yellow" aria-hidden="true">03</span>
                 <div>
@@ -158,6 +164,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
       {isMaster ? <OccurrenceAssignmentPanel mode="master" /> : null}
       {isMaster ? <MasterTeamPanel /> : null}
       {isSubaccount ? <OccurrenceAssignmentPanel mode="subaccount" /> : null}
+      {isAdmin ? <AdminPanel /> : null}
       {(isMaster || isAdmin) ? <PostManagementPanel /> : null}
       <PostFeed />
       <InstitutionDirectory />

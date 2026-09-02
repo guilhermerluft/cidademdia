@@ -1,0 +1,226 @@
+.admin-panel {
+  scroll-margin-top: 1.5rem;
+}
+
+.admin-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.admin-overview__card .ced-card__body {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-overview__card span {
+  color: var(--ced-color-text-muted, #64748b);
+  font-size: 0.82rem;
+}
+
+.admin-overview__card strong {
+  font-size: clamp(1.45rem, 3vw, 2rem);
+}
+
+.admin-account-status,
+.admin-row__badges,
+.admin-row__actions,
+.admin-status-form__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.admin-account-status {
+  margin-bottom: 1.25rem;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.admin-tab {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0.65rem 0.9rem;
+  white-space: nowrap;
+}
+
+.admin-tab--active {
+  background: #0f6674;
+  border-color: #0f6674;
+  color: #fff;
+}
+
+.admin-search {
+  display: grid;
+  gap: 0.45rem;
+  margin-bottom: 1rem;
+}
+
+.admin-search label,
+.admin-status-form label {
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.admin-search > div {
+  display: flex;
+  gap: 0.65rem;
+}
+
+.admin-search input,
+.admin-status-form textarea {
+  width: 100%;
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  border-radius: 0.75rem;
+  background: #fff;
+  color: #0f172a;
+  font: inherit;
+  padding: 0.75rem 0.85rem;
+}
+
+.admin-list {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-list__count,
+.admin-feedback {
+  color: #64748b;
+  margin: 0 0 0.75rem;
+}
+
+.admin-feedback--error {
+  color: #b42318;
+}
+
+.admin-row .ced-card__body {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-row__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.admin-row__main > div:first-child {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.admin-row__main strong {
+  color: #0f172a;
+}
+
+.admin-row__main span,
+.admin-row__meta,
+.admin-plan span,
+.admin-plan small,
+.admin-readonly-notice span {
+  color: #64748b;
+}
+
+.admin-row__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  font-size: 0.84rem;
+}
+
+.admin-billing {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-billing h3 {
+  margin: 0.5rem 0 0;
+}
+
+.admin-readonly-notice {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  border-radius: 0.85rem;
+  background: #f0f9ff;
+  padding: 0.85rem 1rem;
+}
+
+.admin-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-plan .ced-card__body {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-plan b {
+  color: #0f6674;
+  font-size: 1.1rem;
+}
+
+.admin-status-form {
+  position: sticky;
+  bottom: 1rem;
+  z-index: 5;
+  display: grid;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  border: 1px solid rgba(15, 102, 116, 0.25);
+  border-radius: 1rem;
+  background: #fff;
+  box-shadow: 0 18px 50px rgba(15, 23, 42, 0.16);
+  padding: 1rem;
+}
+
+.admin-status-form p {
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.admin-status-form label {
+  display: grid;
+  gap: 0.4rem;
+}
+
+@media (max-width: 900px) {
+  .admin-overview,
+  .admin-plan-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  .admin-overview,
+  .admin-plan-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-search > div,
+  .admin-row__main,
+  .admin-readonly-notice {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .admin-search > div {
+    display: grid;
+  }
+}
