@@ -42,7 +42,7 @@ The gate must run on the exact candidate SHA and verifies:
 - inner Nginx is exposed only on `127.0.0.1:8080`;
 - `.env` is untracked and has restrictive permissions;
 - runtime JWT/DB/R2/SMTP/payment secret values do not appear in tracked files, Git history or current API logs;
-- R2 credentials are configured and unsigned bucket access is denied;
+- R2 credentials are configured and an unsigned S3 API request is rejected with HTTP 400/401/403;
 - unsigned Mercado Pago webhook is rejected with HTTP 401;
 - Mercado Pago provider tables remain unchanged during the gate;
 - health, web and main working tree remain clean.
@@ -66,14 +66,13 @@ Repeat the dependency scan once more immediately before the production cutover i
 
 Validated architecture and homologation evidence:
 
-- bucket is private;
 - object reads use temporary signed URLs;
 - direct browser upload uses presigned PUT;
 - homologation CORS allows the required origin/methods/headers;
 - invalid media signature does not become READY;
-- the release-candidate gate performs an unsigned bucket request and requires HTTP 401/403.
+- the release-candidate gate performs an unsigned request against the R2 S3 API endpoint and requires an explicit rejection (HTTP 400/401/403), never 2xx/3xx.
 
-Do not enable public bucket access as a substitute for signed URLs or CORS.
+This S3 API check proves that unsigned access through the application storage endpoint is rejected. Public `r2.dev`/custom-domain exposure, if ever enabled separately at Cloudflare, must remain disabled or be reviewed independently before production.
 
 ## TLS and edge
 
