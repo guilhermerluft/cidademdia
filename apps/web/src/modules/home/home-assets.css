@@ -1,0 +1,4 @@
+/* Keep the versioned hero artwork available as a build-time fallback asset. */
+.public-home {
+  --public-home-versioned-hero-fallback: url('./assets/hero-city.svg');
+}
