@@ -10,6 +10,7 @@ public static class AuthorizationPolicies
     public const string MasterScope = "master.scope";
     public const string SubaccountRole = "subaccount.role";
     public const string AdminAccess = "admin.access";
+    public const string ContentPublish = "content.publish";
 
     public static IServiceCollection AddCidadeEmDiaAuthorization(this IServiceCollection services)
     {
@@ -36,6 +37,23 @@ public static class AuthorizationPolicies
                 .RequireAuthenticatedUser()
                 .RequireRole(IdentityRoleKeys.Admin)
                 .RequireClaim(IdentityClaimTypes.Permission, IdentityPermissionKeys.AdminAccess));
+
+            options.AddPolicy(ContentPublish, policy => policy
+                .RequireAuthenticatedUser()
+                .RequireAssertion(context =>
+                    (
+                        context.User.IsInRole(IdentityRoleKeys.Admin)
+                        && context.User.HasClaim(
+                            IdentityClaimTypes.Permission,
+                            IdentityPermissionKeys.AdminAccess)
+                    )
+                    ||
+                    (
+                        context.User.IsInRole(IdentityRoleKeys.Master)
+                        && context.User.HasClaim(
+                            IdentityClaimTypes.Permission,
+                            IdentityPermissionKeys.MasterScopeAccess)
+                    )));
         });
 
         return services;
