@@ -9,7 +9,10 @@ namespace CidadeEmDia.Infrastructure.Occurrences;
 internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccurrenceGeoSearchService
 {
     private const int MaxPageSize = 50;
+    private const int MaxPublicLimit = 12;
+    private const decimal DefaultPublicRadiusKm = 25m;
     private const decimal MaxRadiusKm = 100m;
+    private const string DefaultPublicCity = "São Paulo";
 
     public async Task<OccurrenceListResult> SearchMineAsync(
         Guid authorUserId,
@@ -28,20 +31,10 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
         IQueryable<Occurrence> query;
         if (input.Latitude.HasValue && input.Longitude.HasValue && input.RadiusKm.HasValue)
         {
-            var latitude = (double)input.Latitude.Value;
-            var longitude = (double)input.Longitude.Value;
-            var radiusMeters = (double)(input.RadiusKm.Value * 1000m);
-
-            query = dbContext.Occurrences
-                .FromSqlInterpolated($"""
-                    SELECT *
-                    FROM occurrences
-                    WHERE ST_DWithin(
-                        location,
-                        ST_SetSRID(ST_MakePoint({longitude}, {latitude}), 4326)::geography,
-                        {radiusMeters})
-                    """)
-                .AsNoTracking();
+            query = CreateRadiusQuery(
+                input.Latitude.Value,
+                input.Longitude.Value,
+                input.RadiusKm.Value);
         }
         else
         {
@@ -127,6 +120,121 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
             totalPages));
     }
 
+    public async Task<PublicOccurrenceSearchResult> SearchPublicAsync(
+        PublicOccurrenceSearchInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var hasLatitude = input.Latitude.HasValue;
+        var hasLongitude = input.Longitude.HasValue;
+
+        if (hasLatitude != hasLongitude)
+        {
+            return PublicOccurrenceSearchResult.Failure(
+                "invalid_geo_filter",
+                "Latitude and longitude must be supplied together.");
+        }
+
+        if (input.Latitude is < -90m or > 90m)
+            return PublicOccurrenceSearchResult.Failure("invalid_geo_filter", "Latitude must be between -90 and 90.");
+
+        if (input.Longitude is < -180m or > 180m)
+            return PublicOccurrenceSearchResult.Failure("invalid_geo_filter", "Longitude must be between -180 and 180.");
+
+        var radiusKm = input.RadiusKm ?? DefaultPublicRadiusKm;
+        if ((hasLatitude || input.RadiusKm.HasValue) && radiusKm is <= 0m or > MaxRadiusKm)
+        {
+            return PublicOccurrenceSearchResult.Failure(
+                "invalid_geo_filter",
+                $"Radius must be greater than zero and at most {MaxRadiusKm:0} km.");
+        }
+
+        if (!hasLatitude && input.RadiusKm.HasValue)
+        {
+            return PublicOccurrenceSearchResult.Failure(
+                "invalid_geo_filter",
+                "Radius requires latitude and longitude.");
+        }
+
+        var city = input.City?.Trim();
+        if (!string.IsNullOrWhiteSpace(city) && city.Length > 120)
+            return PublicOccurrenceSearchResult.Failure("invalid_city", "City filter cannot exceed 120 characters.");
+
+        if (!hasLatitude && string.IsNullOrWhiteSpace(city))
+            city = DefaultPublicCity;
+
+        IQueryable<Occurrence> query = hasLatitude
+            ? CreateRadiusQuery(input.Latitude!.Value, input.Longitude!.Value, radiusKm)
+            : dbContext.Occurrences.AsNoTracking();
+
+        query = query.Where(x =>
+            x.Status != OccurrenceStatus.Closed
+            && x.Status != OccurrenceStatus.Cancelled);
+
+        if (!string.IsNullOrWhiteSpace(city))
+            query = query.Where(x => EF.Functions.ILike(x.AddressText, $"%{city}%"));
+
+        var limit = Math.Clamp(input.Limit, 1, MaxPublicLimit);
+        var rows = await query
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Take(limit)
+            .ToListAsync(cancellationToken);
+
+        var categoryIds = rows
+            .Select(x => x.CategoryId)
+            .Distinct()
+            .ToArray();
+
+        var categories = categoryIds.Length == 0
+            ? new Dictionary<Guid, CategoryInfo>()
+            : await dbContext.OccurrenceCategories
+                .AsNoTracking()
+                .Where(x => categoryIds.Contains(x.Id))
+                .Select(x => new CategoryInfo(x.Id, x.Name, x.Slug))
+                .ToDictionaryAsync(x => x.Id, cancellationToken);
+
+        var items = rows
+            .Select(x =>
+            {
+                var category = categories.GetValueOrDefault(x.CategoryId);
+                return new PublicOccurrenceItem(
+                    x.Id,
+                    x.PublicCode.Value,
+                    category?.Name ?? string.Empty,
+                    category?.Slug ?? string.Empty,
+                    x.Title,
+                    x.Description,
+                    x.Status.Value,
+                    x.AddressText,
+                    x.CreatedAt,
+                    x.UpdatedAt);
+            })
+            .ToArray();
+
+        return PublicOccurrenceSearchResult.Success(items);
+    }
+
+    private IQueryable<Occurrence> CreateRadiusQuery(
+        decimal latitude,
+        decimal longitude,
+        decimal radiusKm)
+    {
+        var lat = (double)latitude;
+        var lng = (double)longitude;
+        var radiusMeters = (double)(radiusKm * 1000m);
+
+        return dbContext.Occurrences
+            .FromSqlInterpolated($"""
+                SELECT *
+                FROM occurrences
+                WHERE ST_DWithin(
+                    location,
+                    ST_SetSRID(ST_MakePoint({lng}, {lat}), 4326)::geography,
+                    {radiusMeters})
+                """)
+            .AsNoTracking();
+    }
+
     private static bool TryValidateLocationFilter(
         OccurrenceGeoSearchInput input,
         out string? error)
@@ -170,4 +278,6 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
         error = null;
         return true;
     }
+
+    private sealed record CategoryInfo(Guid Id, string Name, string Slug);
 }
