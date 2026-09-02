@@ -274,7 +274,7 @@ export function OccurrenceLocationPicker({
         autocomplete.addEventListener('input', autocompleteInputListener);
         autocomplete.addEventListener('gmp-select', autocompleteSelectListener);
         autocomplete.addEventListener('gmp-error', autocompleteErrorListener);
-        autocompleteHostRef.current.replaceChildren(autocomplete);
+        autocompleteHostRef.current.appendChild(autocomplete);
 
         mapRef.current = map;
         markerRef.current = marker;
@@ -391,6 +391,13 @@ export function OccurrenceLocationPicker({
 
       <label className="occurrence-form__full">
         Endereço
+        <div
+          ref={autocompleteHostRef}
+          className="occurrence-map-picker__autocomplete"
+          aria-busy={!mapsReady}
+          hidden={Boolean(mapsError)}
+        />
+        {!mapsReady && !mapsError ? <span>Carregando busca de endereços...</span> : null}
         {mapsError ? (
           <input
             required
@@ -400,15 +407,7 @@ export function OccurrenceLocationPicker({
             autoComplete="street-address"
             disabled={disabled}
           />
-        ) : (
-          <div
-            ref={autocompleteHostRef}
-            className="occurrence-map-picker__autocomplete"
-            aria-busy={!mapsReady}
-          >
-            {!mapsReady ? <span>Carregando busca de endereços...</span> : null}
-          </div>
-        )}
+        ) : null}
       </label>
 
       <div
@@ -416,9 +415,8 @@ export function OccurrenceLocationPicker({
         className={`occurrence-map-picker__map${mapsReady ? ' is-ready' : ''}`}
         role="application"
         aria-label="Mapa para selecionar a localização da ocorrência"
-      >
-        {!mapsReady && !mapsError ? <span>Carregando Google Maps...</span> : null}
-      </div>
+      />
+      {!mapsReady && !mapsError ? <span>Carregando Google Maps...</span> : null}
 
       {mapsError ? <p className="occurrence-map-picker__warning">{mapsError}</p> : null}
 
