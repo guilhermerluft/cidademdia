@@ -2,6 +2,8 @@ import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/
 import type { AuthenticatedUser } from '../../modules/auth/types';
 import { OccurrenceAssignmentPanel } from '../../modules/occurrenceAssignments/OccurrenceAssignmentPanel';
 import { OccurrenceCenter } from '../../modules/occurrences/OccurrenceCenter';
+import { PostFeed } from '../../modules/posts/PostFeed';
+import { PostManagementPanel } from '../../modules/posts/PostManagementPanel';
 import { MasterTeamPanel } from './MasterTeamPanel';
 
 interface DashboardHomeProps {
@@ -130,7 +132,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
               <span className="dashboard-action-card__icon dashboard-action-card__icon--green" aria-hidden="true">02</span>
               <div>
                 <h3>Mídias</h3>
-                <p>Acompanhar conteúdos e informações publicadas na plataforma.</p>
+                <p>{isMaster || isAdmin ? 'Criar, publicar e acompanhar conteúdos da plataforma.' : 'Acompanhar conteúdos e informações publicadas na plataforma.'}</p>
               </div>
               <span className="dashboard-action-card__arrow" aria-hidden="true">→</span>
             </CardBody>
@@ -155,6 +157,8 @@ export function DashboardHome({ user }: DashboardHomeProps) {
       {isMaster ? <OccurrenceAssignmentPanel mode="master" /> : null}
       {isMaster ? <MasterTeamPanel /> : null}
       {isSubaccount ? <OccurrenceAssignmentPanel mode="subaccount" /> : null}
+      {(isMaster || isAdmin) ? <PostManagementPanel /> : null}
+      <PostFeed />
 
       <section className="dashboard-section dashboard-profile-section" id="dashboard-profile">
         <div>
