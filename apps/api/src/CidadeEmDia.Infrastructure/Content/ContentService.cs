@@ -99,6 +99,45 @@ internal sealed class ContentService(
         return ContentPostResult.Success(ToItem(post, includeSignedUrls: false));
     }
 
+    public async Task<ContentManagedPostListResult> ListManagedAsync(
+        Guid requesterUserId,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        if (requesterUserId == Guid.Empty)
+            return ContentManagedPostListResult.Failure("invalid_post_request");
+
+        var actor = await LoadPublisherActorAsync(requesterUserId, cancellationToken);
+        if (!actor.Allowed)
+            return ContentManagedPostListResult.Failure("post_publish_not_allowed");
+
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        IQueryable<Post> query = dbContext.Posts.AsNoTracking();
+        if (!actor.IsAdmin)
+            query = query.Where(x => x.MasterUserId == requesterUserId);
+
+        var totalItems = await query.CountAsync(cancellationToken);
+
+        var posts = await query
+            .Include(x => x.Media)
+            .Include(x => x.Placements)
+            .OrderByDescending(x => x.CreatedAt)
+            .ThenByDescending(x => x.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
+
+        return ContentManagedPostListResult.Success(
+            new ContentManagedPostPage(
+                posts.Select(x => ToItem(x, includeSignedUrls: true)).ToArray(),
+                page,
+                pageSize,
+                totalItems));
+    }
+
     public async Task<ContentMediaUploadResult> RequestMediaUploadAsync(
         Guid requesterUserId,
         Guid postId,
