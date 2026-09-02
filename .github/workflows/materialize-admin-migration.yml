@@ -1,0 +1,61 @@
+name: Materialize admin migration
+
+on:
+  push:
+    branches:
+      - feat/admin-essential-platform
+
+permissions:
+  contents: write
+
+jobs:
+  migration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: feat/admin-essential-platform
+
+      - name: Skip if migration already exists
+        id: migration
+        shell: bash
+        run: |
+          if compgen -G 'apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/*_AddAdminAuditLogs.cs' > /dev/null; then
+            echo 'exists=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'exists=false' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup .NET 10
+        if: steps.migration.outputs.exists == 'false'
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore
+        if: steps.migration.outputs.exists == 'false'
+        run: dotnet restore CidadeEmDia.sln
+
+      - name: Install EF tool
+        if: steps.migration.outputs.exists == 'false'
+        run: dotnet tool install --global dotnet-ef --version 10.0.11
+
+      - name: Generate migration
+        if: steps.migration.outputs.exists == 'false'
+        run: |
+          dotnet ef migrations add AddAdminAuditLogs \
+            --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \
+            --startup-project apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj
+
+      - name: Commit migration
+        if: steps.migration.outputs.exists == 'false'
+        shell: bash
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations
+          git diff --cached --quiet && exit 0
+          git commit -m 'feat(admin): add admin audit migration'
+          git push origin HEAD:feat/admin-essential-platform
