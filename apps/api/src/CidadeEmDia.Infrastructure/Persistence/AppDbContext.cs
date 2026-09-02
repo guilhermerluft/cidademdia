@@ -2,6 +2,7 @@ using CidadeEmDia.Domain.Billing;
 using CidadeEmDia.Domain.Chat;
 using CidadeEmDia.Domain.Content;
 using CidadeEmDia.Domain.Identity;
+using CidadeEmDia.Domain.Institutions;
 using CidadeEmDia.Domain.Occurrences;
 using Microsoft.EntityFrameworkCore;
 
@@ -20,6 +21,11 @@ public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbCon
     public DbSet<MasterSubaccount> MasterSubaccounts => Set<MasterSubaccount>();
     public DbSet<MasterSubaccountPermission> MasterSubaccountPermissions => Set<MasterSubaccountPermission>();
     public DbSet<SubaccountInvitation> SubaccountInvitations => Set<SubaccountInvitation>();
+    public DbSet<Institution> Institutions => Set<Institution>();
+    public DbSet<InstitutionJurisdiction> InstitutionJurisdictions => Set<InstitutionJurisdiction>();
+    public DbSet<InstitutionRepresentative> InstitutionRepresentatives => Set<InstitutionRepresentative>();
+    public DbSet<InstitutionMembership> InstitutionMemberships => Set<InstitutionMembership>();
+    public DbSet<InstitutionInvite> InstitutionInvites => Set<InstitutionInvite>();
     public DbSet<OccurrenceCategory> OccurrenceCategories => Set<OccurrenceCategory>();
     public DbSet<Occurrence> Occurrences => Set<Occurrence>();
     public DbSet<OccurrenceTarget> OccurrenceTargets => Set<OccurrenceTarget>();

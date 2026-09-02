@@ -1,5 +1,6 @@
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import type { AuthenticatedUser } from '../../modules/auth/types';
+import { InstitutionDirectory } from '../../modules/institutions/InstitutionDirectory';
 import { OccurrenceAssignmentPanel } from '../../modules/occurrenceAssignments/OccurrenceAssignmentPanel';
 import { OccurrenceCenter } from '../../modules/occurrences/OccurrenceCenter';
 import { PostFeed } from '../../modules/posts/PostFeed';
@@ -159,6 +160,7 @@ export function DashboardHome({ user }: DashboardHomeProps) {
       {isSubaccount ? <OccurrenceAssignmentPanel mode="subaccount" /> : null}
       {(isMaster || isAdmin) ? <PostManagementPanel /> : null}
       <PostFeed />
+      <InstitutionDirectory />
 
       <section className="dashboard-section dashboard-profile-section" id="dashboard-profile">
         <div>
