@@ -14,18 +14,39 @@ public static class ContentEndpoints
             string placementKey,
             string? cursor,
             int? limit,
+            string? publisher,
             IContentService service,
             CancellationToken cancellationToken) =>
         {
+            if (!ContentPublisherScopes.IsSupported(publisher))
+                return Results.BadRequest(new { error = "post_publisher_scope_not_supported" });
+
+            var requestedLimit = Math.Clamp(limit ?? 20, 1, 50);
+            var platformOnly = string.Equals(
+                publisher?.Trim(),
+                ContentPublisherScopes.Platform,
+                StringComparison.OrdinalIgnoreCase);
+
             var result = await service.ListPlacementAsync(
                 placementKey,
                 cursor,
-                limit ?? 20,
+                platformOnly ? 50 : requestedLimit,
                 cancellationToken);
 
-            return result.Succeeded
-                ? Results.Ok(result.Page)
-                : Results.BadRequest(new { error = result.ErrorCode });
+            if (!result.Succeeded || result.Page is null)
+                return Results.BadRequest(new { error = result.ErrorCode });
+
+            if (!platformOnly)
+                return Results.Ok(result.Page);
+
+            var officialItems = result.Page.Items
+                .Where(item => item.MasterUserId is null)
+                .Take(requestedLimit)
+                .ToArray();
+
+            return Results.Ok(new ContentPlacementPage(
+                officialItems,
+                result.Page.NextCursor));
         });
 
         posts.MapGet("/manage", async (

@@ -141,6 +141,15 @@ public sealed record ContentManagedPostListResult(
         new(false, null, errorCode);
 }
 
+public static class ContentPublisherScopes
+{
+    public const string Platform = "platform";
+
+    public static bool IsSupported(string? value) =>
+        string.IsNullOrWhiteSpace(value)
+        || string.Equals(value.Trim(), Platform, StringComparison.OrdinalIgnoreCase);
+}
+
 public interface IContentService
 {
     Task<ContentPostResult> CreateDraftAsync(

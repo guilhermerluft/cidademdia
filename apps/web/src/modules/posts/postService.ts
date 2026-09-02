@@ -10,6 +10,8 @@ import type {
   PostPlacementKey,
 } from './types';
 
+export type PostPublisherScope = 'platform';
+
 export async function listManagedPosts(page = 1, pageSize = 20) {
   const { data } = await api.get<ManagedPostPage>('/posts/manage', {
     params: { page, pageSize },
@@ -22,9 +24,10 @@ export async function listPlacementPosts(
   placementKey: PostPlacementKey,
   cursor?: string,
   limit = 20,
+  publisher?: PostPublisherScope,
 ) {
   const { data } = await api.get<PlacementPostPage>(`/posts/placements/${placementKey}`, {
-    params: { cursor, limit },
+    params: { cursor, limit, publisher },
   });
 
   return data;
