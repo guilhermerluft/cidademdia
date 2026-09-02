@@ -66,7 +66,7 @@ public static class ContentEndpoints
                     request.Title,
                     request.Body,
                     request.LinkUrl,
-                    request.Placements
+                    (request.Placements ?? [])
                         .Select(x => new ContentPlacementInput(
                             x.PlacementKey,
                             x.Priority,
@@ -230,7 +230,7 @@ public static class ContentEndpoints
         string? Title,
         string? Body,
         string? LinkUrl,
-        IReadOnlyCollection<PostPlacementRequest> Placements);
+        IReadOnlyCollection<PostPlacementRequest>? Placements);
 
     public sealed record PostPlacementRequest(
         string PlacementKey,
