@@ -21,7 +21,7 @@ die() {
   exit 1
 }
 
-for cmd in git docker curl grep awk stat sed; do
+for cmd in git docker curl grep awk stat; do
   command -v "$cmd" >/dev/null 2>&1 || die "comando ausente: $cmd"
 done
 
@@ -67,30 +67,24 @@ sleep 2
 
 NGINX_ID="$(compose ps -q nginx)"
 test -n "$NGINX_ID" || die "nginx não encontrado após recreate"
-
 echo "nginx=running"
 
 echo
 echo "=== 2. HEALTH / TLS ==="
 HEALTH="$(curl -fsS -o /dev/null -w '%{http_code}' "$BASE/health/ready")"
 WEB="$(curl -fsS -o /dev/null -w '%{http_code}' "$BASE/")"
-echo "health=$HEALTH"
-echo "web=$WEB"
-test "$HEALTH" = "200" || die "health != 200"
-test "$WEB" = "200" || die "web != 200"
-
 HTTP_RESULT="$(curl -sS -o /dev/null -w '%{http_code}|%{redirect_url}' "${BASE/https:/http:}/")"
 HTTP_CODE="${HTTP_RESULT%%|*}"
 HTTP_REDIRECT="${HTTP_RESULT#*|}"
+
+echo "health=$HEALTH"
+echo "web=$WEB"
 echo "http_redirect=$HTTP_CODE"
-case "$HTTP_CODE" in
-  301|302|307|308) ;;
-  *) die "HTTP não redireciona para HTTPS" ;;
-esac
-case "$HTTP_REDIRECT" in
-  https://*) ;;
-  *) die "redirect HTTP não aponta para HTTPS" ;;
-esac
+
+test "$HEALTH" = "200" || die "health != 200"
+test "$WEB" = "200" || die "web != 200"
+case "$HTTP_CODE" in 301|302|307|308) ;; *) die "HTTP não redireciona para HTTPS" ;; esac
+case "$HTTP_REDIRECT" in https://*) ;; *) die "redirect HTTP não aponta para HTTPS" ;; esac
 
 echo
 echo "=== 3. SECURITY HEADERS ==="
@@ -115,23 +109,15 @@ echo "hsts=$HSTS"
 test "$NOSNIFF" = "nosniff" || die "X-Content-Type-Options ausente/incorreto"
 test "$FRAME" = "DENY" || die "X-Frame-Options ausente/incorreto"
 test "$REFERRER" = "strict-origin-when-cross-origin" || die "Referrer-Policy ausente/incorreto"
-case "$HSTS" in
-  max-age=31536000*) ;;
-  *) die "HSTS ausente/incorreto" ;;
-esac
+case "$HSTS" in max-age=31536000*) ;; *) die "HSTS ausente/incorreto" ;; esac
 
 echo
 echo "=== 4. CORS ==="
 ALLOWED_HEADERS="$TMP/cors-allowed.txt"
 DENIED_HEADERS="$TMP/cors-denied.txt"
 
-curl -fsS -D "$ALLOWED_HEADERS" -o /dev/null \
-  -H "Origin: $BASE" \
-  "$BASE/api/v1/status"
-
-curl -fsS -D "$DENIED_HEADERS" -o /dev/null \
-  -H "Origin: https://evil.invalid" \
-  "$BASE/api/v1/status"
+curl -fsS -D "$ALLOWED_HEADERS" -o /dev/null -H "Origin: $BASE" "$BASE/api/v1/status"
+curl -fsS -D "$DENIED_HEADERS" -o /dev/null -H "Origin: https://evil.invalid" "$BASE/api/v1/status"
 
 ALLOWED_ORIGIN="$(awk 'BEGIN{IGNORECASE=1} /^access-control-allow-origin:/ {sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$ALLOWED_HEADERS")"
 DENIED_ORIGIN="$(awk 'BEGIN{IGNORECASE=1} /^access-control-allow-origin:/ {sub(/^[^:]+:[[:space:]]*/, ""); sub(/\r$/, ""); print; exit}' "$DENIED_HEADERS")"
@@ -162,10 +148,7 @@ echo
 echo "=== 6. ENV / SECRETS ==="
 MODE="$(stat -c '%a' "$ENV_FILE")"
 echo "env_mode=$MODE"
-case "$MODE" in
-  600|640) ;;
-  *) die ".env com permissão excessiva: $MODE" ;;
-esac
+case "$MODE" in 600|640) ;; *) die ".env com permissão excessiva: $MODE" ;; esac
 
 if git -C "$ROOT" ls-files --error-unmatch .env >/dev/null 2>&1; then
   die ".env está rastreado pelo Git"
@@ -221,7 +204,7 @@ check_secret POSTGRES_PASSWORD "$POSTGRES_PASSWORD_VALUE"
 unset JWT_VALUE DB_CONN_VALUE R2_ACCESS_VALUE R2_SECRET_VALUE SMTP_PASSWORD_VALUE MP_ACCESS_VALUE MP_WEBHOOK_VALUE POSTGRES_PASSWORD_VALUE
 
 echo
-echo "=== 7. R2 PRIVATE ==="
+echo "=== 7. R2 UNSIGNED S3 API ==="
 R2_ACCOUNT="$(docker exec "$CURRENT_API_ID" printenv R2_ACCOUNT_ID || true)"
 R2_BUCKET="$(docker exec "$CURRENT_API_ID" printenv R2_BUCKET || true)"
 R2_ACCESS_PRESENT="$(docker exec "$CURRENT_API_ID" sh -lc 'test -n "$R2_ACCESS_KEY_ID" && echo YES || echo NO')"
@@ -232,22 +215,26 @@ test -n "$R2_BUCKET" || die "R2_BUCKET vazio"
 test "$R2_ACCESS_PRESENT" = "YES" || die "R2 access key ausente"
 test "$R2_SECRET_PRESENT" = "YES" || die "R2 secret ausente"
 
-R2_PUBLIC_CODE="$(curl -sS -o /dev/null -w '%{http_code}' "https://${R2_ACCOUNT}.r2.cloudflarestorage.com/${R2_BUCKET}/" || true)"
-echo "r2_unsigned_bucket=$R2_PUBLIC_CODE"
-case "$R2_PUBLIC_CODE" in
-  401|403) ;;
-  *) die "bucket R2 respondeu $R2_PUBLIC_CODE sem assinatura" ;;
+R2_UNSIGNED_CODE="$(curl -sS -o "$TMP/r2-unsigned-body.txt" -w '%{http_code}' "https://${R2_ACCOUNT}.r2.cloudflarestorage.com/${R2_BUCKET}/" || true)"
+echo "r2_unsigned_s3_api=$R2_UNSIGNED_CODE"
+
+case "$R2_UNSIGNED_CODE" in
+  400|401|403)
+    echo "r2_unsigned_s3_api_rejected=YES"
+    ;;
+  2??|3??)
+    die "R2 S3 API aceitou/redirecionou request sem assinatura: HTTP $R2_UNSIGNED_CODE"
+    ;;
+  *)
+    die "R2 S3 API retornou status não conclusivo sem assinatura: HTTP $R2_UNSIGNED_CODE"
+    ;;
 esac
 
 unset R2_ACCOUNT R2_BUCKET
 
 echo
 echo "=== 8. WEBHOOK INVALID ==="
-WEBHOOK_CODE="$(curl -sS -o /dev/null -w '%{http_code}' \
-  -X POST \
-  -H 'Content-Type: application/json' \
-  --data '{}' \
-  "$BASE/api/v1/webhooks/mercadopago?data.id=security-rc")"
+WEBHOOK_CODE="$(curl -sS -o /dev/null -w '%{http_code}' -X POST -H 'Content-Type: application/json' --data '{}' "$BASE/api/v1/webhooks/mercadopago?data.id=security-rc")"
 echo "invalid_webhook=$WEBHOOK_CODE"
 test "$WEBHOOK_CODE" = "401" || die "webhook sem assinatura deveria retornar 401"
 
@@ -293,7 +280,7 @@ echo "API PRIVATE: OK"
 echo "BACKEND NETWORK INTERNAL: OK"
 echo "ENV PERMISSIONS: $MODE"
 echo "SECRETS GIT/LOGS: NOT EXPOSED"
-echo "R2 UNSIGNED ACCESS: $R2_PUBLIC_CODE"
+echo "R2 UNSIGNED S3 API: REJECTED ($R2_UNSIGNED_CODE)"
 echo "INVALID WEBHOOK: 401"
 echo "MERCADO PAGO PROVIDER: $PROVIDER"
 echo "HEALTH: 200"
