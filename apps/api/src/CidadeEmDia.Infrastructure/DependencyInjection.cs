@@ -1,3 +1,4 @@
+using CidadeEmDia.Application.Administration;
 using CidadeEmDia.Application.Authentication;
 using CidadeEmDia.Application.Billing;
 using CidadeEmDia.Application.Chat;
@@ -6,6 +7,7 @@ using CidadeEmDia.Application.Institutions;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Application.Profiles;
 using CidadeEmDia.Application.Subaccounts;
+using CidadeEmDia.Infrastructure.Administration;
 using CidadeEmDia.Infrastructure.Billing;
 using CidadeEmDia.Infrastructure.Billing.MercadoPago;
 using CidadeEmDia.Infrastructure.Chat;
@@ -57,6 +59,7 @@ public static class DependencyInjection
         services.AddSingleton<ISubaccountInvitationEmailSender, SmtpSubaccountInvitationEmailSender>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IProfileService, ProfileService>();
+        services.AddScoped<IAdminService, AdminService>();
         services.AddScoped<IInstitutionService, InstitutionService>();
         services.AddScoped<IBillingCatalogService, BillingCatalogService>();
         services.AddScoped<IBillingEntitlementService, BillingEntitlementService>();

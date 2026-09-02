@@ -1,13 +1,16 @@
+using System.Security.Claims;
 using System.Text;
 using CidadeEmDia.Api.Authorization;
 using CidadeEmDia.Api.Endpoints;
 using CidadeEmDia.Api.Hubs;
 using CidadeEmDia.Api.Middleware;
 using CidadeEmDia.Application;
+using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Infrastructure;
 using CidadeEmDia.Infrastructure.Identity;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -49,8 +52,8 @@ builder.Services
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.SigningKey)),
             ValidateLifetime = true,
             ClockSkew = TimeSpan.FromSeconds(30),
-            NameClaimType = System.Security.Claims.ClaimTypes.NameIdentifier,
-            RoleClaimType = System.Security.Claims.ClaimTypes.Role
+            NameClaimType = ClaimTypes.NameIdentifier,
+            RoleClaimType = ClaimTypes.Role
         };
         options.Events = new JwtBearerEvents
         {
@@ -64,6 +67,27 @@ builder.Services
                 }
 
                 return Task.CompletedTask;
+            },
+            OnTokenValidated = async context =>
+            {
+                var userIdValue = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdValue, out var userId))
+                {
+                    context.Fail("user_id_invalid");
+                    return;
+                }
+
+                var dbContext = context.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                var canUseSession = await dbContext.Users
+                    .AsNoTracking()
+                    .AnyAsync(
+                        user => user.Id == userId
+                            && user.Status != UserStatus.Suspended
+                            && user.Status != UserStatus.Blocked,
+                        context.HttpContext.RequestAborted);
+
+                if (!canUseSession)
+                    context.Fail("user_inactive");
             }
         };
     });
