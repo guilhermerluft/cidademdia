@@ -207,8 +207,8 @@ async function validate(viewport, screenshot, mobile) {
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
   await page.locator('.public-home__hero').waitFor({ state: 'visible' });
   await page.locator('.public-home__phone').waitFor({ state: 'visible' });
-  await page.getByText('Mídias do CIDADEMDIA', { exact: true }).waitFor({ state: 'visible' });
-  await page.getByText('Ocorrências', { exact: true }).first().waitFor({ state: 'visible' });
+  await page.locator('#midias h2').waitFor({ state: 'visible' });
+  await page.locator('#ocorrencias h2').waitFor({ state: 'visible' });
 
   const title = await page.locator('#public-home-title').innerText();
   if (!title.includes('Uma cidade melhor') || !title.includes('pode resolver')) {
