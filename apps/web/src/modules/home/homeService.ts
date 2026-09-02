@@ -21,10 +21,31 @@ export interface PublicOccurrenceQuery {
   limit?: number;
 }
 
+export interface PublicPlanOffer {
+  offerId: string;
+  planVersionId: string;
+  planKey: string;
+  planName: string;
+  categoryKey: string;
+  categoryName: string;
+  billingIntervalMonths: number;
+  priceCents: number;
+  signupFeeCents: number;
+  marketingReferencePriceCents?: number | null;
+  subaccountLimit: number;
+  monthlyPublicationLimit: number;
+  version: number;
+}
+
 export async function listPublicOccurrences(query: PublicOccurrenceQuery) {
   const { data } = await api.get<{ items: PublicOccurrenceItem[] }>('/public/occurrences', {
     params: query,
   });
 
   return data.items;
+}
+
+export async function listPublicPlans() {
+  const { data } = await api.get<PublicPlanOffer[]>('/billing/catalog');
+  return data;
 }
