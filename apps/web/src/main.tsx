@@ -11,6 +11,7 @@ import './styles/occurrences.css';
 import './styles/assignments.css';
 import './styles/posts.css';
 import './styles/institutions.css';
+import './modules/home/home.css';
 
 const queryClient = new QueryClient();
 
