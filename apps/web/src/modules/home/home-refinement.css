@@ -1,11 +1,107 @@
-/* Final public-home visual refinement requested before MVP regression. */
+/* Public-home visual refinement. Loaded after the base/responsive styles. */
 
+/* Header: restore the polished shell-like visual language used before the public redesign. */
+.public-home__header {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  background: rgba(255, 255, 255, .98);
+  border-bottom: 0;
+  box-shadow: 0 1px 0 rgba(16, 48, 88, .05);
+  backdrop-filter: blur(16px);
+}
+
+.public-home__header::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #1477d4 0%, #2e93c9 36%, #71ad43 72%, #d1d523 100%);
+}
+
+.public-home__header-inner {
+  min-height: 86px;
+  width: min(1280px, calc(100% - 48px));
+  gap: 34px;
+}
+
+.public-home__brand {
+  transform: scale(.94);
+  transform-origin: left center;
+}
+
+.public-home__desktop-nav {
+  gap: 34px;
+}
+
+.public-home__desktop-nav a {
+  gap: 9px;
+  padding-top: 1px;
+  color: #667487;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.public-home__desktop-nav a::before {
+  font-family: 'Font Awesome 6 Free';
+  font-weight: 900;
+  color: #4f677d;
+  font-size: .94rem;
+  line-height: 1;
+}
+
+.public-home__desktop-nav a[href='#inicio']::before { content: '\f015'; }
+.public-home__desktop-nav a[href='#midias']::before { content: '\f144'; }
+.public-home__desktop-nav a[href='#ocorrencias']::before { content: '\f03a'; }
+
+.public-home__desktop-nav a:hover,
+.public-home__desktop-nav a:focus-visible,
+.public-home__desktop-nav .public-home__nav-active {
+  color: #1265ac;
+}
+
+.public-home__desktop-nav .public-home__nav-active::before {
+  color: #1265ac;
+}
+
+.public-home__desktop-nav .public-home__nav-active::after {
+  height: 3px;
+  background: linear-gradient(90deg, #1477d4, #2e93c9 58%, #6aaf4a);
+}
+
+.public-home__header-actions {
+  gap: 10px;
+}
+
+.public-home__header-actions .ced-button {
+  min-height: 44px;
+  border-radius: 18px;
+}
+
+/* Hero: one real photographic banner. CSS is only responsible for crop and readability fade. */
 .public-home__hero {
+  position: relative;
   min-height: 420px;
-  background: #fff url('./assets/hero-city.svg') center center / cover no-repeat;
+  background-image: url('https://images.unsplash.com/photo-1758465922136-748004d9ecec?auto=format&fit=crop&fm=jpg&q=88&w=2400');
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+}
+
+.public-home__hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255,255,255,.99) 0%, rgba(255,255,255,.96) 25%, rgba(255,255,255,.78) 39%, rgba(255,255,255,.24) 55%, rgba(255,255,255,0) 72%);
 }
 
 .public-home__hero-inner {
+  position: relative;
+  z-index: 2;
   min-height: 420px;
   grid-template-columns: minmax(390px, 560px) 1fr;
 }
@@ -16,7 +112,7 @@
   padding-right: 24px;
 }
 
-/* The hero now uses one real generated banner asset; the previous CSS city/phone composition stays out of rendering. */
+/* Previous CSS city/phone composition stays out of rendering. */
 .public-home__hero-visual {
   display: none !important;
 }
@@ -68,8 +164,22 @@
   font-size: 1.35rem;
 }
 
+/* Keep section glyphs optically and geometrically centered. */
 .public-home__section-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   font-size: 0;
+  line-height: 1;
+}
+
+.public-home__section-icon::before {
+  display: block;
+  width: 1em;
+  height: 1em;
+  line-height: 1;
+  text-align: center;
 }
 
 .public-home__section-icon--media::before {
@@ -113,30 +223,11 @@
   font-size: 1rem;
 }
 
-.public-home__occurrence-thumb--red span::before {
-  content: '\f071';
-  font-size: 2rem;
-}
-
-.public-home__occurrence-thumb--blue span::before {
-  content: '\f0eb';
-  font-size: 2rem;
-}
-
-.public-home__occurrence-thumb--green span::before {
-  content: '\f2ed';
-  font-size: 2rem;
-}
-
-.public-home__occurrence-thumb--orange span::before {
-  content: '\f1b9';
-  font-size: 2rem;
-}
-
-.public-home__occurrence-thumb--purple span::before {
-  content: '\f3ed';
-  font-size: 2rem;
-}
+.public-home__occurrence-thumb--red span::before { content: '\f071'; font-size: 2rem; }
+.public-home__occurrence-thumb--blue span::before { content: '\f0eb'; font-size: 2rem; }
+.public-home__occurrence-thumb--green span::before { content: '\f2ed'; font-size: 2rem; }
+.public-home__occurrence-thumb--orange span::before { content: '\f1b9'; font-size: 2rem; }
+.public-home__occurrence-thumb--purple span::before { content: '\f3ed'; font-size: 2rem; }
 
 .public-home__occurrence-location span::before {
   content: '\f3c5';
@@ -149,33 +240,49 @@
   font-size: .74rem;
 }
 
+/* Footer: favicon mark + institutional copy only, separated across the available width. */
+.public-home__footer-inner {
+  flex-direction: row;
+  justify-content: space-between;
+  text-align: left;
+}
+
+.public-home__footer .ced-brand {
+  width: 34px;
+  min-width: 34px;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.public-home__footer .ced-brand__mark {
+  flex: 0 0 auto;
+}
+
+.public-home__footer .ced-brand__wordmark,
+.public-home__footer-actions {
+  display: none !important;
+}
+
 .public-home__bottom-nav {
   grid-template-columns: repeat(4, 1fr);
 }
 
-.public-home__bottom-nav > :nth-child(1) span::before {
-  content: '\f015';
-  font-size: 1rem;
-}
-
-.public-home__bottom-nav > :nth-child(2) span::before {
-  content: '\f0ae';
-  font-size: 1rem;
-}
-
-.public-home__bottom-nav > :nth-child(3) span::before {
-  content: '\f008';
-  font-size: 1rem;
-}
-
-.public-home__bottom-nav > :nth-child(5) span::before {
-  content: '\f2bd';
-  font-size: 1rem;
-}
+.public-home__bottom-nav > :nth-child(1) span::before { content: '\f015'; font-size: 1rem; }
+.public-home__bottom-nav > :nth-child(2) span::before { content: '\f0ae'; font-size: 1rem; }
+.public-home__bottom-nav > :nth-child(3) span::before { content: '\f008'; font-size: 1rem; }
+.public-home__bottom-nav > :nth-child(5) span::before { content: '\f2bd'; font-size: 1rem; }
 
 @media (max-width: 900px) {
+  .public-home__header-inner {
+    width: min(100% - 34px, 860px);
+  }
+
   .public-home__hero {
-    background-position: left center;
+    background-position: 58% center;
+  }
+
+  .public-home__hero::before {
+    background: linear-gradient(90deg, rgba(255,255,255,.98) 0%, rgba(255,255,255,.92) 52%, rgba(255,255,255,.48) 78%, rgba(255,255,255,.18) 100%);
   }
 
   .public-home__hero-inner {
@@ -193,7 +300,11 @@
 @media (max-width: 720px) {
   .public-home__hero {
     min-height: 460px;
-    background-position: 18% center;
+    background-position: 62% center;
+  }
+
+  .public-home__hero::before {
+    background: rgba(255,255,255,.83);
   }
 
   .public-home__hero-inner,
@@ -208,5 +319,16 @@
   .public-home__hero-line {
     width: 280px;
     max-width: 76%;
+  }
+
+  .public-home__footer-inner {
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 18px;
+    text-align: right;
+  }
+
+  .public-home__footer p {
+    max-width: 270px;
   }
 }
