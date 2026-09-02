@@ -95,6 +95,7 @@ api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapAdminEndpoints();
 api.MapSubaccountEndpoints();
+api.MapInstitutionEndpoints();
 api.MapBillingEndpoints();
 api.MapMercadoPagoWebhookEndpoints();
 api.MapOccurrenceEndpoints();
