@@ -45,6 +45,9 @@ jobs:
       - name: Preview Content migration
         if: github.event_name == 'pull_request'
         shell: bash
+        env:
+          JWT_SIGNING_KEY: ci-only-signing-key-0123456789abcdef0123456789abcdef
+          DATABASE_CONNECTION: Host=localhost;Port=5432;Database=cidademdia_ci;Username=ci;Password=ci
         run: |
           set -euo pipefail
           dotnet tool install --global dotnet-ef --version 10.0.11
