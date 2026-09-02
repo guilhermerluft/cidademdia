@@ -351,19 +351,22 @@ internal sealed class ContentService(
         if (post.Media.Any(x => x.Status != PostMediaStatusKeys.Ready))
             return ContentPostResult.Failure("post_media_not_ready");
 
-        if (post.MasterUserId.HasValue)
-        {
-            var usage = await publicationUsageTracker.TrackAsync(
-                post.MasterUserId.Value,
-                now,
-                cancellationToken);
-
-            if (!usage.Succeeded)
-                return ContentPostResult.Failure(usage.ErrorCode!);
-        }
-
         try
         {
+            if (post.MasterUserId.HasValue)
+            {
+                var usage = await publicationUsageTracker.TrackAsync(
+                    post.MasterUserId.Value,
+                    now,
+                    cancellationToken);
+
+                if (!usage.Succeeded)
+                {
+                    await transaction.RollbackAsync(cancellationToken);
+                    return ContentPostResult.Failure(usage.ErrorCode!);
+                }
+            }
+
             post.Publish(
                 post.Media
                     .Where(x => x.Status == PostMediaStatusKeys.Ready)
