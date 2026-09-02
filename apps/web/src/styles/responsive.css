@@ -168,8 +168,11 @@
   }
 
   .admin-tabs {
-    margin-inline: calc(-1 * var(--ced-space-4));
-    padding-inline: var(--ced-space-4);
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
     scroll-snap-type: x proximity;
     scrollbar-width: none;
   }
