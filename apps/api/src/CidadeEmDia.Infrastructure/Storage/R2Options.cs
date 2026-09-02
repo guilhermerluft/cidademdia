@@ -9,6 +9,7 @@ internal sealed record R2Options(
     string? Bucket,
     long MaxImageBytes,
     long MaxVideoBytes,
+    long MaxAudioBytes,
     TimeSpan UploadUrlLifetime,
     TimeSpan ReadUrlLifetime)
 {
@@ -26,6 +27,7 @@ internal sealed record R2Options(
             configuration["R2_BUCKET"],
             ReadPositiveLong(configuration["OCCURRENCE_MEDIA_MAX_IMAGE_BYTES"], 10L * 1024 * 1024),
             ReadPositiveLong(configuration["OCCURRENCE_MEDIA_MAX_VIDEO_BYTES"], 100L * 1024 * 1024),
+            ReadPositiveLong(configuration["CHAT_AUDIO_MAX_BYTES"], 20L * 1024 * 1024),
             TimeSpan.FromMinutes(ReadPositiveInt(configuration["R2_UPLOAD_URL_MINUTES"], 10)),
             TimeSpan.FromMinutes(ReadPositiveInt(configuration["R2_READ_URL_MINUTES"], 5)));
 
