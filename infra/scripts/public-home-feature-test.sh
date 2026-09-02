@@ -96,7 +96,13 @@ docker exec "$WEB_ID" sh -lc 'grep -R -q "geolocation" /usr/share/nginx/html/ass
   || fail "geolocalização pública ausente do bundle"
 docker exec "$WEB_ID" sh -lc 'grep -R -q "platform" /usr/share/nginx/html/assets' \
   || fail "escopo de mídia institucional ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'grep -R -q "Font Awesome 6 Free" /usr/share/nginx/html/assets' \
+  || fail "Font Awesome Free ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'find /usr/share/nginx/html/assets -type f | grep -q "hero-city"' \
+  || fail "banner real do hero ausente dos assets"
 echo "home_bundle=OK"
+echo "font_awesome_bundle=OK"
+echo "hero_banner_asset=OK"
 
 echo
 echo "=== 4. MÍDIA INSTITUCIONAL ==="
@@ -206,14 +212,45 @@ async function validate(viewport, screenshot, mobile) {
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
   await page.locator('.public-home__hero').waitFor({ state: 'visible' });
-  await page.locator('.public-home__phone').waitFor({ state: 'visible' });
   await page.locator('#midias h2').waitFor({ state: 'visible' });
   await page.locator('#ocorrencias h2').waitFor({ state: 'visible' });
+  await page.getByText('Conheça os planos', { exact: true }).waitFor({ state: 'visible' });
+  await page.getByText('Como funciona', { exact: true }).first().waitFor({ state: 'visible' });
 
   const title = await page.locator('#public-home-title').innerText();
   if (!title.includes('Uma cidade melhor') || !title.includes('pode resolver')) {
     throw new Error('hero copy inesperada');
   }
+
+  const heroState = await page.locator('.public-home__hero').evaluate((element) => {
+    const style = getComputedStyle(element);
+    const line = document.querySelector('.public-home__hero-line');
+    const lineStyle = line ? getComputedStyle(line) : null;
+    const icon = document.querySelector('.public-home__section-icon--media');
+    const iconStyle = icon ? getComputedStyle(icon, '::before') : null;
+    return {
+      backgroundImage: style.backgroundImage,
+      lineBackground: lineStyle?.backgroundImage ?? '',
+      iconFont: iconStyle?.fontFamily ?? '',
+    };
+  });
+
+  if (!heroState.backgroundImage || heroState.backgroundImage === 'none' || !heroState.backgroundImage.includes('url(')) {
+    throw new Error('banner real do hero não foi aplicado');
+  }
+  if (!heroState.lineBackground.includes('linear-gradient') || !heroState.lineBackground.includes('rgb(23, 165, 60)')) {
+    throw new Error(`gradiente azul-verde-amarelo ausente: ${heroState.lineBackground}`);
+  }
+  if (!heroState.iconFont.toLowerCase().includes('font awesome')) {
+    throw new Error(`Font Awesome não aplicado: ${heroState.iconFont}`);
+  }
+
+  const legacyVisualVisible = await page.locator('.public-home__hero-visual').isVisible();
+  if (legacyVisualVisible) throw new Error('composição CSS antiga do hero ainda está visível');
+
+  const plansVisible = await page.locator('.public-home__plans').isVisible();
+  const howVisible = await page.locator('.public-home__how').isVisible();
+  if (plansVisible || howVisible) throw new Error('Planos/Como funciona ainda aparecem como seções da home');
 
   const dims = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
@@ -223,12 +260,14 @@ async function validate(viewport, screenshot, mobile) {
     throw new Error(`overflow horizontal: ${dims.scrollWidth}/${dims.viewport}`);
   }
 
-  const heroVisible = await page.locator('.public-home__hero').isVisible();
-  if (!heroVisible) throw new Error('hero público não visível');
-
   const bottomNavVisible = await page.locator('.public-home__bottom-nav').isVisible();
   if (mobile && !bottomNavVisible) throw new Error('bottom nav mobile ausente');
   if (!mobile && bottomNavVisible) throw new Error('bottom nav apareceu no desktop');
+
+  if (mobile) {
+    const visibleBottomItems = await page.locator('.public-home__bottom-nav > *:visible').count();
+    if (visibleBottomItems !== 4) throw new Error(`bottom nav mobile deveria ter 4 itens visíveis, recebeu ${visibleBottomItems}`);
+  }
 
   if (errors.length) throw new Error(`pageerror: ${errors.join(' | ')}`);
   await page.screenshot({ path: `/work/${screenshot}`, fullPage: true });
@@ -240,6 +279,11 @@ try {
   console.log('home_desktop=OK');
   await validate({ width: 390, height: 844 }, 'home-mobile.png', true);
   console.log('home_mobile=OK');
+  console.log('hero_real_banner=OK');
+  console.log('hero_gradient=OK');
+  console.log('font_awesome=OK');
+  console.log('home_plans_hidden=OK');
+  console.log('home_how_it_works_hidden=OK');
 } finally {
   await browser.close();
 }
@@ -280,6 +324,12 @@ echo "PUBLIC OCCURRENCES: OK"
 echo "PUBLIC DATA SANITIZED: OK"
 echo "LOCATION FALLBACK: SÃO PAULO"
 echo "GEO RADIUS: 25 KM"
+echo "REAL HERO BANNER: OK"
+echo "HERO GRADIENT: OK"
+echo "FONT AWESOME FREE: OK"
+echo "PLANS SECTION ON HOME: HIDDEN"
+echo "HOW IT WORKS SECTION ON HOME: HIDDEN"
+echo "HERO CTAS: VISIBLE"
 echo "DESKTOP: OK"
 echo "MOBILE: OK"
 echo "WEB: 200"
