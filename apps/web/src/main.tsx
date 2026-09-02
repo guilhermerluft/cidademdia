@@ -16,6 +16,7 @@ import './styles/institutions.css';
 import './styles/chat.css';
 import './modules/home/home.css';
 import './styles/responsive.css';
+import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
 
 const queryClient = new QueryClient();
