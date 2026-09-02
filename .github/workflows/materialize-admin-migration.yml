@@ -44,6 +44,9 @@ jobs:
 
       - name: Generate migration
         if: steps.migration.outputs.exists == 'false'
+        env:
+          JWT_SIGNING_KEY: admin-migration-design-time-key-2026-only
+          DATABASE_CONNECTION: Host=localhost;Port=5432;Database=cidademdia_design;Username=postgres;Password=postgres
         run: |
           dotnet ef migrations add AddAdminAuditLogs \
             --project apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj \
