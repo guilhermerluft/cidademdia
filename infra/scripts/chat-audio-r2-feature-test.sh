@@ -324,7 +324,7 @@ echo "jwt=OK"
 
 echo
 echo "=== 6. FIXTURE OCORRÊNCIA / TARGET / CHAT ==="
-CATEGORY_ID="$(dbq "SELECT id FROM occurrence_categories WHERE status = 'Active' ORDER BY display_order, name LIMIT 1;")"
+CATEGORY_ID="$(dbq "SELECT id FROM occurrence_categories WHERE status = 'ACTIVE' ORDER BY display_order, name LIMIT 1;")"
 test -n "$CATEGORY_ID" || fail "categoria ativa não encontrada"
 
 OCC_BODY="$TMP_DIR/occurrence.json"
