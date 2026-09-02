@@ -3,6 +3,7 @@ import type {
   CreateOccurrencePayload,
   OccurrenceCategory,
   OccurrenceDetails,
+  OccurrenceGeoFilters,
   OccurrenceMediaItem,
   OccurrenceMediaUpload,
   OccurrencePage,
@@ -16,6 +17,21 @@ export async function listOccurrenceCategories() {
 export async function listMyOccurrences(page = 1, pageSize = 10) {
   const { data } = await api.get<OccurrencePage>('/occurrences', {
     params: { page, pageSize },
+  });
+  return data;
+}
+
+export async function searchMyOccurrences(
+  filters: OccurrenceGeoFilters,
+  page = 1,
+  pageSize = 10,
+) {
+  const { data } = await api.get<OccurrencePage>('/occurrences/geo-search', {
+    params: {
+      ...filters,
+      page,
+      pageSize,
+    },
   });
   return data;
 }
