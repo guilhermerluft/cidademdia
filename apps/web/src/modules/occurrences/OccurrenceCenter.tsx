@@ -8,6 +8,8 @@ import {
   listOccurrenceCategories,
   prepareOccurrenceMedia,
 } from './occurrenceService';
+import { OccurrenceGeoFilter } from './OccurrenceGeoFilter';
+import { OccurrenceLocationPicker } from './OccurrenceLocationPicker';
 import type { OccurrenceCategory, OccurrencePage } from './types';
 
 const ACCEPTED_MEDIA_TYPES = 'image/jpeg,image/png,image/webp,video/mp4,video/webm';
@@ -106,6 +108,9 @@ function getErrorMessage(error: unknown) {
         return 'Não foi possível vincular as mídias à ocorrência. Tente novamente.';
       case 'invalid_media_selection':
         return data.detail ?? 'A seleção de mídias é inválida.';
+      case 'invalid_geo_filter':
+      case 'invalid_city':
+        return data.detail ?? 'Os filtros geográficos informados são inválidos.';
       default:
         if (data?.detail) return data.detail;
     }
@@ -130,7 +135,6 @@ export function OccurrenceCenter() {
   const [fileInputKey, setFileInputKey] = useState(0);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [locating, setLocating] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -154,6 +158,11 @@ export function OccurrenceCenter() {
     }));
   }
 
+  async function reloadOccurrenceList() {
+    const nextOccurrences = await listMyOccurrences(1, 10);
+    setOccurrences(nextOccurrences);
+  }
+
   useEffect(() => {
     let active = true;
     setLoading(true);
@@ -173,33 +182,6 @@ export function OccurrenceCenter() {
 
   function updateField<K extends keyof OccurrenceFormState>(field: K, value: OccurrenceFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
-  }
-
-  function useCurrentLocation() {
-    setError(null);
-
-    if (!navigator.geolocation) {
-      setError('Este navegador não disponibiliza geolocalização. Informe latitude e longitude manualmente.');
-      return;
-    }
-
-    setLocating(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        updateField('latitude', position.coords.latitude.toFixed(6));
-        updateField('longitude', position.coords.longitude.toFixed(6));
-        setLocating(false);
-      },
-      () => {
-        setError('Não foi possível obter sua localização. Autorize o navegador ou informe as coordenadas manualmente.');
-        setLocating(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10_000,
-        maximumAge: 30_000,
-      },
-    );
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -316,70 +298,18 @@ export function OccurrenceCenter() {
                 />
               </label>
 
-              <label className="occurrence-form__full">
-                Endereço
-                <input
-                  required
-                  value={form.addressText}
-                  onChange={(event) => updateField('addressText', event.target.value)}
-                  placeholder="Rua, número, bairro e cidade"
-                />
-              </label>
-
-              <label>
-                CEP
-                <input
-                  value={form.postalCode}
-                  onChange={(event) => updateField('postalCode', event.target.value)}
-                  inputMode="numeric"
-                  placeholder="00000-000"
-                />
-              </label>
-
-              <label>
-                UF
-                <input
-                  value={form.stateCode}
-                  onChange={(event) => updateField('stateCode', event.target.value.slice(0, 2).toUpperCase())}
-                  maxLength={2}
-                  placeholder="RS"
-                />
-              </label>
-
-              <div className="occurrence-location occurrence-form__full">
-                <div className="occurrence-location__header">
-                  <div>
-                    <span>Localização</span>
-                    <small>Enquanto o mapa não está ativo, use a localização do dispositivo ou informe as coordenadas.</small>
-                  </div>
-                  <Button type="button" variant="soft" size="sm" onClick={useCurrentLocation} disabled={locating || submitting}>
-                    {locating ? 'Obtendo...' : 'Usar minha localização'}
-                  </Button>
-                </div>
-
-                <div className="occurrence-location__fields">
-                  <label>
-                    Latitude
-                    <input
-                      required
-                      inputMode="decimal"
-                      value={form.latitude}
-                      onChange={(event) => updateField('latitude', event.target.value)}
-                      placeholder="-30.034600"
-                    />
-                  </label>
-                  <label>
-                    Longitude
-                    <input
-                      required
-                      inputMode="decimal"
-                      value={form.longitude}
-                      onChange={(event) => updateField('longitude', event.target.value)}
-                      placeholder="-51.217700"
-                    />
-                  </label>
-                </div>
-              </div>
+              <OccurrenceLocationPicker
+                value={{
+                  addressText: form.addressText,
+                  postalCode: form.postalCode,
+                  stateCode: form.stateCode,
+                  latitude: form.latitude,
+                  longitude: form.longitude,
+                }}
+                disabled={submitting}
+                onChange={(field, value) => updateField(field, value)}
+                onError={setError}
+              />
 
               <label>
                 Protocolo externo
@@ -460,10 +390,17 @@ export function OccurrenceCenter() {
               </Button>
             </div>
 
+            <OccurrenceGeoFilter
+              disabled={loading}
+              onResults={setOccurrences}
+              onReset={reloadOccurrenceList}
+              onError={setError}
+            />
+
             {loading ? <p className="occurrence-empty" role="status">Carregando ocorrências...</p> : null}
 
             {!loading && occurrences?.items.length === 0 ? (
-              <p className="occurrence-empty">Você ainda não publicou nenhuma ocorrência.</p>
+              <p className="occurrence-empty">Nenhuma ocorrência encontrada para os filtros informados.</p>
             ) : null}
 
             {!loading && occurrences && occurrences.items.length > 0 ? (
