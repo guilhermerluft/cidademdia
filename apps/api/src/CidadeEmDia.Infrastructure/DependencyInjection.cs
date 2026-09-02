@@ -76,6 +76,7 @@ public static class DependencyInjection
         services.AddScoped<IMasterSubaccountService, MasterSubaccountService>();
         services.AddScoped<ISubaccountAccessStateService, SubaccountAccessStateService>();
         services.AddScoped<IOccurrenceService, OccurrenceService>();
+        services.AddScoped<IOccurrenceGeoSearchService, OccurrenceGeoSearchService>();
         services.AddScoped<IOccurrenceCreationService, OccurrenceCreationService>();
         services.AddScoped<IOccurrenceTargetDecisionService, OccurrenceTargetDecisionService>();
         services.AddScoped<IOccurrenceLifecycleService, OccurrenceLifecycleService>();
