@@ -27,8 +27,57 @@ declare global {
 
 const DEFAULT_CENTER = { lat: -30.0346, lng: -51.2177 };
 
+function installGoogleMapsBootstrap(apiKey: string) {
+  const win = window as any;
+  const google = win.google ?? (win.google = {});
+  const maps = google.maps ?? (google.maps = {});
+
+  if (typeof maps.importLibrary === 'function') return;
+
+  let loadPromise: Promise<void> | undefined;
+  const requestedLibraries = new Set<string>();
+  const callbackName = '__cidademdiaGoogleMapsInit';
+
+  const load = () => {
+    if (loadPromise) return loadPromise;
+
+    loadPromise = new Promise<void>((resolve, reject) => {
+      const params = new URLSearchParams();
+      params.set('libraries', [...requestedLibraries].join(','));
+      params.set('key', apiKey);
+      params.set('v', 'weekly');
+      params.set('loading', 'async');
+      params.set('language', 'pt-BR');
+      params.set('region', 'BR');
+      params.set('callback', `google.maps.${callbackName}`);
+
+      maps[callbackName] = resolve;
+
+      const script = document.createElement('script');
+      script.dataset.cidademdiaGoogleMaps = 'true';
+      script.async = true;
+      script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
+      script.onerror = () => {
+        loadPromise = undefined;
+        reject(new Error('Falha ao carregar Google Maps.'));
+      };
+      script.nonce = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce ?? '';
+      document.head.appendChild(script);
+    });
+
+    return loadPromise;
+  };
+
+  maps.importLibrary = (libraryName: string, ...args: any[]) => {
+    requestedLibraries.add(libraryName);
+    return load().then(() => maps.importLibrary(libraryName, ...args));
+  };
+}
+
 function loadGoogleMaps() {
-  if (window.google?.maps) return Promise.resolve(window.google);
+  if (window.google?.maps?.importLibrary && window.google?.maps?.Map) {
+    return Promise.resolve(window.google);
+  }
   if (window.__cidademdiaGoogleMapsPromise) return window.__cidademdiaGoogleMapsPromise;
 
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
@@ -36,30 +85,18 @@ function loadGoogleMaps() {
     return Promise.reject(new Error('Google Maps não está configurado para o navegador.'));
   }
 
-  window.__cidademdiaGoogleMapsPromise = new Promise((resolve, reject) => {
-    const existing = document.querySelector<HTMLScriptElement>('script[data-cidademdia-google-maps]');
-    if (existing) {
-      if (window.google?.maps) {
-        resolve(window.google);
-        return;
-      }
+  installGoogleMapsBootstrap(apiKey);
 
-      existing.addEventListener('load', () => resolve(window.google), { once: true });
-      existing.addEventListener('error', () => reject(new Error('Falha ao carregar Google Maps.')), { once: true });
-      return;
+  window.__cidademdiaGoogleMapsPromise = Promise.all([
+    window.google!.maps.importLibrary('maps'),
+    window.google!.maps.importLibrary('places'),
+    window.google!.maps.importLibrary('geocoding'),
+  ]).then(() => {
+    if (!window.google?.maps?.Map || !window.google?.maps?.Geocoder) {
+      throw new Error('Google Maps não inicializou corretamente.');
     }
 
-    const script = document.createElement('script');
-    script.dataset.cidademdiaGoogleMaps = 'true';
-    script.async = true;
-    script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&loading=async&libraries=places&language=pt-BR&region=BR&v=weekly`;
-    script.onload = () => {
-      if (window.google?.maps) resolve(window.google);
-      else reject(new Error('Google Maps não inicializou corretamente.'));
-    };
-    script.onerror = () => reject(new Error('Falha ao carregar Google Maps.'));
-    document.head.appendChild(script);
+    return window.google;
   });
 
   return window.__cidademdiaGoogleMapsPromise;
