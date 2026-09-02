@@ -2,11 +2,14 @@ import axios from 'axios';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { HubConnection } from '@microsoft/signalr';
 import {
+  confirmChatAudioMessage,
   createChatConnection,
   getConversationByTarget,
   getMessages,
   joinConversation,
+  requestChatAudioUpload,
   sendMessageRealtime,
+  uploadChatAudioFile,
 } from './chatService';
 import type {
   ChatConnectionState,
@@ -47,6 +50,7 @@ export interface UseChatConversationResult {
   state: ChatConnectionState;
   error: string | null;
   sendText: (content: string) => Promise<ChatMessage>;
+  sendAudio: (file: File) => Promise<ChatMessage>;
   resync: () => Promise<void>;
 }
 
@@ -234,12 +238,39 @@ export function useChatConversation(
     return message;
   }, []);
 
+  const sendAudio = useCallback(async (file: File) => {
+    const currentConversation = conversationRef.current;
+    if (!currentConversation) {
+      throw new Error('Chat conversation is not available.');
+    }
+    if (!file || file.size <= 0) {
+      throw new Error('Selecione ou grave um áudio válido.');
+    }
+
+    const clientMessageId = crypto.randomUUID();
+    const upload = await requestChatAudioUpload(currentConversation.id, file);
+    await uploadChatAudioFile(upload, file);
+    const message = await confirmChatAudioMessage(
+      currentConversation.id,
+      upload,
+      file,
+      clientMessageId,
+    );
+
+    if (conversationRef.current?.id === currentConversation.id) {
+      setMessages((current) => mergeMessages(current, message));
+    }
+
+    return message;
+  }, []);
+
   return {
     conversation,
     messages,
     state,
     error,
     sendText,
+    sendAudio,
     resync,
   };
 }
