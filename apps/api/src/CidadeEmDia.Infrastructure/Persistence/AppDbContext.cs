@@ -1,3 +1,4 @@
+using CidadeEmDia.Domain.Administration;
 using CidadeEmDia.Domain.Billing;
 using CidadeEmDia.Domain.Chat;
 using CidadeEmDia.Domain.Content;
@@ -10,6 +11,7 @@ namespace CidadeEmDia.Infrastructure.Persistence;
 
 public sealed class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 {
+    public DbSet<AdminAuditLog> AdminAuditLogs => Set<AdminAuditLog>();
     public DbSet<User> Users => Set<User>();
     public DbSet<UserProfile> UserProfiles => Set<UserProfile>();
     public DbSet<Role> Roles => Set<Role>();
