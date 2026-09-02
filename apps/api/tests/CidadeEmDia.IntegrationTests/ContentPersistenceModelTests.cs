@@ -82,6 +82,76 @@ public sealed class ContentPersistenceModelTests
         Assert.Equal(DeleteBehavior.Cascade, placementPost.DeleteBehavior);
     }
 
+    [Fact]
+    public void Feed_cursor_query_is_translatable_by_npgsql()
+    {
+        using var context = CreateContext();
+
+        const string placementKey = PostPlacementKeys.Feed;
+        const int cursorPriority = 10;
+        const int cursorDisplayOrder = 2;
+        var cursorPublishedAt = new DateTimeOffset(2026, 9, 2, 1, 0, 0, TimeSpan.Zero);
+        var cursorPostId = Guid.Parse("f66e2833-5148-4f38-9e1a-e6abc449847f");
+
+        var query = context.Posts
+            .AsNoTracking()
+            .Where(post =>
+                post.Status == PostStatusKeys.Published &&
+                post.PublishedAt != null &&
+                post.Placements.Any(p => p.PlacementKey == placementKey))
+            .Where(post =>
+                post.Placements
+                    .Where(p => p.PlacementKey == placementKey)
+                    .Select(p => p.Priority)
+                    .First() < cursorPriority
+                || (post.Placements
+                        .Where(p => p.PlacementKey == placementKey)
+                        .Select(p => p.Priority)
+                        .First() == cursorPriority
+                    && post.Placements
+                        .Where(p => p.PlacementKey == placementKey)
+                        .Select(p => p.DisplayOrder)
+                        .First() > cursorDisplayOrder)
+                || (post.Placements
+                        .Where(p => p.PlacementKey == placementKey)
+                        .Select(p => p.Priority)
+                        .First() == cursorPriority
+                    && post.Placements
+                        .Where(p => p.PlacementKey == placementKey)
+                        .Select(p => p.DisplayOrder)
+                        .First() == cursorDisplayOrder
+                    && post.PublishedAt < cursorPublishedAt)
+                || (post.Placements
+                        .Where(p => p.PlacementKey == placementKey)
+                        .Select(p => p.Priority)
+                        .First() == cursorPriority
+                    && post.Placements
+                        .Where(p => p.PlacementKey == placementKey)
+                        .Select(p => p.DisplayOrder)
+                        .First() == cursorDisplayOrder
+                    && post.PublishedAt == cursorPublishedAt
+                    && post.Id.CompareTo(cursorPostId) < 0))
+            .OrderByDescending(post =>
+                post.Placements
+                    .Where(p => p.PlacementKey == placementKey)
+                    .Select(p => p.Priority)
+                    .First())
+            .ThenBy(post =>
+                post.Placements
+                    .Where(p => p.PlacementKey == placementKey)
+                    .Select(p => p.DisplayOrder)
+                    .First())
+            .ThenByDescending(post => post.PublishedAt)
+            .ThenByDescending(post => post.Id)
+            .Take(21);
+
+        var sql = query.ToQueryString();
+
+        Assert.Contains("post_placements", sql);
+        Assert.Contains("ORDER BY", sql);
+        Assert.Contains("LIMIT", sql);
+    }
+
     private static bool HasProperties(
         Microsoft.EntityFrameworkCore.Metadata.IReadOnlyIndex index,
         params string[] propertyNames) =>
