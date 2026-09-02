@@ -1,0 +1,212 @@
+/* Final public-home visual refinement requested before MVP regression. */
+
+.public-home__hero {
+  min-height: 420px;
+  background: #fff url('./assets/hero-city.svg') center center / cover no-repeat;
+}
+
+.public-home__hero-inner {
+  min-height: 420px;
+  grid-template-columns: minmax(390px, 560px) 1fr;
+}
+
+.public-home__hero-copy {
+  max-width: 540px;
+  min-height: 420px;
+  padding-right: 24px;
+}
+
+/* The hero now uses one real generated banner asset; the previous CSS city/phone composition stays out of rendering. */
+.public-home__hero-visual {
+  display: none !important;
+}
+
+.public-home__hero-line {
+  background: linear-gradient(90deg, #075ff0 0%, #17a53c 52%, #f2c51c 100%);
+}
+
+/* Plans and How it works will live on dedicated pages. Keep only their hero CTAs for now. */
+.public-home__plans,
+.public-home__how,
+.public-home__desktop-nav a[href='#planos'],
+.public-home__desktop-nav a[href='#como-funciona'],
+.public-home__bottom-nav a[href='#planos'] {
+  display: none !important;
+}
+
+/* Font Awesome Free — use the library font instead of ad-hoc unicode glyphs. */
+.public-home__hero-actions .ced-button:first-child::before,
+.public-home__cta-play::before,
+.public-home__section-icon::before,
+.public-home__play span::before,
+.public-home__see-all span::before,
+.public-home__carousel-arrow::before,
+.public-home__occurrence-thumb span::before,
+.public-home__occurrence-location span::before,
+.public-home__occurrence-time > span::before,
+.public-home__bottom-nav span::before {
+  font-family: 'Font Awesome 6 Free';
+  font-style: normal;
+  font-weight: 900;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+.public-home__hero-actions .ced-button:first-child::before {
+  content: '\f19c';
+  margin-right: 9px;
+  font-size: .98rem;
+}
+
+.public-home__cta-play {
+  border: 0;
+  font-size: 0;
+}
+
+.public-home__cta-play::before {
+  content: '\f144';
+  font-size: 1.35rem;
+}
+
+.public-home__section-icon {
+  font-size: 0;
+}
+
+.public-home__section-icon--media::before {
+  content: '\f008';
+  font-size: 1.15rem;
+}
+
+.public-home__section-icon--occurrence::before {
+  content: '\f0ae';
+  font-size: 1.15rem;
+}
+
+.public-home__play span,
+.public-home__see-all span,
+.public-home__carousel-arrow,
+.public-home__occurrence-thumb span,
+.public-home__occurrence-location span,
+.public-home__occurrence-time > span,
+.public-home__bottom-nav span {
+  font-size: 0;
+}
+
+.public-home__play span::before {
+  content: '\f04b';
+  padding-left: 2px;
+  font-size: 1rem;
+}
+
+.public-home__see-all span::before {
+  content: '\f054';
+  font-size: .75rem;
+}
+
+.public-home__carousel-arrow--left::before {
+  content: '\f053';
+  font-size: 1rem;
+}
+
+.public-home__carousel-arrow--right::before {
+  content: '\f054';
+  font-size: 1rem;
+}
+
+.public-home__occurrence-thumb--red span::before {
+  content: '\f071';
+  font-size: 2rem;
+}
+
+.public-home__occurrence-thumb--blue span::before {
+  content: '\f0eb';
+  font-size: 2rem;
+}
+
+.public-home__occurrence-thumb--green span::before {
+  content: '\f2ed';
+  font-size: 2rem;
+}
+
+.public-home__occurrence-thumb--orange span::before {
+  content: '\f1b9';
+  font-size: 2rem;
+}
+
+.public-home__occurrence-thumb--purple span::before {
+  content: '\f3ed';
+  font-size: 2rem;
+}
+
+.public-home__occurrence-location span::before {
+  content: '\f3c5';
+  font-size: .7rem;
+}
+
+.public-home__occurrence-time > span::before {
+  content: '\f017';
+  margin-right: 4px;
+  font-size: .74rem;
+}
+
+.public-home__bottom-nav {
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.public-home__bottom-nav > :nth-child(1) span::before {
+  content: '\f015';
+  font-size: 1rem;
+}
+
+.public-home__bottom-nav > :nth-child(2) span::before {
+  content: '\f0ae';
+  font-size: 1rem;
+}
+
+.public-home__bottom-nav > :nth-child(3) span::before {
+  content: '\f008';
+  font-size: 1rem;
+}
+
+.public-home__bottom-nav > :nth-child(5) span::before {
+  content: '\f2bd';
+  font-size: 1rem;
+}
+
+@media (max-width: 900px) {
+  .public-home__hero {
+    background-position: left center;
+  }
+
+  .public-home__hero-inner {
+    min-height: 430px;
+    grid-template-columns: 1fr;
+  }
+
+  .public-home__hero-copy {
+    min-height: 430px;
+    max-width: 620px;
+    padding: 38px 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .public-home__hero {
+    min-height: 460px;
+    background-position: 18% center;
+  }
+
+  .public-home__hero-inner,
+  .public-home__hero-copy {
+    min-height: 460px;
+  }
+
+  .public-home__hero-copy {
+    padding-inline: 8px;
+  }
+
+  .public-home__hero-line {
+    width: 280px;
+    max-width: 76%;
+  }
+}
