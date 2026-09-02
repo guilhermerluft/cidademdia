@@ -214,9 +214,14 @@ async function validate(viewport, screenshot, mobile) {
   await page.locator('.public-home__hero').waitFor({ state: 'visible' });
   await page.locator('#midias h2').waitFor({ state: 'visible' });
   await page.locator('#ocorrencias h2').waitFor({ state: 'visible' });
+
   const heroActions = page.locator('.public-home__hero-actions');
-  await heroActions.getByRole('button', { name: 'Conheça os planos', exact: true }).waitFor({ state: 'visible' });
-  await heroActions.getByRole('button', { name: 'Como funciona', exact: true }).waitFor({ state: 'visible' });
+  const plansCta = heroActions.locator('button.ced-button').filter({ hasText: 'Conheça os planos' }).first();
+  const howCta = heroActions.locator('button.public-home__outline-cta').filter({ hasText: 'Como funciona' }).first();
+  await plansCta.waitFor({ state: 'visible' });
+  await howCta.waitFor({ state: 'visible' });
+  if (!(await plansCta.innerText()).includes('Conheça os planos')) throw new Error('CTA Conheça os planos ausente');
+  if (!(await howCta.innerText()).includes('Como funciona')) throw new Error('CTA Como funciona ausente');
 
   const title = await page.locator('#public-home-title').innerText();
   if (!title.includes('Uma cidade melhor') || !title.includes('pode resolver')) {
