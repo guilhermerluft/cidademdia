@@ -1,0 +1,306 @@
+/* Cross-module responsive hardening. Keep this file imported last. */
+.dashboard-home,
+.dashboard-section,
+.master-team,
+.occurrence-center,
+.assignment-panel,
+.posts-panel,
+.post-feed,
+.institution-directory,
+.admin-panel,
+.chat-panel {
+  min-width: 0;
+}
+
+.dashboard-home *,
+.master-team *,
+.occurrence-center *,
+.assignment-panel *,
+.posts-panel *,
+.post-feed *,
+.institution-directory *,
+.admin-panel *,
+.chat-panel * {
+  min-width: 0;
+}
+
+.dashboard-summary-card strong,
+.dashboard-summary-card small,
+.assignment-card__main h3,
+.assignment-card__main p,
+.subaccount-member__identity strong,
+.subaccount-member__identity span,
+.posts-list__item h4,
+.posts-list__item p,
+.post-feed__card h3,
+.post-feed__body,
+.institution-directory__card h3,
+.institution-directory__description,
+.institution-directory__representative strong,
+.institution-directory__representative span,
+.admin-row__main strong,
+.admin-row__main span,
+.admin-row__meta,
+.admin-plan span,
+.admin-plan small {
+  overflow-wrap: anywhere;
+}
+
+.posts-list__media img,
+.posts-list__media video,
+.post-feed__media img,
+.post-feed__media video {
+  max-width: 100%;
+}
+
+.admin-tabs,
+.posts-placement-options,
+.subaccount-member__permissions {
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 799px) {
+  .admin-status-form {
+    bottom: calc(var(--ced-bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 0.75rem);
+  }
+
+  .dashboard-section,
+  .assignment-panel,
+  .master-team,
+  .occurrence-center,
+  .posts-panel,
+  .post-feed,
+  .institution-directory,
+  .admin-panel {
+    scroll-margin-top: 84px;
+  }
+}
+
+@media (max-width: 639px) {
+  .ced-card__header,
+  .ced-card__body,
+  .ced-card__footer {
+    padding-inline: var(--ced-space-4);
+  }
+
+  .ced-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .ced-section-heading > *,
+  .ced-section-heading__copy {
+    width: 100%;
+  }
+
+  .dashboard-action-card .ced-card__body {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .dashboard-action-card__arrow {
+    display: none;
+  }
+
+  .occurrence-file-list li {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .occurrence-file-list span {
+    width: 100%;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .occurrence-file-list small {
+    align-self: flex-start;
+  }
+
+  .assignment-card__main > div:first-child,
+  .subaccount-member__identity,
+  .posts-list__item,
+  .post-feed__card,
+  .institution-directory__representative > div,
+  .admin-row__main > div:first-child {
+    width: 100%;
+  }
+
+  .assignment-card > .ced-card__body > .ced-button,
+  .assignment-card button,
+  .posts-list__actions .ced-button,
+  .admin-row__actions .ced-button,
+  .admin-status-form__actions .ced-button {
+    width: 100%;
+  }
+
+  .posts-list__actions,
+  .admin-row__actions,
+  .admin-status-form__actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .posts-placement-options {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .posts-placement-option {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .institution-directory__filter-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .institution-directory__filter-actions button {
+    width: 100%;
+  }
+
+  .institution-directory__pagination {
+    width: 100%;
+  }
+
+  .institution-directory__pagination button {
+    flex: 1 1 120px;
+  }
+
+  .admin-tabs {
+    width: 100%;
+    max-width: 100%;
+    margin-inline: 0;
+    padding-inline: 0;
+    scroll-padding-inline: 0;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .admin-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .admin-tab {
+    scroll-snap-align: start;
+  }
+
+  .admin-status-form {
+    margin-inline: calc(-1 * var(--ced-space-1));
+    padding: 0.9rem;
+  }
+
+  .admin-row__meta {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .admin-readonly-notice {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 430px) {
+  .dashboard-header__inner,
+  .dashboard-main,
+  .ced-container {
+    padding-inline: max(0.8rem, env(safe-area-inset-left, 0px));
+  }
+
+  .dashboard-header__inner {
+    padding-right: max(0.8rem, env(safe-area-inset-right, 0px));
+  }
+
+  .dashboard-bottom-nav {
+    padding-inline: max(0.25rem, env(safe-area-inset-left, 0px));
+  }
+
+  .dashboard-bottom-nav__item {
+    font-size: 0.59rem;
+  }
+
+  .dashboard-bottom-nav__item svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .dashboard-hero,
+  .dashboard-profile-section,
+  .ced-card,
+  .occurrence-location,
+  .posts-placement-fieldset,
+  .subaccount-member,
+  .institution-directory__filters,
+  .admin-status-form {
+    border-radius: var(--ced-radius-md);
+  }
+
+  .dashboard-hero {
+    padding: 1.15rem;
+  }
+
+  .dashboard-hero h1 {
+    max-width: none;
+  }
+
+  .subaccount-state {
+    min-height: 210px;
+    padding: var(--ced-space-5);
+  }
+
+  .subaccount-member__summary {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .subaccount-member__identity strong,
+  .subaccount-member__identity span {
+    white-space: normal;
+  }
+
+  .posts-list__media img,
+  .posts-list__media video,
+  .post-feed__media img,
+  .post-feed__media video {
+    max-height: 320px;
+  }
+
+  .admin-overview__card strong {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .ced-card__header,
+  .ced-card__body,
+  .ced-card__footer {
+    padding-inline: 0.85rem;
+  }
+
+  .dashboard-header__brand .ced-brand__wordmark,
+  .ced-brand__wordmark {
+    font-size: 1.12rem;
+  }
+
+  .dashboard-account__avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .dashboard-bottom-nav__item {
+    font-size: 0.55rem;
+  }
+
+  .dashboard-hero h1 {
+    font-size: 1.9rem;
+  }
+
+  .dashboard-hero__welcome,
+  .dashboard-summary-card__label {
+    font-size: 0.7rem;
+  }
+
+  .admin-tab {
+    padding-inline: 0.75rem;
+  }
+}
