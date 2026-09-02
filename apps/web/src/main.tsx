@@ -9,6 +9,7 @@ import './styles/dashboard.css';
 import './styles/subaccounts.css';
 import './styles/occurrences.css';
 import './styles/assignments.css';
+import './styles/posts.css';
 
 const queryClient = new QueryClient();
 
