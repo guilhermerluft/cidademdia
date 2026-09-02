@@ -8,6 +8,7 @@ using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Infrastructure.Persistence;
 using CidadeEmDia.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace CidadeEmDia.Infrastructure.Content;
 
@@ -379,6 +380,13 @@ internal sealed class ContentService(
             return ContentPostResult.Failure(exception.Message, exception.Message);
         }
         catch (DbUpdateException)
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            return ContentPostResult.Failure("content_concurrency_conflict");
+        }
+        catch (PostgresException exception)
+            when (exception.SqlState is PostgresErrorCodes.SerializationFailure
+                or PostgresErrorCodes.UniqueViolation)
         {
             await transaction.RollbackAsync(cancellationToken);
             return ContentPostResult.Failure("content_concurrency_conflict");
