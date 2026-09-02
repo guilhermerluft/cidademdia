@@ -173,14 +173,15 @@ docker exec "$WEB_ID" sh -lc \
   || fail "loader Maps ausente do bundle"
 
 docker exec "$WEB_ID" sh -lc \
-  'grep -R -q "occurrence-map-picker" /usr/share/nginx/html/assets' \
-  || fail "picker Maps ausente do bundle"
+  'grep -R -q "PlaceAutocompleteElement" /usr/share/nginx/html/assets' \
+  || fail "Places New ausente do bundle"
 
 docker exec "$WEB_ID" sh -lc \
   'grep -R -q "occurrences/geo-search" /usr/share/nginx/html/assets' \
   || fail "geo-search ausente do bundle"
 
 echo "maps_bundle=OK"
+echo "places_new_bundle=OK"
 
 echo
 echo "=== 6. GEO SEM AUTENTICAÇÃO ==="
@@ -362,7 +363,7 @@ echo "invalid_geo=$INVALID_GEO"
 test "$INVALID_GEO" = "400" || fail "geo incompleto deveria retornar 400"
 
 echo
-echo "=== 14. GOOGLE MAPS / PLACES NO BROWSER ==="
+echo "=== 14. GOOGLE MAPS / PLACES NEW NO BROWSER ==="
 mkdir -p "$QA_DIR"
 
 docker run --rm -i \
@@ -383,6 +384,12 @@ docker run --rm -i \
     node --input-type=module -
   ' <<'JS'
 import { chromium } from 'playwright-core';
+
+function redact(value) {
+  return String(value ?? '')
+    .replace(/([?&]key=)[^&\s]+/gi, '$1REDACTED')
+    .replace(/AIza[0-9A-Za-z_-]+/g, 'REDACTED_KEY');
+}
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROME,
@@ -413,36 +420,95 @@ await context.route('**/api/v1/auth/refresh', async (route) => {
 });
 
 const page = await context.newPage();
+page.on('console', (message) => {
+  if (message.type() === 'error' || message.type() === 'warning') {
+    console.log(`browser_console_${message.type()}=${redact(message.text())}`);
+  }
+});
+page.on('pageerror', (error) => {
+  console.log(`browser_pageerror=${redact(error.message)}`);
+});
+page.on('requestfailed', (request) => {
+  if (request.url().includes('googleapis.com') || request.url().includes('gstatic.com')) {
+    console.log(`google_request_failed=${redact(request.failure()?.errorText)}:${redact(request.url())}`);
+  }
+});
+
 try {
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.dashboard-shell').waitFor({ state: 'visible', timeout: 15000 });
-  await page.locator('.occurrence-map-picker__map.is-ready').waitFor({ state: 'visible', timeout: 30000 });
+  await page.locator('.occurrence-map-picker').waitFor({ state: 'visible', timeout: 15000 });
 
-  const googleReady = await page.evaluate(() => Boolean(
-    globalThis.google?.maps?.Geocoder
-    && globalThis.google?.maps?.places?.Autocomplete
-  ));
-  if (!googleReady) throw new Error('Google Maps/Places não inicializou');
-  console.log('google_maps_runtime=OK');
-  console.log('google_places_runtime=OK');
+  const state = await Promise.race([
+    page.locator('.occurrence-map-picker__map.is-ready')
+      .waitFor({ state: 'visible', timeout: 30000 })
+      .then(() => 'ready'),
+    page.locator('.occurrence-map-picker__warning')
+      .waitFor({ state: 'visible', timeout: 30000 })
+      .then(() => 'error'),
+  ]);
 
-  const address = page.locator('input[placeholder="Digite e selecione um endereço"]');
-  await address.fill('');
-  await address.pressSequentially('Praça da Alfândega Porto Alegre', { delay: 55 });
-  const suggestion = page.locator('.pac-item').first();
-  await suggestion.waitFor({ state: 'visible', timeout: 20000 });
-  console.log('places_suggestions=OK');
-  await suggestion.click();
+  if (state === 'error') {
+    const warning = await page.locator('.occurrence-map-picker__warning').innerText();
+    throw new Error(`Maps UI fallback ativado: ${warning}`);
+  }
 
-  await page.waitForFunction(() => {
-    const lat = document.querySelector('input[placeholder="-30.034600"]');
-    const lng = document.querySelector('input[placeholder="-51.217700"]');
-    return lat instanceof HTMLInputElement && lng instanceof HTMLInputElement && lat.value && lng.value;
+  const result = await page.evaluate(async () => {
+    const google = globalThis.google;
+    if (!google?.maps?.Geocoder || typeof google.maps.importLibrary !== 'function') {
+      throw new Error('Google Maps runtime não inicializou');
+    }
+
+    const places = await google.maps.importLibrary('places');
+    if (!places?.PlaceAutocompleteElement) {
+      throw new Error('PlaceAutocompleteElement indisponível');
+    }
+    if (!places?.AutocompleteSuggestion) {
+      throw new Error('AutocompleteSuggestion indisponível');
+    }
+
+    const response = await places.AutocompleteSuggestion.fetchAutocompleteSuggestions({
+      input: 'Praça da Alfândega Porto Alegre',
+      includedRegionCodes: ['br'],
+    });
+
+    const suggestions = response?.suggestions ?? [];
+    const prediction = suggestions.find((item) => item.placePrediction)?.placePrediction;
+    if (!prediction) {
+      throw new Error('Places API (New) não retornou sugestões');
+    }
+
+    const place = prediction.toPlace();
+    await place.fetchFields({
+      fields: ['formattedAddress', 'location', 'addressComponents'],
+    });
+
+    const latitude = typeof place.location?.lat === 'function' ? place.location.lat() : null;
+    const longitude = typeof place.location?.lng === 'function' ? place.location.lng() : null;
+
+    return {
+      suggestionCount: suggestions.length,
+      formattedAddress: place.formattedAddress ?? '',
+      latitude,
+      longitude,
+      widgetMounted: Boolean(document.querySelector('gmp-place-autocomplete')),
+    };
   });
 
-  const addressValue = await address.inputValue();
-  if (!addressValue.includes('Porto Alegre')) throw new Error(`endereço inesperado: ${addressValue}`);
-  console.log('autocomplete_selection=OK');
+  if (result.suggestionCount < 1) throw new Error('nenhuma sugestão retornada');
+  if (!result.widgetMounted) throw new Error('PlaceAutocompleteElement não foi montado');
+  if (!result.formattedAddress.toLowerCase().includes('porto alegre')) {
+    throw new Error(`endereço inesperado: ${result.formattedAddress}`);
+  }
+  if (!Number.isFinite(result.latitude) || !Number.isFinite(result.longitude)) {
+    throw new Error('Place Details não retornou coordenadas válidas');
+  }
+
+  console.log('google_maps_runtime=OK');
+  console.log('places_new_runtime=OK');
+  console.log(`places_suggestions=${result.suggestionCount}`);
+  console.log('place_details=OK');
+  console.log('places_widget=OK');
 
   const dims = await page.evaluate(() => ({
     viewport: document.documentElement.clientWidth,
@@ -497,8 +563,9 @@ echo "MAPS / POSTGIS — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
 echo "GOOGLE MAPS KEY: PRESENT"
 echo "GOOGLE MAPS RUNTIME: OK"
-echo "GOOGLE PLACES: OK"
-echo "AUTOCOMPLETE: OK"
+echo "PLACES API NEW: OK"
+echo "AUTOCOMPLETE SUGGESTIONS: OK"
+echo "PLACE DETAILS: OK"
 echo "MAP MOBILE: OK"
 echo "POSTGIS: $POSTGIS_VERSION"
 echo "GEOGRAPHY POINT: OK"
