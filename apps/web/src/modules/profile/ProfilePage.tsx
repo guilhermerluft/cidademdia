@@ -3,6 +3,7 @@ import { isAxiosError } from 'axios';
 import { Button, Card, CardBody, SectionHeading } from '../../components/ui';
 import { getInitials, getPrimaryRoleLabel } from '../../app/layout/AppNavigation';
 import type { AuthenticatedUser } from '../auth/types';
+import { formatBrazilianDocument, formatBrazilianPhone } from './profileMasks';
 import {
   getMyProfile,
   getMyProfileAvatar,
@@ -59,8 +60,8 @@ export function ProfilePage({ user }: ProfilePageProps) {
       .then(async (result) => {
         if (!active) return;
         setProfile(result);
-        setDocument(result.document ?? '');
-        setPhone(result.phone ?? '');
+        setDocument(formatBrazilianDocument(result.document ?? ''));
+        setPhone(formatBrazilianPhone(result.phone ?? ''));
 
         if (result.avatarMediaId) {
           try {
@@ -104,8 +105,8 @@ export function ProfilePage({ user }: ProfilePageProps) {
         phone: phone.trim() || null,
       });
       setProfile(updated);
-      setDocument(updated.document ?? '');
-      setPhone(updated.phone ?? '');
+      setDocument(formatBrazilianDocument(updated.document ?? ''));
+      setPhone(formatBrazilianPhone(updated.phone ?? ''));
       setFeedback({ type: 'success', text: 'Perfil atualizado com sucesso.' });
     } catch (error) {
       setFeedback({
@@ -231,9 +232,10 @@ export function ProfilePage({ user }: ProfilePageProps) {
                         autoComplete="off"
                         maxLength={18}
                         placeholder="CPF ou CNPJ"
-                        onChange={(event) => setDocument(event.target.value)}
+                        aria-describedby="profile-document-help"
+                        onChange={(event) => setDocument(formatBrazilianDocument(event.target.value))}
                       />
-                      <small>Informe CPF ou CNPJ. O documento é validado antes de salvar.</small>
+                      <small id="profile-document-help">CPF ou CNPJ. Apenas números são aceitos e a máscara é aplicada automaticamente.</small>
                     </label>
 
                     <label className="profile-page__field">
@@ -241,12 +243,14 @@ export function ProfilePage({ user }: ProfilePageProps) {
                       <input
                         type="tel"
                         value={phone}
+                        inputMode="numeric"
                         autoComplete="tel"
-                        maxLength={20}
+                        maxLength={15}
                         placeholder="(00) 00000-0000"
-                        onChange={(event) => setPhone(event.target.value)}
+                        aria-describedby="profile-phone-help"
+                        onChange={(event) => setPhone(formatBrazilianPhone(event.target.value))}
                       />
-                      <small>Informe o telefone com DDD.</small>
+                      <small id="profile-phone-help">Telefone com DDD. Apenas números são aceitos e o limite é 11 dígitos.</small>
                     </label>
                   </div>
 
