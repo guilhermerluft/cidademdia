@@ -1,11 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Brand, Button } from '../../components/ui';
+import { Brand } from '../../components/ui';
 import { listPublicPlanOffers, type PublicPlanOffer } from './plansService';
 
 interface PublicPlansProps {
-  onHome: () => void;
-  onLogin: () => void;
-  onRegister: () => void;
   embedded?: boolean;
   onSelectOffer?: (offer: PublicPlanOffer) => void;
   onContact?: () => void;
@@ -126,34 +123,6 @@ function getReferenceAnnualPrice(annual: PublicPlanOffer, monthly?: PublicPlanOf
   }
 
   return null;
-}
-
-function PublicPlansHeader({ onHome, onLogin, onRegister }: Pick<PublicPlansProps, 'onHome' | 'onLogin' | 'onRegister'>) {
-  return (
-    <header className="plans-page__header">
-      <div className="plans-page__header-inner">
-        <button className="plans-page__brand-button" type="button" onClick={onHome} aria-label="Ir para o início">
-          <Brand className="plans-page__brand" />
-        </button>
-
-        <nav className="plans-page__nav" aria-label="Navegação principal">
-          <button type="button" onClick={onHome}>
-            <i className="fa-solid fa-house" aria-hidden="true" />
-            Início
-          </button>
-          <a className="plans-page__nav-active" href="/planos" aria-current="page">
-            <i className="fa-solid fa-layer-group" aria-hidden="true" />
-            Planos
-          </a>
-        </nav>
-
-        <div className="plans-page__header-actions">
-          <Button variant="ghost" onClick={onLogin}>Entrar</Button>
-          <Button onClick={onRegister}>Criar conta</Button>
-        </div>
-      </div>
-    </header>
-  );
 }
 
 function PaymentOption({
@@ -442,9 +411,6 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
 }
 
 export function PublicPlans({
-  onHome,
-  onLogin,
-  onRegister,
   embedded = false,
   onSelectOffer,
   onContact,
@@ -491,7 +457,6 @@ export function PublicPlans({
 
   return (
     <div className="plans-page">
-      <PublicPlansHeader onHome={onHome} onLogin={onLogin} onRegister={onRegister} />
       <main>{content}</main>
       <footer className="plans-page__footer">
         <div className="plans-page__footer-inner">
