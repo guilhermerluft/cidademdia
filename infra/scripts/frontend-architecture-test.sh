@@ -104,6 +104,14 @@ grep -q 'prepareProfileAvatar' "$WEB/modules/profile/ProfilePage.tsx" \
   || fail "tela de perfil não implementa upload confirmado de avatar"
 grep -q 'updateMyProfile' "$WEB/modules/profile/ProfilePage.tsx" \
   || fail "tela de perfil não permite atualizar documento/telefone"
+grep -q 'formatBrazilianDocument' "$WEB/modules/profile/ProfilePage.tsx" \
+  || fail "campo de documento não usa máscara central"
+grep -q 'formatBrazilianPhone' "$WEB/modules/profile/ProfilePage.tsx" \
+  || fail "campo de telefone não usa máscara central"
+grep -q 'onlyDigits(value, 14)' "$WEB/modules/profile/profileMasks.ts" \
+  || fail "máscara de CPF/CNPJ não limita em 14 dígitos"
+grep -q 'onlyDigits(value, 11)' "$WEB/modules/profile/profileMasks.ts" \
+  || fail "máscara de telefone não limita em 11 dígitos"
 grep -q 'href="/perfil"' "$WEB/app/layout/AppHeader.tsx" \
   || fail "dropdown do perfil não aponta para /perfil"
 
@@ -150,6 +158,19 @@ grep -q 'user={user}' "$WEB/modules/home/PublicHome.tsx" \
 grep -q 'permissions={permissions}' "$WEB/modules/home/PublicHome.tsx" \
   || fail "PublicHome não entrega permissões à navegação compartilhada"
 
+grep -q 'HowItWorksModal' "$WEB/modules/home/PublicHome.tsx" \
+  || fail "Home não usa o modal compartilhado Como funciona"
+grep -q 'setHowItWorksOpen(true)' "$WEB/modules/home/PublicHome.tsx" \
+  || fail "CTA Como funciona não abre modal"
+grep -q "'/media/como-funciona.mp4'" "$WEB/modules/home/HowItWorksModal.tsx" \
+  || fail "modal Como funciona não aponta para o vídeo operacional"
+grep -q "how-it-works-modal.css" "$WEB/main.tsx" \
+  || fail "estilos do modal Como funciona não são carregados"
+grep -q 'CIDADEMDIA_RUNTIME_MEDIA_DIR' "$ROOT/infra/docker-compose.yml" \
+  || fail "diretório persistente de mídia não está montado no nginx"
+grep -q 'location = /media/como-funciona.mp4' "$ROOT/infra/nginx/cidademdia.conf" \
+  || fail "nginx não expõe exclusivamente o vídeo Como funciona"
+
 echo "shared_header=OK"
 echo "single_home=OK"
 echo "authenticated_home_reuses_public_home=OK"
@@ -159,10 +180,12 @@ echo "public_representatives_navigation=OK"
 echo "profile_route_separated_from_home=OK"
 echo "editable_profile=OK"
 echo "profile_avatar_flow=OK"
+echo "profile_input_masks=OK"
 echo "representatives_route_separated_from_home=OK"
 echo "shared_public_occurrence_location=OK"
 echo "shared_google_maps_loader=OK"
 echo "user_panel_permissions=OK"
 echo "home_private_operations_removed=OK"
 echo "account_dropdown_profile_and_logout=OK"
+echo "how_it_works_video_modal=OK"
 echo "FRONTEND ARCHITECTURE: OK"
