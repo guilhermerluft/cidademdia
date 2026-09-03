@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom';
+import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { DashboardShell } from '../../app/layout/DashboardShell';
 import { Brand } from '../../components/ui';
 import { useAuth } from '../auth/AuthProvider';
@@ -10,10 +11,14 @@ export function PlansRoute() {
 
   if (status === 'loading') {
     return (
-      <main className="plans-page plans-page__route-loading" aria-busy="true">
-        <Brand />
-        <span>Carregando planos...</span>
-      </main>
+      <>
+        <AppHeader active="plans" />
+        <main className="plans-page plans-page__route-loading" aria-busy="true">
+          <Brand />
+          <span>Carregando planos...</span>
+        </main>
+        <AppBottomNavigation active="plans" />
+      </>
     );
   }
 
@@ -22,9 +27,6 @@ export function PlansRoute() {
       <DashboardShell user={user} onLogout={logout}>
         <PublicPlans
           embedded
-          onHome={() => navigate('/')}
-          onLogin={() => navigate('/')}
-          onRegister={() => navigate('/')}
           onContact={() => navigate('/')}
         />
       </DashboardShell>
@@ -32,12 +34,21 @@ export function PlansRoute() {
   }
 
   return (
-    <PublicPlans
-      onHome={() => navigate('/')}
-      onLogin={() => navigate('/')}
-      onRegister={() => navigate('/')}
-      onSelectOffer={() => navigate('/')}
-      onContact={() => navigate('/')}
-    />
+    <>
+      <AppHeader
+        active="plans"
+        onLogin={() => navigate('/')}
+        onRegister={() => navigate('/')}
+      />
+      <PublicPlans
+        onSelectOffer={() => navigate('/')}
+        onContact={() => navigate('/')}
+      />
+      <AppBottomNavigation
+        active="plans"
+        onLogin={() => navigate('/')}
+        onRegister={() => navigate('/')}
+      />
+    </>
   );
 }
