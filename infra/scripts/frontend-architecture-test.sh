@@ -19,6 +19,8 @@ grep -q '<AppHeader' "$WEB/modules/home/PublicHome.tsx" \
   || fail "Home compartilhada não usa AppHeader"
 grep -q '<AppHeader' "$WEB/modules/plans/PlansRoute.tsx" \
   || fail "Planos não usa AppHeader compartilhado"
+grep -q '<AppHeader' "$WEB/modules/occurrences/PublicOccurrencesRoute.tsx" \
+  || fail "Ocorrências não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/app/layout/DashboardShell.tsx" \
   || fail "shell autenticado não usa AppHeader compartilhado"
 
@@ -50,17 +52,26 @@ grep -q 'onLogout={logout}' "$WEB/app/App.tsx" \
 
 grep -q 'export function useNavigationAccess' "$WEB/app/layout/AppNavigation.tsx" \
   || fail "estado de acesso não está centralizado em useNavigationAccess"
-grep -q "restrictedSubaccountPermission: 'occurrence.read.targeted'" "$WEB/app/layout/AppNavigation.tsx" \
-  || fail "visibilidade de ocorrências não está ligada à permissão real"
+grep -q "href: '/ocorrencias'" "$WEB/app/layout/AppNavigation.tsx" \
+  || fail "Ocorrências não aponta para /ocorrencias"
+grep -A6 "id: 'occurrences'" "$WEB/app/layout/AppNavigation.tsx" | grep -q 'public: true' \
+  || fail "listagem pública de ocorrências não está visível para visitantes"
 
 grep -q "permissions.includes('occurrence.read.targeted')" "$WEB/modules/home/HomeAccountModules.tsx" \
-  || fail "módulos da Home não respeitam permissão de leitura de ocorrências"
+  || fail "módulos privados da Home não respeitam permissão de leitura de ocorrências"
 grep -q "permissions.includes('chat.read')" "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "módulos da Home não respeitam permissão de leitura de chat"
 grep -q "user.roles.includes('MASTER')" "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "módulos da Home não controlam acesso Master"
 grep -q "user.roles.includes('ADMIN')" "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "módulos da Home não controlam acesso Admin"
+
+grep -q 'requestBrowserCoordinates' "$WEB/modules/home/PublicHome.tsx" \
+  || fail "Home não reutiliza a resolução central de localização pública"
+grep -q 'PublicOccurrenceCard' "$WEB/modules/home/PublicHome.tsx" \
+  || fail "Home não reutiliza o card público de ocorrência"
+grep -q 'loadGoogleMaps' "$WEB/modules/occurrences/OccurrenceLocationPicker.tsx" \
+  || fail "picker de ocorrência não reutiliza loader central de mapas"
 
 grep -q 'user={user}' "$WEB/modules/home/PublicHome.tsx" \
   || fail "PublicHome não entrega usuário ao header/bottom nav compartilhados"
@@ -71,5 +82,8 @@ echo "shared_header=OK"
 echo "single_home=OK"
 echo "authenticated_home_reuses_public_home=OK"
 echo "centralized_navigation_access=OK"
+echo "public_occurrences_navigation=OK"
+echo "shared_public_occurrence_location=OK"
+echo "shared_google_maps_loader=OK"
 echo "permission_driven_home_modules=OK"
 echo "FRONTEND ARCHITECTURE: OK"
