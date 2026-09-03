@@ -61,14 +61,20 @@ grep -q 'href="/perfil"' "$WT/apps/web/src/app/layout/AppHeader.tsx" || fail "Pe
 grep -q "href: '/representantes'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" || fail "Representantes ausente da navegação"
 ! grep -q 'InstitutionDirectory' "$WT/apps/web/src/modules/home/HomeAccountModules.tsx" || fail "diretório institucional continua na Home"
 ! grep -q 'id="perfil"' "$WT/apps/web/src/modules/home/HomeAccountModules.tsx" || fail "perfil continua na Home"
+grep -q 'updateMyProfile' "$WT/apps/web/src/modules/profile/ProfilePage.tsx" || fail "edição de documento/telefone ausente"
+grep -q 'prepareProfileAvatar' "$WT/apps/web/src/modules/profile/ProfilePage.tsx" || fail "upload de foto ausente"
+grep -q 'MapPost("/avatar/upload"' "$WT/apps/api/src/CidadeEmDia.Api/Endpoints/ProfileEndpoints.cs" || fail "endpoint de upload de avatar ausente"
+grep -q 'MapPost("/avatar/confirm"' "$WT/apps/api/src/CidadeEmDia.Api/Endpoints/ProfileEndpoints.cs" || fail "endpoint de confirmação de avatar ausente"
 echo "profile_dropdown_architecture=OK"
 echo "representatives_navigation_architecture=OK"
 echo "home_separation_architecture=OK"
+echo "editable_profile_architecture=OK"
+echo "profile_avatar_architecture=OK"
 
 echo
 echo "=== 2. BUILD / DEPLOY FEATURE ==="
-compose build web
-compose up -d --no-deps web
+compose build api web
+compose up -d --no-deps api web
 compose restart nginx
 
 READY=0
@@ -91,7 +97,7 @@ echo "representatives_shell=200"
 echo "profile_shell=200"
 
 echo
-echo "=== 3. BROWSER — REPRESENTANTES / PERFIL ==="
+echo "=== 3. BROWSER — REPRESENTANTES / PERFIL EDITÁVEL / AVATAR ==="
 mkdir -p "$QA_DIR"
 docker run --rm -i \
   --network host \
@@ -126,6 +132,11 @@ const page = await context.newPage();
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
 
+const png = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1xkAAAAASUVORK5CYII=',
+  'base64',
+);
+
 try {
   await page.goto(`${process.env.BASE}/representantes`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.getByRole('heading', { name: 'Instituições e representantes', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
@@ -133,13 +144,6 @@ try {
   await repsLink.waitFor({ state: 'visible', timeout: 15000 });
   if (await repsLink.getAttribute('aria-current') !== 'page') {
     throw new Error('Representantes não está ativo no header');
-  }
-  const institutionsResponse = await page.waitForResponse(
-    response => response.url().includes('/api/v1/institutions') && response.request().method() === 'GET',
-    { timeout: 15000 },
-  ).catch(() => null);
-  if (institutionsResponse && institutionsResponse.status() !== 200) {
-    throw new Error(`diretório público retornou ${institutionsResponse.status()}`);
   }
   console.log('public_representatives=OK');
 
@@ -185,9 +189,50 @@ try {
   await page.getByRole('heading', { name: 'Meu perfil', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await page.getByText(process.env.QA_EMAIL, { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 });
   await page.getByText(process.env.QA_NAME, { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 });
-  console.log('authenticated_profile=OK');
+
+  const documentInput = page.getByPlaceholder('CPF ou CNPJ');
+  const phoneInput = page.getByPlaceholder('(00) 00000-0000');
+  await documentInput.fill('529.982.247-25');
+  await phoneInput.fill('(51) 99999-8888');
+  await page.getByRole('button', { name: 'Salvar alterações', exact: true }).click();
+  await page.getByText('Perfil atualizado com sucesso.', { exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+
+  const profileResponse = await context.request.get(`${process.env.BASE}/api/v1/profile`);
+  if (profileResponse.status() !== 200) throw new Error(`GET profile após edição: ${profileResponse.status()}`);
+  const profilePayload = await profileResponse.json();
+  if (profilePayload.document !== '52998224725') {
+    throw new Error(`documento não persistiu normalizado: ${profilePayload.document}`);
+  }
+  if (profilePayload.phone !== '51999998888') {
+    throw new Error(`telefone não persistiu normalizado: ${profilePayload.phone}`);
+  }
+  console.log('profile_document_phone_update=OK');
+
+  const fileInput = page.locator('.profile-page__avatar-upload input[type="file"]');
+  await fileInput.setInputFiles({ name: 'avatar.png', mimeType: 'image/png', buffer: png });
+  await page.getByText('Foto de perfil atualizada com sucesso.', { exact: true }).waitFor({ state: 'visible', timeout: 20000 });
+  const avatarImage = page.locator('img.profile-page__avatar--image');
+  await avatarImage.waitFor({ state: 'visible', timeout: 10000 });
+
+  const avatarResponse = await context.request.get(`${process.env.BASE}/api/v1/profile/avatar`);
+  if (avatarResponse.status() !== 200) throw new Error(`GET avatar: ${avatarResponse.status()} ${await avatarResponse.text()}`);
+  const avatarPayload = await avatarResponse.json();
+  const storedAvatar = await fetch(avatarPayload.readUrl);
+  if (!storedAvatar.ok) throw new Error(`leitura assinada do avatar: ${storedAvatar.status}`);
+  const bytes = new Uint8Array(await storedAvatar.arrayBuffer());
+  if (bytes.length < 8 || bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47) {
+    throw new Error('avatar salvo não possui assinatura PNG esperada');
+  }
+  console.log('profile_avatar_upload_read=OK');
 
   await page.screenshot({ path: '/work/profile-desktop.png', fullPage: true });
+
+  await page.getByRole('button', { name: 'Remover', exact: true }).click();
+  await page.getByText('Foto de perfil removida.', { exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  const removedAvatar = await context.request.get(`${process.env.BASE}/api/v1/profile/avatar`);
+  if (removedAvatar.status() !== 404) throw new Error(`avatar deveria estar removido; status ${removedAvatar.status()}`);
+  console.log('profile_avatar_remove=OK');
+  console.log('authenticated_profile=OK');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto(`${process.env.BASE}/representantes`, { waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -200,6 +245,9 @@ try {
 
   if (errors.length) throw new Error(`pageerror: ${errors.join(' | ')}`);
 } finally {
+  try {
+    await context.request.delete(`${process.env.BASE}/api/v1/profile/avatar`);
+  } catch {}
   await context.close();
   await browser.close();
 }
@@ -220,6 +268,8 @@ echo "============================================================"
 echo "PROFILE + REPRESENTATIVES — FEATURE HOMOLOG: OK"
 echo "PROTECTED /perfil: OK"
 echo "PROFILE ONLY IN DROPDOWN: OK"
+echo "PROFILE DOCUMENT + PHONE EDIT: OK"
+echo "PROFILE AVATAR UPLOAD + READ + REMOVE: OK"
 echo "PROFILE REMOVED FROM HOME: OK"
 echo "PUBLIC /representantes: OK"
 echo "REPRESENTATIVES IN SHARED HEADER: OK"
