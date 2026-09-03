@@ -50,10 +50,9 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     id: 'occurrences',
     label: 'Ocorrências',
     icon: 'occurrences',
-    href: '/#conta-ocorrencias',
-    public: false,
+    href: '/ocorrencias',
+    public: true,
     authenticated: true,
-    restrictedSubaccountPermission: 'occurrence.read.targeted',
   },
   {
     id: 'media',
