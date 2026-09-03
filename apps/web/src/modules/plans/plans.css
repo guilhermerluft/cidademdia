@@ -1,0 +1,1048 @@
+.plans-page {
+  min-height: 100vh;
+  color: var(--ced-color-text-strong);
+  background:
+    radial-gradient(circle at 12% 12%, rgba(72, 146, 207, .12), transparent 24%),
+    radial-gradient(circle at 88% 4%, rgba(227, 222, 86, .12), transparent 20%),
+    linear-gradient(180deg, #ffffff 0%, #f7fafc 52%, #f3f7fa 100%);
+}
+
+.plans-page,
+.plans-page button,
+.plans-page input {
+  font-family: inherit;
+}
+
+.plans-page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.plans-page__header {
+  position: sticky;
+  top: 0;
+  z-index: 70;
+  background: rgba(255, 255, 255, .98);
+  box-shadow: 0 1px 0 rgba(16, 48, 88, .05);
+  backdrop-filter: blur(16px);
+}
+
+.plans-page__header::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, #1477d4 0%, #2e93c9 36%, #71ad43 72%, #d1d523 100%);
+}
+
+.plans-page__header-inner,
+.plans-page__content,
+.plans-page__footer-inner {
+  width: min(1360px, calc(100% - 48px));
+  margin-inline: auto;
+}
+
+.plans-page__header-inner {
+  min-height: 86px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 34px;
+}
+
+.plans-page__brand-button {
+  display: inline-flex;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.plans-page__brand {
+  transform: scale(.94);
+  transform-origin: left center;
+}
+
+.plans-page__nav {
+  min-height: 86px;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 34px;
+}
+
+.plans-page__nav a,
+.plans-page__nav button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 1px 0 0;
+  border: 0;
+  background: transparent;
+  color: #667487;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.plans-page__nav i {
+  color: #4f677d;
+}
+
+.plans-page__nav a:hover,
+.plans-page__nav button:hover,
+.plans-page__nav a:focus-visible,
+.plans-page__nav button:focus-visible,
+.plans-page__nav .plans-page__nav-active {
+  color: #1265ac;
+}
+
+.plans-page__nav .plans-page__nav-active i {
+  color: #1265ac;
+}
+
+.plans-page__nav .plans-page__nav-active::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: linear-gradient(90deg, #1477d4, #2e93c9 58%, #6aaf4a);
+}
+
+.plans-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.plans-page__header-actions .ced-button {
+  min-height: 44px;
+  border-radius: 18px;
+}
+
+.plans-page__content {
+  padding: clamp(44px, 6vw, 82px) 0 56px;
+}
+
+.plans-page--embedded {
+  width: 100%;
+  background: transparent;
+}
+
+.plans-page--embedded .plans-page__content {
+  width: 100%;
+  padding-top: 22px;
+  padding-bottom: 32px;
+}
+
+.plans-page__intro {
+  max-width: 900px;
+  margin: 0 auto clamp(38px, 5vw, 64px);
+  text-align: center;
+}
+
+.plans-page__intro-kicker,
+.plans-page__catalog-heading > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 0 13px;
+  border: 1px solid rgba(25, 98, 169, .12);
+  border-radius: 999px;
+  color: var(--ced-color-primary-700);
+  background: var(--ced-gradient-brand-soft);
+  font-size: .72rem;
+  font-weight: 900;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.plans-page__intro h1 {
+  margin: 18px 0 18px;
+  font-size: clamp(2.7rem, 6vw, 5.6rem);
+  line-height: .9;
+  letter-spacing: -.065em;
+  font-weight: 950;
+}
+
+.plans-page__intro h1 span {
+  display: block;
+}
+
+.plans-page__headline-blue {
+  color: #155fa8;
+}
+
+.plans-page__headline-green {
+  color: #5f9f3d;
+}
+
+.plans-page__headline-yellow {
+  color: #d0b72c;
+}
+
+.plans-page__intro p {
+  max-width: 720px;
+  margin: 0 auto;
+  color: #566879;
+  font-size: clamp(1rem, 1.6vw, 1.16rem);
+  line-height: 1.65;
+}
+
+.plans-page__intro-line {
+  display: block;
+  width: min(420px, 72%);
+  height: 4px;
+  margin: 24px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1477d4 0%, #4f9290 47%, #6aa53d 70%, #e3de56 100%);
+}
+
+.plans-page__benefits {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: clamp(54px, 7vw, 86px);
+  padding: 24px 0;
+  border-top: 1px solid #e0e8ef;
+  border-bottom: 1px solid #e0e8ef;
+  background: rgba(255, 255, 255, .76);
+}
+
+.plans-page__benefits article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 13px;
+  align-items: center;
+  padding: 4px clamp(12px, 2vw, 24px);
+}
+
+.plans-page__benefits article + article {
+  border-left: 1px solid #e5ebf0;
+}
+
+.plans-page__benefit-icon {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  font-size: 1.08rem;
+}
+
+.plans-page__benefit-icon--blue {
+  color: #1265ac;
+  background: #eaf4ff;
+}
+
+.plans-page__benefit-icon--green {
+  color: #528c37;
+  background: #edf7e8;
+}
+
+.plans-page__benefit-icon--orange {
+  color: #bd701e;
+  background: #fff2e3;
+}
+
+.plans-page__benefit-icon--yellow {
+  color: #9b8411;
+  background: #fff9d8;
+}
+
+.plans-page__benefits h2 {
+  margin: 0 0 4px;
+  color: #143058;
+  font-size: .93rem;
+  line-height: 1.25;
+}
+
+.plans-page__benefits p {
+  margin: 0;
+  color: #6a7886;
+  font-size: .76rem;
+  line-height: 1.45;
+}
+
+.plans-page__catalog-heading {
+  max-width: 760px;
+  margin: 0 auto 30px;
+  text-align: center;
+}
+
+.plans-page__catalog-heading h2 {
+  margin: 11px 0 7px;
+  color: #0d274e;
+  font-size: clamp(1.7rem, 3vw, 2.55rem);
+  letter-spacing: -.04em;
+}
+
+.plans-page__catalog-heading p {
+  margin: 0;
+  color: #667788;
+  font-size: .92rem;
+}
+
+.plans-page__catalog-state {
+  min-height: 76px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed #bdd0df;
+  border-radius: 16px;
+  color: #53697d;
+  background: rgba(255, 255, 255, .8);
+  font-weight: 700;
+}
+
+.plans-page__catalog-state--error {
+  border-color: #efc8cc;
+  color: #a52f3a;
+  background: #fff7f7;
+}
+
+.plans-page__plans-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.plans-page__plan-card,
+.plans-page__mega-card {
+  min-width: 0;
+  border-radius: 24px;
+}
+
+.plans-page__plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid #dce6ed;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(20, 66, 105, .09);
+}
+
+.plans-page__plan-card--blue {
+  border-top: 4px solid #1962a9;
+}
+
+.plans-page__plan-card--green {
+  border-top: 4px solid #69a53d;
+}
+
+.plans-page__plan-card--sky {
+  border-top: 4px solid #4892cf;
+}
+
+.plans-page__posting-badge {
+  align-self: flex-start;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #52677c;
+  background: #f0f5f8;
+  font-size: .68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+
+.plans-page__plan-title {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 20px 2px 14px;
+}
+
+.plans-page__plan-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  color: #fff;
+  font-size: 1.08rem;
+  box-shadow: 0 8px 18px rgba(20, 66, 105, .16);
+}
+
+.plans-page__plan-card--blue .plans-page__plan-icon {
+  background: #1962a9;
+}
+
+.plans-page__plan-card--green .plans-page__plan-icon {
+  background: #69a53d;
+}
+
+.plans-page__plan-card--sky .plans-page__plan-icon {
+  background: #4892cf;
+}
+
+.plans-page__plan-title small {
+  display: block;
+  margin-bottom: 1px;
+  color: #8796a4;
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.plans-page__plan-title h2 {
+  margin: 0;
+  color: #0d274e;
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.plans-page__signup-fee {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 13px;
+  padding: 6px 10px;
+  border: 1px solid #d8e3ea;
+  border-radius: 10px;
+  color: #294c6e;
+  background: #f8fbfd;
+  font-size: .74rem;
+  font-weight: 850;
+}
+
+.plans-page__plan-summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-bottom: 15px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: #f7fafc;
+  color: #5a6c7b;
+  font-size: .72rem;
+}
+
+.plans-page__plan-summary span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.plans-page__plan-summary i {
+  width: 15px;
+  color: #4382b8;
+  text-align: center;
+}
+
+.plans-page__payments {
+  display: grid;
+  gap: 10px;
+}
+
+.plans-page__payment {
+  padding: 12px;
+  border: 1px solid #e0e6ec;
+  border-left-width: 4px;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.plans-page__payment--basic {
+  border-left-color: #1962a9;
+}
+
+.plans-page__payment--bronze {
+  border-left-color: #b84f45;
+}
+
+.plans-page__payment--silver {
+  border-left-color: #8d98a3;
+}
+
+.plans-page__payment--gold {
+  border-color: #b89922;
+  color: #fff;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(227, 222, 86, .16), transparent 30%),
+    linear-gradient(145deg, #102743 0%, #132f50 62%, #1b3c5d 100%);
+  box-shadow: inset 0 0 0 1px rgba(227, 222, 86, .08);
+}
+
+.plans-page__payment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #243f5c;
+  font-size: .74rem;
+  font-weight: 900;
+}
+
+.plans-page__payment--gold .plans-page__payment-heading {
+  color: #f8f5df;
+}
+
+.plans-page__payment-heading small {
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: #4c3b00;
+  background: #e3de56;
+  font-size: .55rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.plans-page__payment-price {
+  min-height: 52px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 7px;
+}
+
+.plans-page__payment-price del {
+  width: 100%;
+  color: #96a3ae;
+  font-size: .68rem;
+}
+
+.plans-page__payment--gold .plans-page__payment-price del {
+  color: #b8c2cc;
+}
+
+.plans-page__payment-price strong {
+  color: #123b62;
+  font-size: 1.15rem;
+  letter-spacing: -.03em;
+}
+
+.plans-page__payment--gold .plans-page__payment-price strong {
+  color: #f6df59;
+  font-size: 1.25rem;
+}
+
+.plans-page__payment-price span {
+  color: #778592;
+  font-size: .61rem;
+}
+
+.plans-page__payment--gold .plans-page__payment-price span {
+  color: #d3dce4;
+}
+
+.plans-page__installment {
+  margin: 0 0 9px;
+  color: #d6dee5;
+  font-size: .61rem;
+  line-height: 1.4;
+}
+
+.plans-page__choose-button {
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid #1962a9;
+  border-radius: 9px;
+  color: #155a99;
+  background: #fff;
+  font-size: .68rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform var(--ced-transition-fast), box-shadow var(--ced-transition-fast), background var(--ced-transition-fast);
+}
+
+.plans-page__payment--bronze .plans-page__choose-button {
+  border-color: #b84f45;
+  color: #a23c34;
+}
+
+.plans-page__payment--silver .plans-page__choose-button {
+  border-color: #909ba5;
+  color: #66727c;
+}
+
+.plans-page__payment--gold .plans-page__choose-button {
+  border-color: #e3de56;
+  color: #342e00;
+  background: #e3de56;
+  box-shadow: 0 7px 16px rgba(227, 222, 86, .16);
+}
+
+.plans-page__choose-button:not(:disabled):hover,
+.plans-page__choose-button:not(:disabled):focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(20, 66, 105, .12);
+}
+
+.plans-page__choose-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.plans-page__payment-unavailable {
+  display: grid;
+  gap: 4px;
+  color: #778694;
+  font-size: .66rem;
+}
+
+.plans-page__payment-unavailable strong {
+  color: #4f6273;
+}
+
+.plans-page__payment-unavailable .plans-page__choose-button {
+  margin-top: 6px;
+}
+
+.plans-page__mega-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 18px 18px;
+  border: 2px solid #d6bd48;
+  color: #fff;
+  text-align: center;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(255,255,255,.75) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 82% 18%, rgba(227,222,86,.85) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 68% 52%, rgba(255,255,255,.5) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 26% 68%, rgba(227,222,86,.65) 0 1.1px, transparent 1.8px),
+    linear-gradient(155deg, #08162b 0%, #102946 52%, #0a1c33 100%);
+  background-size: 74px 74px, 93px 93px, 111px 111px, 127px 127px, auto;
+  box-shadow: 0 22px 54px rgba(8, 22, 43, .25), inset 0 0 34px rgba(227, 222, 86, .06);
+}
+
+.plans-page__mega-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, transparent 0 55%, rgba(227,222,86,.05) 75%, transparent 100%);
+}
+
+.plans-page__mega-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.plans-page__mega-badge {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #332c00;
+  background: linear-gradient(90deg, #d7c346, #f0e66a, #c8ae32);
+  box-shadow: 0 8px 22px rgba(227, 222, 86, .2);
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+}
+
+.plans-page__mega-star {
+  margin: 22px 0 11px;
+  color: #f1df64;
+  font-size: 3.1rem;
+  filter: drop-shadow(0 0 16px rgba(227,222,86,.34));
+}
+
+.plans-page__mega-eyebrow {
+  color: #9fb4c6;
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .11em;
+  text-transform: uppercase;
+}
+
+.plans-page__mega-card h2 {
+  margin: 5px 0 9px;
+  color: #fff7ba;
+  font-size: 1.48rem;
+  line-height: 1.05;
+  letter-spacing: -.035em;
+}
+
+.plans-page__mega-card > p {
+  margin: 0 0 16px;
+  color: #c3d0db;
+  font-size: .75rem;
+  line-height: 1.5;
+}
+
+.plans-page__mega-condition {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding: 13px 10px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 13px;
+  background: rgba(255,255,255,.06);
+}
+
+.plans-page__mega-condition span {
+  color: #93a9bc;
+  font-size: .59rem;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.plans-page__mega-condition strong {
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.plans-page__mega-condition small {
+  color: #b9c7d2;
+  font-size: .61rem;
+}
+
+.plans-page__mega-condition--yellow {
+  border-color: rgba(227,222,86,.38);
+  background: rgba(227,222,86,.1);
+}
+
+.plans-page__mega-condition--yellow strong {
+  color: #f1df64;
+}
+
+.plans-page__mega-prices {
+  width: 100%;
+  display: grid;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(255,255,255,.12);
+}
+
+.plans-page__mega-prices > span {
+  margin-bottom: 2px;
+  color: #91a7b9;
+  font-size: .59rem;
+  font-weight: 850;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.plans-page__mega-prices > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: #d6e0e8;
+}
+
+.plans-page__mega-prices small {
+  font-size: .64rem;
+}
+
+.plans-page__mega-prices strong {
+  color: #f1df64;
+  font-size: .72rem;
+}
+
+.plans-page__mega-benefits {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.plans-page__mega-benefits div {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  color: #c8d4de;
+  font-size: .56rem;
+  line-height: 1.2;
+}
+
+.plans-page__mega-benefits i {
+  color: #e3de56;
+  font-size: .9rem;
+}
+
+.plans-page__complementary {
+  display: grid;
+  grid-template-columns: 1.35fr repeat(4, 1fr);
+  margin-top: clamp(54px, 7vw, 84px);
+  padding: 25px 0;
+  border-top: 1px solid #dce6ed;
+  border-bottom: 1px solid #dce6ed;
+}
+
+.plans-page__complementary article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-content: start;
+  padding: 3px 18px;
+}
+
+.plans-page__complementary article + article {
+  border-left: 1px solid #e0e8ef;
+}
+
+.plans-page__complementary article > i {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: #1962a9;
+  background: #eaf4fc;
+}
+
+.plans-page__complementary strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #173d62;
+  font-size: .76rem;
+}
+
+.plans-page__complementary span {
+  display: block;
+  color: #6f7e8b;
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.plans-page__complementary-contact {
+  grid-template-columns: 34px 1fr !important;
+}
+
+.plans-page__complementary-contact button {
+  grid-column: 2;
+  justify-self: start;
+  min-height: 31px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid #1962a9;
+  border-radius: 9px;
+  color: #155a99;
+  background: #fff;
+  font-size: .65rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.plans-page__footer {
+  padding: 22px 0;
+  border-top: 1px solid #e5e9ef;
+  background: #fbfcfe;
+}
+
+.plans-page__footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.plans-page__footer .ced-brand {
+  width: 34px;
+  min-width: 34px;
+  overflow: hidden;
+}
+
+.plans-page__footer .ced-brand__mark {
+  flex: 0 0 auto;
+}
+
+.plans-page__footer .ced-brand__wordmark {
+  display: none;
+}
+
+.plans-page__footer span {
+  color: #667085;
+  font-size: .82rem;
+}
+
+@media (max-width: 1180px) {
+  .plans-page__header-inner,
+  .plans-page__content,
+  .plans-page__footer-inner {
+    width: min(100% - 36px, 1100px);
+  }
+
+  .plans-page__benefits {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .plans-page__benefits article:nth-child(3) {
+    border-left: 0;
+  }
+
+  .plans-page__benefits article:nth-child(n+3) {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #e5ebf0;
+  }
+
+  .plans-page__plans-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plans-page__complementary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+
+  .plans-page__complementary article {
+    min-height: 112px;
+    padding-block: 16px;
+    border-top: 1px solid #e0e8ef;
+  }
+
+  .plans-page__complementary article:nth-child(odd) {
+    border-left: 0;
+  }
+}
+
+@media (max-width: 900px) {
+  .plans-page__header-inner {
+    grid-template-columns: auto 1fr auto;
+    gap: 16px;
+  }
+
+  .plans-page__nav {
+    min-height: 76px;
+    gap: 18px;
+  }
+
+  .plans-page__nav a,
+  .plans-page__nav button {
+    font-size: .78rem;
+  }
+
+  .plans-page__header-actions > :first-child {
+    display: none;
+  }
+
+  .plans-page__header-actions .ced-button {
+    min-height: 38px;
+    padding-inline: 12px;
+    font-size: .76rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .plans-page__header-inner,
+  .plans-page__content,
+  .plans-page__footer-inner {
+    width: min(100% - 24px, 680px);
+  }
+
+  .plans-page__header-inner {
+    min-height: 68px;
+    grid-template-columns: 1fr auto;
+  }
+
+  .plans-page__brand {
+    transform: scale(.82);
+  }
+
+  .plans-page__nav {
+    min-height: 68px;
+    justify-self: end;
+  }
+
+  .plans-page__nav button:first-child {
+    display: none;
+  }
+
+  .plans-page__header-actions {
+    display: none;
+  }
+
+  .plans-page__content {
+    padding-top: 38px;
+  }
+
+  .plans-page__intro {
+    margin-bottom: 38px;
+  }
+
+  .plans-page__intro h1 {
+    font-size: clamp(2.4rem, 14vw, 4rem);
+  }
+
+  .plans-page__intro p {
+    font-size: .92rem;
+  }
+
+  .plans-page__benefits,
+  .plans-page__plans-grid,
+  .plans-page__complementary {
+    grid-template-columns: 1fr;
+  }
+
+  .plans-page__benefits {
+    padding: 10px 0;
+  }
+
+  .plans-page__benefits article,
+  .plans-page__benefits article:nth-child(3),
+  .plans-page__benefits article:nth-child(n+3) {
+    margin: 0;
+    padding: 15px 4px;
+    border-top: 0;
+    border-left: 0;
+  }
+
+  .plans-page__benefits article + article {
+    border-top: 1px solid #e5ebf0;
+  }
+
+  .plans-page__plan-card,
+  .plans-page__mega-card {
+    border-radius: 20px;
+  }
+
+  .plans-page__complementary article,
+  .plans-page__complementary article:nth-child(odd) {
+    min-height: 0;
+    padding: 16px 4px;
+    border-left: 0;
+    border-top: 1px solid #e0e8ef;
+  }
+
+  .plans-page__complementary article:first-child {
+    border-top: 0;
+  }
+
+  .plans-page__footer-inner {
+    align-items: flex-start;
+  }
+
+  .plans-page__footer span {
+    max-width: 250px;
+    text-align: right;
+  }
+}
