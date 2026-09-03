@@ -24,6 +24,11 @@ export interface AppNavigationItem {
   restrictedSubaccountPermission?: string;
 }
 
+export interface NavigationAccessState {
+  permissions: string[];
+  subaccountContextActive: boolean | null;
+}
+
 export const APP_NAVIGATION: readonly AppNavigationItem[] = [
   {
     id: 'home',
@@ -45,7 +50,7 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     id: 'occurrences',
     label: 'Ocorrências',
     icon: 'occurrences',
-    href: '/#dashboard-actions',
+    href: '/#ocorrencias',
     public: false,
     authenticated: true,
     restrictedSubaccountPermission: 'occurrence.read.targeted',
@@ -54,7 +59,7 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     id: 'media',
     label: 'Mídias',
     icon: 'media',
-    href: '/#dashboard-media',
+    href: '/#midias',
     public: false,
     authenticated: true,
   },
@@ -62,7 +67,7 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     id: 'team',
     label: 'Equipe',
     icon: 'team',
-    href: '/#dashboard-team',
+    href: '/#equipe',
     public: false,
     authenticated: true,
     roles: ['MASTER'],
@@ -71,7 +76,7 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     id: 'admin',
     label: 'Admin',
     icon: 'admin',
-    href: '/#dashboard-admin',
+    href: '/#admin',
     public: false,
     authenticated: true,
     roles: ['ADMIN'],
@@ -80,13 +85,13 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     id: 'profile',
     label: 'Perfil',
     icon: 'profile',
-    href: '/#dashboard-profile',
+    href: '/#perfil',
     public: false,
     authenticated: true,
   },
 ] as const;
 
-function isRestrictedSubaccount(user: AuthenticatedUser) {
+export function isRestrictedSubaccount(user: AuthenticatedUser) {
   return user.roles.includes('SUBACCOUNT')
     && !user.roles.includes('MASTER')
     && !user.roles.includes('ADMIN');
@@ -119,32 +124,51 @@ export function getVisibleNavigation(
   });
 }
 
-export function useNavigationPermissions(user?: AuthenticatedUser | null) {
-  const [permissions, setPermissions] = useState<string[]>([]);
+export function useNavigationAccess(user?: AuthenticatedUser | null): NavigationAccessState {
+  const [state, setState] = useState<NavigationAccessState>({
+    permissions: [],
+    subaccountContextActive: null,
+  });
 
   useEffect(() => {
     if (!user || !isRestrictedSubaccount(user)) {
-      setPermissions([]);
+      setState({ permissions: [], subaccountContextActive: null });
       return;
     }
 
     let active = true;
 
-    void listSubaccountContexts()
-      .then((contexts) => {
+    async function verifyAccess() {
+      try {
+        const contexts = await listSubaccountContexts();
         if (!active) return;
-        setPermissions(Array.from(new Set(contexts.flatMap((context) => context.permissions))));
-      })
-      .catch(() => {
-        if (active) setPermissions([]);
-      });
+
+        setState({
+          permissions: Array.from(new Set(contexts.flatMap((context) => context.permissions))),
+          subaccountContextActive: contexts.length > 0,
+        });
+      } catch {
+        // Falha de rede não deve presumir revogação nem derrubar a sessão.
+      }
+    }
+
+    const handleFocus = () => void verifyAccess();
+    void verifyAccess();
+    const intervalId = window.setInterval(() => void verifyAccess(), 15000);
+    window.addEventListener('focus', handleFocus);
 
     return () => {
       active = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', handleFocus);
     };
   }, [user]);
 
-  return permissions;
+  return state;
+}
+
+export function useNavigationPermissions(user?: AuthenticatedUser | null) {
+  return useNavigationAccess(user).permissions;
 }
 
 export function getPrimaryRoleLabel(roles: readonly string[]) {
