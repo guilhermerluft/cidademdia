@@ -174,8 +174,8 @@ async function validate(viewport, screenshot) {
   const current = await occurrenceLink.getAttribute('aria-current');
   if (current !== 'page') throw new Error('Ocorrências não está ativa no header');
 
-  const city = page.getByLabel('Cidade');
-  const radius = page.getByLabel('Raio em km');
+  const city = page.getByRole('textbox', { name: 'Cidade', exact: true });
+  const radius = page.getByRole('spinbutton', { name: 'Raio em km', exact: true });
   await city.waitFor({ state: 'visible' });
   await radius.waitFor({ state: 'visible' });
 
@@ -183,6 +183,9 @@ async function validate(viewport, screenshot) {
     const el = document.querySelector('.public-occurrences__location-summary strong');
     return el && el.textContent?.includes('São Paulo');
   }, { timeout: 15000 });
+
+  const cityValue = await city.inputValue();
+  if (cityValue !== 'São Paulo') throw new Error(`cidade fallback deveria ser São Paulo; recebeu ${cityValue}`);
 
   const radiusValue = await radius.inputValue();
   if (Number(radiusValue) !== 25) throw new Error(`raio inicial deveria ser 25 km; recebeu ${radiusValue}`);
@@ -196,8 +199,8 @@ async function validate(viewport, screenshot) {
     throw new Error(`busca inicial não usou raio de 25 km: ${occurrenceRequests.join(' | ')}`);
   }
 
-  await page.getByRole('button', { name: 'Usar minha localização' }).waitFor({ state: 'visible' });
-  await page.getByRole('button', { name: 'Aplicar cidade e raio' }).waitFor({ state: 'visible' });
+  await page.getByRole('button', { name: 'Usar minha localização', exact: true }).waitFor({ state: 'visible' });
+  await page.getByRole('button', { name: 'Aplicar cidade e raio', exact: true }).waitFor({ state: 'visible' });
   await page.locator('.public-occurrences__map').waitFor({ state: 'visible' });
 
   const dims = await page.evaluate(() => ({
