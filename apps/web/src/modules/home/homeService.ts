@@ -19,6 +19,16 @@ export interface PublicOccurrenceQuery {
   longitude?: number;
   radiusKm?: number;
   limit?: number;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface PublicOccurrencePage {
+  items: PublicOccurrenceItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 export interface PublicPlanOffer {
@@ -37,12 +47,16 @@ export interface PublicPlanOffer {
   version: number;
 }
 
-export async function listPublicOccurrences(query: PublicOccurrenceQuery) {
-  const { data } = await api.get<{ items: PublicOccurrenceItem[] }>('/public/occurrences', {
+export async function searchPublicOccurrences(query: PublicOccurrenceQuery) {
+  const { data } = await api.get<PublicOccurrencePage>('/public/occurrences', {
     params: query,
   });
 
-  return data.items;
+  return data;
+}
+
+export async function listPublicOccurrences(query: PublicOccurrenceQuery) {
+  return (await searchPublicOccurrences(query)).items;
 }
 
 export async function listPublicPlans() {
