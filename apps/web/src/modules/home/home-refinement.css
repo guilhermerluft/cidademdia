@@ -84,8 +84,8 @@
 .public-home__hero {
   position: relative;
   min-height: 420px;
-  background-image: url('https://images.unsplash.com/photo-1758465922136-748004d9ecec?auto=format&fit=crop&fm=jpg&q=88&w=2400');
-  background-position: center center;
+  background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/29/IbirapueraDusk.jpg');
+  background-position: center 46%;
   background-size: cover;
   background-repeat: no-repeat;
 }
@@ -124,6 +124,8 @@
 /* Plans and How it works will live on dedicated pages. Keep only their hero CTAs for now. */
 .public-home__plans,
 .public-home__how,
+.public-home__desktop-nav a[href='#midias'],
+.public-home__desktop-nav a[href='#ocorrencias'],
 .public-home__desktop-nav a[href='#planos'],
 .public-home__desktop-nav a[href='#como-funciona'],
 .public-home__bottom-nav a[href='#planos'] {
@@ -155,13 +157,26 @@
 }
 
 .public-home__cta-play {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   border: 0;
   font-size: 0;
+  line-height: 1;
 }
 
 .public-home__cta-play::before {
   content: '\f144';
+  display: block;
+  width: 1em;
+  height: 1em;
   font-size: 1.35rem;
+  line-height: 1;
+  text-align: center;
 }
 
 /* Keep section glyphs optically and geometrically centered. */
