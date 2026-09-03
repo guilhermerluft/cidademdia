@@ -21,8 +21,12 @@ grep -q '<AppHeader' "$WEB/modules/plans/PlansRoute.tsx" \
   || fail "Planos não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/modules/occurrences/PublicOccurrencesRoute.tsx" \
   || fail "Ocorrências não usa AppHeader compartilhado"
+grep -q '<AppHeader' "$WEB/modules/institutions/RepresentativesRoute.tsx" \
+  || fail "Representantes não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/modules/panel/UserPanelRoute.tsx" \
   || fail "Painel não usa AppHeader compartilhado"
+grep -q '<AppHeader' "$WEB/modules/profile/ProfileRoute.tsx" \
+  || fail "Perfil não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/app/layout/DashboardShell.tsx" \
   || fail "shell autenticado não usa AppHeader compartilhado"
 
@@ -64,6 +68,12 @@ grep -q "href: '/ocorrencias'" "$WEB/app/layout/AppNavigation.tsx" \
   || fail "Ocorrências não aponta para /ocorrencias"
 grep -A6 "id: 'occurrences'" "$WEB/app/layout/AppNavigation.tsx" | grep -q 'public: true' \
   || fail "listagem pública de ocorrências não está visível para visitantes"
+grep -q "href: '/representantes'" "$WEB/app/layout/AppNavigation.tsx" \
+  || fail "Representantes não aponta para /representantes"
+grep -A6 "id: 'representatives'" "$WEB/app/layout/AppNavigation.tsx" | grep -q 'public: true' \
+  || fail "Representantes não está visível na navegação pública"
+! grep -A6 "id: 'profile'" "$WEB/app/layout/AppNavigation.tsx" | grep -q "href: '/#perfil'" \
+  || fail "Perfil voltou para a navegação principal/âncora da Home"
 
 grep -q 'path="/painel"' "$WEB/main.tsx" \
   || fail "rota /painel não registrada"
@@ -78,17 +88,39 @@ grep -q 'OccurrenceAssignmentPanel' "$WEB/modules/panel/UserPanel.tsx" \
 grep -q 'ChatInbox' "$WEB/modules/panel/UserPanel.tsx" \
   || fail "Conversas não foi movido para /painel"
 
+grep -q 'path="/perfil"' "$WEB/main.tsx" \
+  || fail "rota /perfil não registrada"
+grep -q "status !== 'authenticated'" "$WEB/modules/profile/ProfileRoute.tsx" \
+  || fail "rota /perfil não está protegida por autenticação"
+grep -q "api.get<PrivateUserProfile>('/profile')" "$WEB/modules/profile/profileService.ts" \
+  || fail "Perfil não consome o endpoint privado existente"
+grep -q 'href="/perfil"' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "dropdown do perfil não aponta para /perfil"
+
+grep -q 'path="/representantes"' "$WEB/main.tsx" \
+  || fail "rota /representantes não registrada"
+grep -q 'InstitutionDirectory' "$WEB/modules/institutions/RepresentativesRoute.tsx" \
+  || fail "rota /representantes não reutiliza o diretório institucional"
+
 ! grep -q 'OccurrenceCenter' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "Minhas ocorrências voltou a ser renderizado na Home"
 ! grep -q 'OccurrenceAssignmentPanel' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "ocorrências privadas voltaram a ser renderizadas na Home"
 ! grep -q 'ChatInbox' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "Conversas voltou a ser renderizado na Home"
+! grep -q 'InstitutionDirectory' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "Instituições e representantes voltaram a ser renderizados na Home"
+! grep -q 'dashboard-profile-section' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "informações do perfil voltaram a ser renderizadas na Home"
+! grep -q 'id="perfil"' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "âncora de perfil voltou a ser renderizada na Home"
 
 grep -q 'getUserPanelAccess(user, permissions)' "$WEB/app/layout/AppHeader.tsx" \
   || fail "dropdown do perfil não usa a mesma regra de acesso do painel"
 grep -q 'href="/painel"' "$WEB/app/layout/AppHeader.tsx" \
   || fail "dropdown do perfil não contém acesso ao painel"
+grep -q 'href="/perfil"' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "dropdown da conta não contém acesso ao perfil"
 grep -q 'app-header__account-dropdown' "$WEB/app/layout/AppHeader.tsx" \
   || fail "dropdown do perfil não está implementado"
 grep -q 'app-header__account-menu-item--logout' "$WEB/app/layout/AppHeader.tsx" \
@@ -113,9 +145,12 @@ echo "single_home=OK"
 echo "authenticated_home_reuses_public_home=OK"
 echo "centralized_navigation_access=OK"
 echo "public_occurrences_navigation=OK"
+echo "public_representatives_navigation=OK"
+echo "profile_route_separated_from_home=OK"
+echo "representatives_route_separated_from_home=OK"
 echo "shared_public_occurrence_location=OK"
 echo "shared_google_maps_loader=OK"
 echo "user_panel_permissions=OK"
 echo "home_private_operations_removed=OK"
-echo "account_dropdown_logout=OK"
+echo "account_dropdown_profile_and_logout=OK"
 echo "FRONTEND ARCHITECTURE: OK"
