@@ -25,6 +25,7 @@ import './styles/responsive.css';
 import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
 import './modules/home/home-session.css';
+import './modules/home/how-it-works-modal.css';
 import './modules/institutions/representatives.css';
 import './modules/occurrences/public-occurrences.css';
 import './modules/panel/panel.css';
