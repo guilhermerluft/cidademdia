@@ -197,11 +197,13 @@ try {
   await page.getByRole('heading', { name: 'Minhas ocorrências', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await page.getByText('Conversas', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 });
 
-  await page.getByRole('textbox', { name: 'Cidade', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('spinbutton', { name: 'Raio em km', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: 'Usar minha localização', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: 'Filtrar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await page.getByRole('button', { name: 'Limpar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  const trackingFilters = page.getByLabel('Filtros das ocorrências', { exact: true });
+  await trackingFilters.waitFor({ state: 'visible', timeout: 15000 });
+  await trackingFilters.getByRole('textbox', { name: 'Cidade', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await trackingFilters.getByRole('spinbutton', { name: 'Raio em km', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await trackingFilters.getByRole('button', { name: 'Usar minha localização', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await trackingFilters.getByRole('button', { name: 'Filtrar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await trackingFilters.getByRole('button', { name: 'Limpar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   console.log('occurrence_tracking_filters=OK');
   console.log('citizen_panel_modules=OK');
 
