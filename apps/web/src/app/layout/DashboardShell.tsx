@@ -4,6 +4,7 @@ import type { AuthenticatedUser } from '../../modules/auth/types';
 
 type DashboardIconName =
   | 'home'
+  | 'plans'
   | 'occurrences'
   | 'media'
   | 'team'
@@ -38,6 +39,8 @@ function DashboardIcon({ name }: { name: DashboardIconName }) {
   switch (name) {
     case 'home':
       return <svg {...common}><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10.5V20h13v-9.5"/><path d="M9.5 20v-5.5h5V20"/></svg>;
+    case 'plans':
+      return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 9h10"/><path d="M7 13h6"/></svg>;
     case 'occurrences':
       return <svg {...common}><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>;
     case 'media':
@@ -63,6 +66,7 @@ function getPrimaryRole(roles: string[]) {
 function getNavigation(roles: string[]): NavigationItem[] {
   const items: NavigationItem[] = [
     { label: 'Início', icon: 'home', href: '#dashboard-home' },
+    { label: 'Planos', icon: 'plans', href: '/planos' },
     { label: 'Ocorrências', icon: 'occurrences', href: '#dashboard-actions' },
     { label: 'Mídias', icon: 'media', href: '#dashboard-media' },
   ];
@@ -88,6 +92,18 @@ function initials(displayName: string) {
 export function DashboardShell({ user, onLogout, children }: DashboardShellProps) {
   const navigation = getNavigation(user.roles);
   const roleLabel = getPrimaryRole(user.roles);
+  const isPlansPage = window.location.pathname.replace(/\/+$/, '') === '/planos';
+
+  function navigationHref(item: NavigationItem) {
+    if (isPlansPage && item.href.startsWith('#')) return `/${item.href}`;
+    return item.href;
+  }
+
+  function navigationClass(item: NavigationItem, index: number, mobile = false) {
+    const base = mobile ? 'dashboard-bottom-nav__item' : 'dashboard-nav__item';
+    const active = item.href === '/planos' ? isPlansPage : index === 0 && !isPlansPage;
+    return active ? `${base} ${base}--active` : base;
+  }
 
   return (
     <div className="dashboard-shell">
@@ -98,8 +114,8 @@ export function DashboardShell({ user, onLogout, children }: DashboardShellProps
           <nav className="dashboard-nav dashboard-nav--desktop" aria-label="Navegação principal">
             {navigation.map((item, index) => (
               <a
-                className={index === 0 ? 'dashboard-nav__item dashboard-nav__item--active' : 'dashboard-nav__item'}
-                href={item.href}
+                className={navigationClass(item, index)}
+                href={navigationHref(item)}
                 key={item.label}
               >
                 <DashboardIcon name={item.icon} />
@@ -133,8 +149,8 @@ export function DashboardShell({ user, onLogout, children }: DashboardShellProps
       <nav className="dashboard-bottom-nav" aria-label="Navegação mobile">
         {navigation.slice(0, 5).map((item, index) => (
           <a
-            className={index === 0 ? 'dashboard-bottom-nav__item dashboard-bottom-nav__item--active' : 'dashboard-bottom-nav__item'}
-            href={item.href}
+            className={navigationClass(item, index, true)}
+            href={navigationHref(item)}
             key={item.label}
           >
             <DashboardIcon name={item.icon} />
