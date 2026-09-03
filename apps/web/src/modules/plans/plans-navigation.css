@@ -1,9 +1,0 @@
-@media (max-width: 720px) {
-  .public-home__bottom-nav {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .public-home__bottom-nav a[href="/planos"] {
-    display: none !important;
-  }
-}
