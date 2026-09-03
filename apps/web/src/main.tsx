@@ -20,6 +20,7 @@ import './styles/responsive.css';
 import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
 import './modules/plans/plans.css';
+import './modules/plans/plans-viewport.css';
 
 const queryClient = new QueryClient();
 
