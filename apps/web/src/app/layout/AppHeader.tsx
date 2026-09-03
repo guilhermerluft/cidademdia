@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Brand, Button } from '../../components/ui';
 import type { AuthenticatedUser } from '../../modules/auth/types';
+import { useProfileAvatar } from '../../modules/profile/useProfileAvatar';
 import {
   AppNavigationIcon,
   getInitials,
@@ -29,6 +30,7 @@ export function AppHeader({
 }: AppHeaderProps) {
   const navigation = getVisibleNavigation(user, permissions);
   const panelAccess = user ? getUserPanelAccess(user, permissions) : null;
+  const profileAvatarUrl = useProfileAvatar(user);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
   const accountCloseTimerRef = useRef<number | null>(null);
@@ -129,7 +131,17 @@ export function AppHeader({
                     setAccountOpen((current) => !current);
                   }}
                 >
-                  <span className="app-header__avatar" aria-hidden="true">{getInitials(user.displayName)}</span>
+                  {profileAvatarUrl ? (
+                    <img
+                      className="app-header__avatar"
+                      src={profileAvatarUrl}
+                      alt=""
+                      aria-hidden="true"
+                      style={{ objectFit: 'cover' }}
+                    />
+                  ) : (
+                    <span className="app-header__avatar" aria-hidden="true">{getInitials(user.displayName)}</span>
+                  )}
                   <span className="app-header__account-copy">
                     <strong>{user.displayName}</strong>
                     <span>{getPrimaryRoleLabel(user.roles)}</span>
