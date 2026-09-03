@@ -571,7 +571,7 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
         <a href="#inicio"><span aria-hidden="true">⌂</span>Início</a>
         <a href="#ocorrencias"><span aria-hidden="true">☷</span>Ocorrências</a>
         <a href="#midias"><span aria-hidden="true">▶</span>Mídias</a>
-        <a href="/planos" onClick={(event) => { event.preventDefault(); navigate('/planos'); }}><span aria-hidden="true">◇</span>Planos</a>
+        <a href="#planos"><span aria-hidden="true">◇</span>Planos</a>
         <button type="button" onClick={onLogin}><span aria-hidden="true">○</span>Entrar</button>
       </nav>
     </div>
