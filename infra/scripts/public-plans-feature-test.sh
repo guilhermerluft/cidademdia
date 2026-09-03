@@ -268,14 +268,14 @@ async function validatePlans(viewport, screenshot, mobile) {
   await context.close();
 }
 
-async function validateHomeMobilePlansItem() {
+async function validateHomeMobileFrozen() {
   const { context, page, errors } = await openPage({ width: 390, height: 844 });
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
-  const plans = page.locator('.public-home__bottom-nav a[href="/planos"]');
-  await plans.waitFor({ state: 'visible' });
+  const plansVisible = await page.locator('.public-home__bottom-nav a[href="/planos"]').isVisible();
+  if (plansVisible) throw new Error('Planos apareceu no bottom nav sem autorização expressa');
   const visibleItems = await page.locator('.public-home__bottom-nav > *:visible').count();
-  if (visibleItems !== 5) throw new Error(`bottom nav da Home deveria ter 5 itens, recebeu ${visibleItems}`);
+  if (visibleItems !== 4) throw new Error(`bottom nav congelado deveria manter 4 itens, recebeu ${visibleItems}`);
   if (errors.length) throw new Error(`pageerror na Home mobile: ${errors.join(' | ')}`);
   await context.close();
 }
@@ -283,8 +283,8 @@ async function validateHomeMobilePlansItem() {
 try {
   await validateHomeDesktop();
   console.log('home_to_plans=OK');
-  await validateHomeMobilePlansItem();
-  console.log('home_mobile_plans=OK');
+  await validateHomeMobileFrozen();
+  console.log('home_mobile_frozen=OK');
   await validatePlans({ width: 1440, height: 1000 }, 'plans-desktop.png', false);
   console.log('plans_desktop=OK');
   await validatePlans({ width: 390, height: 844 }, 'plans-mobile.png', true);
@@ -329,6 +329,7 @@ echo "============================================================"
 echo "PUBLIC PLANS — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
 echo "HOME FROZEN VISUALS: OK"
+echo "HOME MOBILE NAV FROZEN: OK"
 echo "PUBLIC HEADER PLANOS: OK"
 echo "AUTHENTICATED HEADER PLANOS SOURCE: OK"
 echo "HOME CTA -> /planos: OK"
