@@ -31,18 +31,49 @@ export function AppHeader({
   const panelAccess = user ? getUserPanelAccess(user, permissions) : null;
   const [accountOpen, setAccountOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
+  const accountCloseTimerRef = useRef<number | null>(null);
+
+  function cancelAccountClose() {
+    if (accountCloseTimerRef.current !== null) {
+      window.clearTimeout(accountCloseTimerRef.current);
+      accountCloseTimerRef.current = null;
+    }
+  }
+
+  function openAccountMenu() {
+    cancelAccountClose();
+    setAccountOpen(true);
+  }
+
+  function scheduleAccountClose() {
+    cancelAccountClose();
+    accountCloseTimerRef.current = window.setTimeout(() => {
+      setAccountOpen(false);
+      accountCloseTimerRef.current = null;
+    }, 220);
+  }
+
+  useEffect(() => () => {
+    if (accountCloseTimerRef.current !== null) {
+      window.clearTimeout(accountCloseTimerRef.current);
+    }
+  }, []);
 
   useEffect(() => {
     if (!accountOpen) return;
 
     function handlePointerDown(event: PointerEvent) {
       if (!accountMenuRef.current?.contains(event.target as Node)) {
+        cancelAccountClose();
         setAccountOpen(false);
       }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setAccountOpen(false);
+      if (event.key === 'Escape') {
+        cancelAccountClose();
+        setAccountOpen(false);
+      }
     }
 
     document.addEventListener('pointerdown', handlePointerDown);
@@ -84,8 +115,8 @@ export function AppHeader({
               <div
                 className={accountOpen ? 'app-header__account-menu app-header__account-menu--open' : 'app-header__account-menu'}
                 ref={accountMenuRef}
-                onMouseEnter={() => setAccountOpen(true)}
-                onMouseLeave={() => setAccountOpen(false)}
+                onMouseEnter={openAccountMenu}
+                onMouseLeave={scheduleAccountClose}
               >
                 <button
                   className="app-header__account"
@@ -93,7 +124,10 @@ export function AppHeader({
                   aria-haspopup="menu"
                   aria-expanded={accountOpen}
                   aria-label={`Abrir menu de ${user.displayName}`}
-                  onClick={() => setAccountOpen((current) => !current)}
+                  onClick={() => {
+                    cancelAccountClose();
+                    setAccountOpen((current) => !current);
+                  }}
                 >
                   <span className="app-header__avatar" aria-hidden="true">{getInitials(user.displayName)}</span>
                   <span className="app-header__account-copy">
@@ -122,6 +156,7 @@ export function AppHeader({
                       type="button"
                       role="menuitem"
                       onClick={() => {
+                        cancelAccountClose();
                         setAccountOpen(false);
                         void onLogout();
                       }}
