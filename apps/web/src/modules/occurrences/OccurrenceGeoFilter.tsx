@@ -149,6 +149,7 @@ export function OccurrenceGeoFilter({
             type="button"
             variant="soft"
             size="sm"
+            fullWidth
             onClick={() => void useCurrentLocation()}
             disabled={disabled || loading || locating}
           >
@@ -158,11 +159,26 @@ export function OccurrenceGeoFilter({
         </div>
 
         <div className="occurrence-geo-filter__actions">
-          <Button type="button" size="sm" onClick={() => void applyFilters()} disabled={disabled || loading || locating}>
+          <Button
+            type="button"
+            size="sm"
+            fullWidth
+            onClick={() => void applyFilters()}
+            disabled={disabled || loading || locating}
+          >
             {loading ? 'Filtrando...' : 'Filtrar'}
           </Button>
-          <Button type="button" variant="ghost" size="sm" onClick={() => void resetFilters()} disabled={disabled || loading}>
-            Limpar
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="occurrence-geo-filter__clear"
+            aria-label="Limpar filtros"
+            title="Limpar filtros"
+            onClick={() => void resetFilters()}
+            disabled={disabled || loading}
+          >
+            <i className="fa-solid fa-eraser" aria-hidden="true" />
           </Button>
         </div>
       </div>
