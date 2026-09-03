@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Brand, Button } from '../../components/ui';
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
@@ -201,6 +202,7 @@ function PlanCard({ offer, onRegister }: { offer: PublicPlanOffer; onRegister: (
 }
 
 export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [postsUnavailable, setPostsUnavailable] = useState(false);
@@ -352,7 +354,7 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
             <a className="public-home__nav-active" href="#inicio">Início</a>
             <a href="#midias">Mídias</a>
             <a href="#ocorrencias">Ocorrências</a>
-            <a href="#planos">Planos</a>
+            <a href="/planos" onClick={(event) => { event.preventDefault(); navigate('/planos'); }}>Planos</a>
             <a href="#como-funciona">Como funciona</a>
           </nav>
 
@@ -380,7 +382,7 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
               </p>
 
               <div className="public-home__hero-actions">
-                <Button size="lg" onClick={() => scrollTo('planos')}>Conheça os planos</Button>
+                <Button size="lg" onClick={() => navigate('/planos')}>Conheça os planos</Button>
                 <button className="public-home__outline-cta" type="button" onClick={() => scrollTo('como-funciona')}>
                   <span className="public-home__cta-play" aria-hidden="true">▶</span>
                   Como funciona
@@ -569,7 +571,7 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
         <a href="#inicio"><span aria-hidden="true">⌂</span>Início</a>
         <a href="#ocorrencias"><span aria-hidden="true">☷</span>Ocorrências</a>
         <a href="#midias"><span aria-hidden="true">▶</span>Mídias</a>
-        <a href="#planos"><span aria-hidden="true">◇</span>Planos</a>
+        <a href="/planos" onClick={(event) => { event.preventDefault(); navigate('/planos'); }}><span aria-hidden="true">◇</span>Planos</a>
         <button type="button" onClick={onLogin}><span aria-hidden="true">○</span>Entrar</button>
       </nav>
     </div>
