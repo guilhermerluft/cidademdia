@@ -29,6 +29,14 @@ export interface ProfileAvatarConfirmation {
   avatar: ProfileAvatarRead;
 }
 
+let avatarCache: ProfileAvatarRead | null = null;
+let avatarRequest: Promise<ProfileAvatarRead> | null = null;
+
+function avatarCacheIsFresh() {
+  if (!avatarCache) return false;
+  return new Date(avatarCache.readUrlExpiresAt).getTime() - Date.now() > 15_000;
+}
+
 export async function getMyProfile() {
   const { data } = await api.get<PrivateUserProfile>('/profile');
   return data;
@@ -79,17 +87,33 @@ export async function prepareProfileAvatar(file: File) {
   const upload = await requestProfileAvatarUpload(file);
   await uploadProfileAvatarBinary(upload, file);
   const confirmation = await confirmProfileAvatar(upload);
+  avatarCache = confirmation.avatar;
+  avatarRequest = null;
   notifyProfileAvatarChanged();
   return confirmation;
 }
 
 export async function getMyProfileAvatar() {
-  const { data } = await api.get<ProfileAvatarRead>('/profile/avatar');
-  return data;
+  if (avatarCacheIsFresh()) return avatarCache!;
+  if (avatarRequest) return avatarRequest;
+
+  avatarRequest = api
+    .get<ProfileAvatarRead>('/profile/avatar')
+    .then(({ data }) => {
+      avatarCache = data;
+      return data;
+    })
+    .finally(() => {
+      avatarRequest = null;
+    });
+
+  return avatarRequest;
 }
 
 export async function removeMyProfileAvatar() {
   const { data } = await api.delete<PrivateUserProfile>('/profile/avatar');
+  avatarCache = null;
+  avatarRequest = null;
   notifyProfileAvatarChanged();
   return data;
 }
