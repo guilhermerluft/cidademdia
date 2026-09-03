@@ -65,6 +65,8 @@ grep -q 'href="/painel"' "$WT/apps/web/src/app/layout/AppHeader.tsx" || fail "dr
 grep -q 'geocodePublicOccurrenceCity' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "filtro privado não reutiliza geocodificação compartilhada"
 grep -q 'requestBrowserCoordinates' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "filtro privado não reutiliza geolocalização compartilhada"
 grep -q 'type="number"' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "raio privado não usa input numérico padronizado"
+grep -q 'aria-label="Limpar filtros"' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "limpeza compacta perdeu nome acessível"
+grep -q 'fa-eraser' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "botão compacto de limpeza perdeu o ícone"
 echo "panel_architecture=OK"
 echo "occurrence_tracking_filter_architecture=OK"
 
@@ -126,6 +128,13 @@ const context = await browser.newContext({
 const page = await context.newPage();
 const errors = [];
 page.on('pageerror', error => errors.push(error.message));
+
+function overlaps(a, b) {
+  return a.x < b.x + b.width
+    && a.x + a.width > b.x
+    && a.y < b.y + b.height
+    && a.y + a.height > b.y;
+}
 
 try {
   const anonymousPanel = await context.newPage();
@@ -197,13 +206,34 @@ try {
   await page.getByRole('heading', { name: 'Minhas ocorrências', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await page.getByText('Conversas', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 });
 
-  const trackingFilters = page.getByLabel('Filtros das ocorrências', { exact: true });
+  const trackingFilters = page.getByLabel('Filtros das ocorrências publicadas por você', { exact: true });
   await trackingFilters.waitFor({ state: 'visible', timeout: 15000 });
   await trackingFilters.getByRole('textbox', { name: 'Cidade', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await trackingFilters.getByRole('spinbutton', { name: 'Raio em km', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await trackingFilters.getByRole('button', { name: 'Usar minha localização', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await trackingFilters.getByRole('button', { name: 'Filtrar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
-  await trackingFilters.getByRole('button', { name: 'Limpar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+
+  const useLocationButton = trackingFilters.getByRole('button', { name: 'Usar minha localização', exact: true });
+  const filterButton = trackingFilters.getByRole('button', { name: 'Filtrar', exact: true });
+  const clearButton = trackingFilters.getByRole('button', { name: 'Limpar filtros', exact: true });
+  await useLocationButton.waitFor({ state: 'visible', timeout: 15000 });
+  await filterButton.waitFor({ state: 'visible', timeout: 15000 });
+  await clearButton.waitFor({ state: 'visible', timeout: 15000 });
+
+  const locationBox = await useLocationButton.boundingBox();
+  const filterBox = await filterButton.boundingBox();
+  const clearBox = await clearButton.boundingBox();
+  if (!locationBox || !filterBox || !clearBox) {
+    throw new Error('não foi possível medir os botões dos filtros de acompanhamento');
+  }
+  if (locationBox.y + locationBox.height > filterBox.y + 1) {
+    throw new Error('Usar minha localização não está acima da linha de ações');
+  }
+  if (overlaps(filterBox, clearBox) || overlaps(locationBox, filterBox) || overlaps(locationBox, clearBox)) {
+    throw new Error('botões dos filtros de acompanhamento estão se sobrepondo');
+  }
+  if (clearBox.width > 52) {
+    throw new Error(`botão Limpar deixou de ser compacto: ${clearBox.width}px`);
+  }
+  console.log('occurrence_tracking_filter_layout=OK');
   console.log('occurrence_tracking_filters=OK');
   console.log('citizen_panel_modules=OK');
 
@@ -267,6 +297,7 @@ echo "PROFILE DROPDOWN: OK"
 echo "DESKTOP HOVER: OK"
 echo "DESKTOP POINTER TRANSITION: OK"
 echo "OCCURRENCE TRACKING FILTERS: OK"
+echo "OCCURRENCE TRACKING FILTER LAYOUT: OK"
 echo "NEW OCCURRENCE HEADER: OK"
 echo "MOBILE CLICK: OK"
 echo "LOGOUT ONLY IN DROPDOWN: OK"
