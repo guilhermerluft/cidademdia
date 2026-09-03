@@ -302,6 +302,15 @@
 }
 
 @media (hover: hover) and (pointer: fine) {
+  .app-header__account-menu::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 264px;
+    height: 12px;
+  }
+
   .app-header__account-menu:hover .app-header__account-dropdown {
     opacity: 1;
     visibility: visible;
