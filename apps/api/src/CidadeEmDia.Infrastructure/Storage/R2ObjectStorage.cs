@@ -36,6 +36,30 @@ internal sealed class R2ObjectStorage(R2Options options)
         return CreatePresignedUrl(HttpMethod.Get, objectKey, null, options.ReadUrlLifetime, now);
     }
 
+    public async Task DeleteObjectAsync(string objectKey, CancellationToken cancellationToken)
+    {
+        if (!options.IsConfigured)
+            return;
+
+        var now = DateTimeOffset.UtcNow;
+        var url = CreatePresignedUrl(HttpMethod.Delete, objectKey, null, TimeSpan.FromMinutes(2), now);
+
+        using var request = new HttpRequestMessage(HttpMethod.Delete, url);
+        using var response = await HttpClient.SendAsync(
+            request,
+            HttpCompletionOption.ResponseHeadersRead,
+            cancellationToken);
+
+        if (response.StatusCode == HttpStatusCode.NotFound)
+            return;
+
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new InvalidOperationException(
+                $"R2 object deletion failed with HTTP {(int)response.StatusCode}.");
+        }
+    }
+
     public async Task<R2ObjectMetadata?> GetObjectMetadataAsync(
         string objectKey,
         CancellationToken cancellationToken)
