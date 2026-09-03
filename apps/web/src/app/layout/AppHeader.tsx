@@ -140,6 +140,14 @@ export function AppHeader({
                 </button>
 
                 <div className="app-header__account-dropdown" role="menu" aria-label="Menu da conta">
+                  <a className="app-header__account-menu-item" href="/perfil" role="menuitem">
+                    <AppNavigationIcon name="profile" />
+                    <span>
+                      <strong>Perfil</strong>
+                      <small>Dados da sua conta</small>
+                    </span>
+                  </a>
+
                   {panelAccess?.canAccessPanel && (
                     <a className="app-header__account-menu-item" href="/painel" role="menuitem">
                       <AppNavigationIcon name="panel" />
