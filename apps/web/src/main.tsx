@@ -5,6 +5,7 @@ import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { App } from './app/App';
 import { AuthProvider } from './modules/auth/AuthProvider';
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
+import { UserPanelRoute } from './modules/panel/UserPanelRoute';
 import { PlansRoute } from './modules/plans/PlansRoute';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './styles/global.css';
@@ -23,6 +24,7 @@ import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
 import './modules/home/home-session.css';
 import './modules/occurrences/public-occurrences.css';
+import './modules/panel/panel.css';
 import './modules/plans/plans.css';
 import './modules/plans/plans-payment-inline.css';
 import './modules/plans/plans-gold-commercial.css';
@@ -36,6 +38,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <AuthProvider>
           <Routes>
             <Route path="/ocorrencias" element={<PublicOccurrencesRoute />} />
+            <Route path="/painel" element={<UserPanelRoute />} />
             <Route path="/planos" element={<PlansRoute />} />
             <Route path="*" element={<App />} />
           </Routes>
