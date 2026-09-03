@@ -11,111 +11,60 @@ interface PublicPlansProps {
   onContact?: () => void;
 }
 
+type BillingCycle = 1 | 3 | 6;
 type PlanTone = 'blue' | 'green' | 'sky';
-type BillingCycle = 1 | 3 | 6 | 12;
 
 interface PlanDefinition {
   id: 'individual' | 'master-5' | 'master-10';
   title: string;
+  eyebrow: string;
   icon: string;
   tone: PlanTone;
-  subaccountLimit: number;
-  number: string;
-  descriptor: string;
-}
-
-interface CycleDefinition {
-  months: BillingCycle;
-  label: string;
-  shortLabel: string;
-  hint: string;
+  fallbackSubaccounts: number;
+  description: string;
 }
 
 const PLAN_DEFINITIONS: PlanDefinition[] = [
   {
     id: 'individual',
     title: 'Individual',
+    eyebrow: 'Comece simples',
     icon: 'fa-user',
     tone: 'blue',
-    subaccountLimit: 0,
-    number: '01',
-    descriptor: 'Gestão direta e objetiva para uma operação enxuta.',
+    fallbackSubaccounts: 0,
+    description: 'Para quem precisa acompanhar ocorrências e publicar com uma gestão direta.',
   },
   {
     id: 'master-5',
     title: 'Master 5',
+    eyebrow: 'Mais escolhido',
     icon: 'fa-building-user',
     tone: 'green',
-    subaccountLimit: 5,
-    number: '02',
-    descriptor: 'Mais autonomia para distribuir acessos e organizar a equipe.',
+    fallbackSubaccounts: 5,
+    description: 'Para equipes que precisam distribuir acessos sem perder controle da operação.',
   },
   {
     id: 'master-10',
     title: 'Master 10',
+    eyebrow: 'Mais capacidade',
     icon: 'fa-people-group',
     tone: 'sky',
-    subaccountLimit: 10,
-    number: '03',
-    descriptor: 'Estrutura ampliada para operações com mais pessoas e volume.',
+    fallbackSubaccounts: 10,
+    description: 'Para estruturas maiores, com mais pessoas, publicações e volume de atendimento.',
   },
 ];
 
-const CYCLE_DEFINITIONS: CycleDefinition[] = [
-  { months: 1, label: 'Mensal', shortLabel: '1 mês', hint: 'Mais flexibilidade' },
-  { months: 3, label: 'Trimestral', shortLabel: '3 meses', hint: 'Planejamento curto' },
-  { months: 6, label: 'Semestral', shortLabel: '6 meses', hint: 'Mais previsibilidade' },
-  { months: 12, label: 'Anual', shortLabel: '12 meses', hint: 'Melhor condição' },
+const REGULAR_CYCLES: { months: BillingCycle; label: string; hint: string }[] = [
+  { months: 1, label: 'Mensal', hint: 'Flexível' },
+  { months: 3, label: 'Trimestral', hint: '3 meses' },
+  { months: 6, label: 'Semestral', hint: '6 meses' },
 ];
-
-const BENEFITS = [
-  {
-    icon: 'fa-clipboard-list',
-    title: 'Acesso às ocorrências',
-    description: 'Acompanhe as demandas compartilhadas com sua gestão.',
-    tone: 'blue',
-  },
-  {
-    icon: 'fa-users-gear',
-    title: 'Gerencie subcontas',
-    description: 'Distribua acessos conforme a estrutura contratada.',
-    tone: 'green',
-  },
-  {
-    icon: 'fa-bell',
-    title: 'Receba notificações',
-    description: 'Não perca movimentações importantes da operação.',
-    tone: 'sky',
-  },
-  {
-    icon: 'fa-photo-film',
-    title: 'Postagens mensais',
-    description: 'Publique de acordo com a franquia vigente do plano.',
-    tone: 'yellow',
-  },
-] as const;
 
 const TRUST_ITEMS = [
-  {
-    icon: 'fa-shield-halved',
-    title: 'Pagamento e dados seguros',
-    text: 'Fluxos protegidos e tratamento responsável das informações.',
-  },
-  {
-    icon: 'fa-headset',
-    title: 'Suporte dedicado',
-    text: 'Apoio para orientar o uso dos recursos contratados.',
-  },
-  {
-    icon: 'fa-ticket',
-    title: 'Adesão transparente',
-    text: 'A taxa aplicável aparece junto da condição escolhida.',
-  },
-  {
-    icon: 'fa-microchip',
-    title: 'Tecnologia conectada',
-    text: 'Ocorrências, equipes e publicações em um só ambiente.',
-  },
+  { icon: 'fa-clipboard-list', title: 'Ocorrências', text: 'Acompanhe demandas compartilhadas.' },
+  { icon: 'fa-users-gear', title: 'Subcontas', text: 'Distribua acessos com controle.' },
+  { icon: 'fa-bell', title: 'Notificações', text: 'Receba movimentações importantes.' },
+  { icon: 'fa-photo-film', title: 'Publicações', text: 'Use a franquia mensal do plano.' },
 ] as const;
 
 function normalize(value: string) {
@@ -131,6 +80,7 @@ function formatMoney(valueInCents: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
+    maximumFractionDigits: 2,
   }).format(valueInCents / 100);
 }
 
@@ -154,16 +104,8 @@ function getPlanOffers(definition: PlanDefinition, offers: PublicPlanOffer[]) {
     .sort((left, right) => left.billingIntervalMonths - right.billingIntervalMonths);
 }
 
-function getOfferByInterval(offers: PublicPlanOffer[], months: BillingCycle) {
+function getOffer(offers: PublicPlanOffer[], months: number) {
   return offers.find((offer) => offer.billingIntervalMonths === months);
-}
-
-function getPublicationLimit(offers: PublicPlanOffer[]) {
-  return offers.reduce((highest, offer) => Math.max(highest, offer.monthlyPublicationLimit), 0);
-}
-
-function getSignupFee(offers: PublicPlanOffer[]) {
-  return offers.reduce((highest, offer) => Math.max(highest, offer.signupFeeCents), 0);
 }
 
 function getReferenceAnnualPrice(annual: PublicPlanOffer, monthly?: PublicPlanOffer) {
@@ -176,10 +118,6 @@ function getReferenceAnnualPrice(annual: PublicPlanOffer, monthly?: PublicPlanOf
   }
 
   return null;
-}
-
-function getCycleDefinition(months: BillingCycle) {
-  return CYCLE_DEFINITIONS.find((cycle) => cycle.months === months) ?? CYCLE_DEFINITIONS[0];
 }
 
 function PublicPlansHeader({ onHome, onLogin, onRegister }: Pick<PublicPlansProps, 'onHome' | 'onLogin' | 'onRegister'>) {
@@ -210,43 +148,42 @@ function PublicPlansHeader({ onHome, onLogin, onRegister }: Pick<PublicPlansProp
   );
 }
 
-function CycleSelector({
-  selectedCycle,
-  availableCycles,
+function BillingSelector({
+  selected,
+  available,
   onChange,
 }: {
-  selectedCycle: BillingCycle;
-  availableCycles: Set<number>;
+  selected: BillingCycle;
+  available: Set<number>;
   onChange: (cycle: BillingCycle) => void;
 }) {
   return (
-    <div className="plans-v2__cycle-panel" aria-label="Ciclo de contratação">
-      <div className="plans-v2__cycle-heading">
-        <span>Ciclo de contratação</span>
-        <strong>Escolha como prefere contratar</strong>
-      </div>
-
-      <div className="plans-v2__cycle-options" role="group" aria-label="Escolha o ciclo do plano">
-        {CYCLE_DEFINITIONS.map((cycle) => {
-          const selected = selectedCycle === cycle.months;
-          const available = availableCycles.size === 0 || availableCycles.has(cycle.months);
+    <div className="pricing-cycle" aria-label="Periodicidade dos planos">
+      <span className="pricing-cycle__label">Periodicidade</span>
+      <div className="pricing-cycle__options" role="group" aria-label="Escolha a periodicidade">
+        {REGULAR_CYCLES.map((cycle) => {
+          const active = selected === cycle.months;
+          const enabled = available.size === 0 || available.has(cycle.months);
 
           return (
             <button
-              className={`plans-v2__cycle-option${selected ? ' plans-v2__cycle-option--active' : ''}${cycle.months === 12 ? ' plans-v2__cycle-option--annual' : ''}`}
-              type="button"
               key={cycle.months}
-              aria-pressed={selected}
-              disabled={!available}
+              type="button"
+              className={active ? 'is-active' : ''}
+              aria-pressed={active}
+              disabled={!enabled}
               onClick={() => onChange(cycle.months)}
             >
-              <span>{cycle.label}</span>
-              <small>{cycle.shortLabel}</small>
-              {cycle.months === 12 && <em>Melhor condição</em>}
+              <strong>{cycle.label}</strong>
+              <small>{cycle.hint}</small>
             </button>
           );
         })}
       </div>
+      <span className="pricing-cycle__annual-note">
+        <i className="fa-solid fa-star" aria-hidden="true" />
+        O anual tem condição especial abaixo.
+      </span>
     </div>
   );
 }
@@ -254,103 +191,78 @@ function CycleSelector({
 function PlanCard({
   definition,
   offers,
-  selectedCycle,
+  cycle,
   onSelectOffer,
 }: {
   definition: PlanDefinition;
   offers: PublicPlanOffer[];
-  selectedCycle: BillingCycle;
+  cycle: BillingCycle;
   onSelectOffer?: (offer: PublicPlanOffer) => void;
 }) {
-  const selectedOffer = getOfferByInterval(offers, selectedCycle);
-  const monthlyOffer = getOfferByInterval(offers, 1);
-  const cycle = getCycleDefinition(selectedCycle);
-  const publicationLimit = selectedOffer?.monthlyPublicationLimit ?? getPublicationLimit(offers);
-  const subaccountLimit = selectedOffer?.subaccountLimit ?? offers[0]?.subaccountLimit ?? definition.subaccountLimit;
-  const signupFee = selectedOffer?.signupFeeCents ?? getSignupFee(offers);
-  const referencePrice = selectedOffer && selectedCycle === 12
-    ? getReferenceAnnualPrice(selectedOffer, monthlyOffer)
-    : null;
-  const equivalentMonthly = selectedOffer && selectedCycle > 1
-    ? Math.round(selectedOffer.priceCents / selectedCycle)
-    : null;
+  const offer = getOffer(offers, cycle);
+  const publicationLimit = offer?.monthlyPublicationLimit ?? offers[0]?.monthlyPublicationLimit ?? 0;
+  const subaccountLimit = offer?.subaccountLimit ?? offers[0]?.subaccountLimit ?? definition.fallbackSubaccounts;
+  const signupFee = offer?.signupFeeCents ?? offers[0]?.signupFeeCents ?? 0;
+  const equivalentMonthly = offer && cycle > 1 ? Math.round(offer.priceCents / cycle) : null;
 
   return (
-    <article className={`plans-v2__plan-card plans-v2__plan-card--${definition.tone}`}>
-      <div className="plans-v2__plan-rail" aria-hidden="true">
-        <span>{definition.number}</span>
-      </div>
-
-      <div className="plans-v2__plan-topline">
-        <span className="plans-v2__plan-icon" aria-hidden="true">
+    <article className={`pricing-card pricing-card--${definition.tone}`}>
+      <div className="pricing-card__accent" aria-hidden="true" />
+      <div className="pricing-card__top">
+        <span className="pricing-card__icon" aria-hidden="true">
           <i className={`fa-solid ${definition.icon}`} />
         </span>
-        <span className="plans-v2__publication-badge">
-          <i className="fa-solid fa-bullhorn" aria-hidden="true" />
-          {publicationLimit > 0
-            ? `${publicationLimit} postagem${publicationLimit === 1 ? '' : 'ens'}/mês`
-            : 'Postagens conforme catálogo'}
-        </span>
+        <span className="pricing-card__eyebrow">{definition.eyebrow}</span>
       </div>
 
-      <div className="plans-v2__plan-title">
+      <div className="pricing-card__title">
         <span>Plano</span>
-        <h3>{definition.title}</h3>
-        <p>{definition.descriptor}</p>
+        <h2>{definition.title}</h2>
+        <p>{definition.description}</p>
       </div>
 
-      <div className="plans-v2__plan-facts">
-        <span>
-          <i className="fa-solid fa-chart-line" aria-hidden="true" />
-          1 Painel Master
-        </span>
-        <span>
-          <i className="fa-solid fa-user-group" aria-hidden="true" />
-          {subaccountLimit} subconta{subaccountLimit === 1 ? '' : 's'}
-        </span>
-      </div>
-
-      <div className={`plans-v2__price-panel${selectedCycle === 12 ? ' plans-v2__price-panel--annual' : ''}`}>
-        <div className="plans-v2__price-cycle">
-          <span>{cycle.label}</span>
-          <small>{cycle.hint}</small>
+      <div className="pricing-card__metrics">
+        <div>
+          <i className="fa-solid fa-table-columns" aria-hidden="true" />
+          <span><strong>1</strong> Painel Master</span>
         </div>
+        <div>
+          <i className="fa-solid fa-user-group" aria-hidden="true" />
+          <span><strong>{subaccountLimit}</strong> subconta{subaccountLimit === 1 ? '' : 's'}</span>
+        </div>
+        <div>
+          <i className="fa-solid fa-bullhorn" aria-hidden="true" />
+          <span><strong>{publicationLimit || '—'}</strong> postagem{publicationLimit === 1 ? '' : 'ens'}/mês</span>
+        </div>
+      </div>
 
-        {selectedOffer ? (
+      <div className="pricing-card__price-block">
+        {offer ? (
           <>
-            <div className="plans-v2__price-value">
-              {referencePrice && <del>{formatMoney(referencePrice)}</del>}
-              <strong>{formatMoney(selectedOffer.priceCents)}</strong>
-              <span>{selectedCycle === 1 ? 'por mês' : `por ${selectedCycle} meses`}</span>
+            <span className="pricing-card__cycle-label">
+              {cycle === 1 ? 'Mensal' : cycle === 3 ? 'Trimestral' : 'Semestral'}
+            </span>
+            <div className="pricing-card__price">
+              <strong>{formatMoney(offer.priceCents)}</strong>
+              <span>{cycle === 1 ? '/mês' : `/${cycle} meses`}</span>
             </div>
-
-            <div className="plans-v2__price-meta">
-              <span>
-                <i className="fa-solid fa-ticket" aria-hidden="true" />
-                {signupFee > 0 ? `Adesão ${formatMoney(signupFee)}` : 'Sem taxa de adesão'}
-              </span>
-              {equivalentMonthly && (
-                <span>
-                  <i className="fa-solid fa-calculator" aria-hidden="true" />
-                  Equivale a {formatMoney(equivalentMonthly)}/mês
-                </span>
-              )}
+            {equivalentMonthly && (
+              <small>Equivale a {formatMoney(equivalentMonthly)} por mês.</small>
+            )}
+            <div className="pricing-card__signup">
+              <i className="fa-solid fa-ticket" aria-hidden="true" />
+              {signupFee > 0 ? `Adesão única de ${formatMoney(signupFee)}` : 'Sem taxa de adesão'}
             </div>
-
-            <button
-              className="plans-v2__select-button"
-              type="button"
-              onClick={() => onSelectOffer?.(selectedOffer)}
-            >
-              <span>Escolher este plano</span>
+            <button type="button" onClick={() => onSelectOffer?.(offer)}>
+              Escolher {definition.title}
               <i className="fa-solid fa-arrow-right" aria-hidden="true" />
             </button>
           </>
         ) : (
-          <div className="plans-v2__unavailable">
-            <strong>Modalidade indisponível</strong>
-            <span>Este ciclo não está publicado para o plano no catálogo atual.</span>
-            <button type="button" disabled>Indisponível</button>
+          <div className="pricing-card__unavailable">
+            <i className="fa-solid fa-clock" aria-hidden="true" />
+            <strong>Condição indisponível</strong>
+            <span>Este ciclo não está publicado para o plano atual.</span>
           </div>
         )}
       </div>
@@ -358,63 +270,54 @@ function PlanCard({
   );
 }
 
-function AnnualPremium({
-  offers,
-  onSelectOffer,
-}: {
-  offers: PublicPlanOffer[];
-  onSelectOffer?: (offer: PublicPlanOffer) => void;
-}) {
+function AnnualSpotlight({ offers, onSelectOffer }: { offers: PublicPlanOffer[]; onSelectOffer?: (offer: PublicPlanOffer) => void }) {
   const annualOffers = PLAN_DEFINITIONS
     .map((definition) => {
       const planOffers = getPlanOffers(definition, offers);
-      const annual = getOfferByInterval(planOffers, 12);
-      const monthly = getOfferByInterval(planOffers, 1);
-
-      return annual
-        ? { definition, offer: annual, referencePrice: getReferenceAnnualPrice(annual, monthly) }
-        : null;
+      const annual = getOffer(planOffers, 12);
+      const monthly = getOffer(planOffers, 1);
+      return annual ? { definition, offer: annual, reference: getReferenceAnnualPrice(annual, monthly) } : null;
     })
-    .filter((item): item is { definition: PlanDefinition; offer: PublicPlanOffer; referencePrice: number | null } => Boolean(item));
+    .filter((item): item is { definition: PlanDefinition; offer: PublicPlanOffer; reference: number | null } => Boolean(item));
 
   return (
-    <section className="plans-v2__premium" aria-labelledby="plans-premium-title">
-      <div className="plans-v2__premium-copy">
-        <div className="plans-v2__premium-badge">
+    <section className="annual-spotlight" aria-labelledby="annual-spotlight-title">
+      <div className="annual-spotlight__copy">
+        <span className="annual-spotlight__badge">
           <i className="fa-solid fa-star" aria-hidden="true" />
-          MEGA PROMOÇÃO
-        </div>
-        <span className="plans-v2__premium-kicker">Condição anual em destaque</span>
-        <h2 id="plans-premium-title">Ouro Anual</h2>
-        <p>
-          Para quem prefere contratar o ciclo completo e aproveitar a melhor condição anual publicada no catálogo.
-        </p>
-        <div className="plans-v2__premium-benefits">
-          <span><i className="fa-solid fa-calendar-check" aria-hidden="true" /> 12 meses de acesso</span>
-          <span><i className="fa-solid fa-piggy-bank" aria-hidden="true" /> Condição promocional</span>
-          <span><i className="fa-solid fa-bolt" aria-hidden="true" /> Menos renovações</span>
+          MELHOR CONDIÇÃO
+        </span>
+        <span className="annual-spotlight__eyebrow">Ouro Anual</span>
+        <h2 id="annual-spotlight-title">Um ano inteiro com menos renovações e mais previsibilidade.</h2>
+        <p>As condições anuais são carregadas do catálogo vigente e ficam separadas para facilitar a comparação.</p>
+
+        <div className="annual-spotlight__benefits">
+          <span><i className="fa-solid fa-calendar-check" aria-hidden="true" /> 12 meses</span>
+          <span><i className="fa-solid fa-piggy-bank" aria-hidden="true" /> Melhor relação anual</span>
+          <span><i className="fa-solid fa-shield-halved" aria-hidden="true" /> Contratação segura</span>
         </div>
       </div>
 
-      <div className="plans-v2__premium-offers">
-        {annualOffers.length > 0 ? annualOffers.map(({ definition, offer, referencePrice }) => (
-          <div className="plans-v2__premium-offer" key={offer.offerId}>
-            <div>
+      <div className="annual-spotlight__offers">
+        {annualOffers.length > 0 ? annualOffers.map(({ definition, offer, reference }) => (
+          <article key={offer.offerId}>
+            <div className="annual-spotlight__offer-name">
               <span>{definition.title}</span>
               <small>{offer.monthlyPublicationLimit} postagem{offer.monthlyPublicationLimit === 1 ? '' : 'ens'}/mês</small>
             </div>
-            <div className="plans-v2__premium-price">
-              {referencePrice && <del>{formatMoney(referencePrice)}</del>}
+            <div className="annual-spotlight__offer-price">
+              {reference && <del>{formatMoney(reference)}</del>}
               <strong>{formatMoney(offer.priceCents)}</strong>
+              <small>12 meses</small>
             </div>
             <button type="button" onClick={() => onSelectOffer?.(offer)} aria-label={`Escolher ${definition.title} anual`}>
               <i className="fa-solid fa-arrow-right" aria-hidden="true" />
             </button>
-          </div>
+          </article>
         )) : (
-          <div className="plans-v2__premium-empty">
+          <div className="annual-spotlight__empty">
             <i className="fa-solid fa-clock" aria-hidden="true" />
-            <span>A condição anual não está publicada no catálogo neste momento.</span>
+            <span>As ofertas anuais não estão publicadas no catálogo neste momento.</span>
           </div>
         )}
       </div>
@@ -435,7 +338,7 @@ function PlansContent({
   onSelectOffer?: (offer: PublicPlanOffer) => void;
   onContact?: () => void;
 }) {
-  const [selectedCycle, setSelectedCycle] = useState<BillingCycle>(12);
+  const [cycle, setCycle] = useState<BillingCycle>(1);
 
   const groupedPlans = useMemo(
     () => PLAN_DEFINITIONS.map((definition) => ({ definition, offers: getPlanOffers(definition, offers) })),
@@ -443,124 +346,83 @@ function PlansContent({
   );
 
   const availableCycles = useMemo(
-    () => new Set(offers.map((offer) => offer.billingIntervalMonths)),
+    () => new Set(offers.filter((offer) => offer.billingIntervalMonths !== 12).map((offer) => offer.billingIntervalMonths)),
     [offers],
   );
 
   useEffect(() => {
-    if (offers.length === 0 || availableCycles.has(selectedCycle)) return;
-
-    const firstAvailable = CYCLE_DEFINITIONS.find((cycle) => availableCycles.has(cycle.months));
-    if (firstAvailable) setSelectedCycle(firstAvailable.months);
-  }, [availableCycles, offers.length, selectedCycle]);
+    if (offers.length === 0 || availableCycles.has(cycle)) return;
+    const first = REGULAR_CYCLES.find((item) => availableCycles.has(item.months));
+    if (first) setCycle(first.months);
+  }, [availableCycles, cycle, offers.length]);
 
   return (
-    <div className="plans-v2">
-      <section className="plans-v2__hero" aria-labelledby="plans-page-title">
-        <div className="plans-v2__hero-copy">
-          <span className="plans-v2__eyebrow">CIDADEMDIA PARA SUA GESTÃO</span>
-          <h1 id="plans-page-title">
-            <span>PLANOS PARA</span>
-            <span>TODOS OS</span>
-            <span>TIPOS DE GESTÃO</span>
-          </h1>
-          <p>
-            Escolha a estrutura ideal para acompanhar ocorrências, gerenciar acessos e ampliar a capacidade de atendimento da sua equipe.
-          </p>
-          <span className="plans-v2__brand-line" aria-hidden="true" />
+    <div className="pricing-page">
+      <section className="pricing-page__intro">
+        <div>
+          <span className="pricing-page__kicker">Planos CIDADEMDIA</span>
+          <h1>Escolha a estrutura que acompanha o ritmo da sua gestão.</h1>
         </div>
-
-        <CycleSelector
-          selectedCycle={selectedCycle}
-          availableCycles={availableCycles}
-          onChange={setSelectedCycle}
-        />
+        <p>Compare capacidade, acessos e publicações. Os valores abaixo vêm diretamente do catálogo vigente.</p>
       </section>
 
-      <section className="plans-v2__benefits" aria-label="Benefícios gerais dos planos">
-        {BENEFITS.map((benefit) => (
-          <article key={benefit.title}>
-            <span className={`plans-v2__benefit-icon plans-v2__benefit-icon--${benefit.tone}`} aria-hidden="true">
-              <i className={`fa-solid ${benefit.icon}`} />
-            </span>
-            <div>
-              <h2>{benefit.title}</h2>
-              <p>{benefit.description}</p>
-            </div>
-          </article>
-        ))}
-      </section>
+      <BillingSelector selected={cycle} available={availableCycles} onChange={setCycle} />
 
-      <section className="plans-v2__catalog" aria-labelledby="plans-catalog-title">
-        <div className="plans-v2__section-heading">
-          <span>Estrutura da operação</span>
-          <div>
-            <h2 id="plans-catalog-title">Escolha o plano. O ciclo já está definido.</h2>
-            <p>Os valores e limites abaixo vêm diretamente do catálogo público vigente.</p>
-          </div>
+      {loading && (
+        <div className="pricing-state" aria-busy="true">
+          <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
+          Carregando planos disponíveis...
         </div>
+      )}
 
-        {loading && (
-          <div className="plans-v2__state" aria-busy="true">
-            <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
-            Carregando condições disponíveis...
-          </div>
-        )}
+      {!loading && unavailable && (
+        <div className="pricing-state pricing-state--error" role="alert">
+          <i className="fa-solid fa-circle-exclamation" aria-hidden="true" />
+          Não foi possível consultar o catálogo agora. Tente novamente em instantes.
+        </div>
+      )}
 
-        {!loading && unavailable && (
-          <div className="plans-v2__state plans-v2__state--error" role="alert">
-            <i className="fa-solid fa-circle-exclamation" aria-hidden="true" />
-            Não foi possível consultar o catálogo agora. Tente novamente em instantes.
-          </div>
-        )}
+      {!loading && !unavailable && offers.length === 0 && (
+        <div className="pricing-state">
+          <i className="fa-solid fa-layer-group" aria-hidden="true" />
+          Nenhuma oferta está publicada no catálogo neste momento.
+        </div>
+      )}
 
-        {!loading && !unavailable && offers.length === 0 && (
-          <div className="plans-v2__state">
-            <i className="fa-solid fa-layer-group" aria-hidden="true" />
-            Nenhuma oferta está publicada no catálogo neste momento.
-          </div>
-        )}
-
-        {!loading && (
-          <div className="plans-v2__plan-grid">
+      {!loading && (
+        <>
+          <section className="pricing-grid" aria-label="Planos disponíveis">
             {groupedPlans.map(({ definition, offers: planOffers }) => (
               <PlanCard
-                definition={definition}
                 key={definition.id}
+                definition={definition}
                 offers={planOffers}
-                selectedCycle={selectedCycle}
+                cycle={cycle}
                 onSelectOffer={onSelectOffer}
               />
             ))}
-          </div>
-        )}
-      </section>
+          </section>
 
-      {!loading && <AnnualPremium offers={offers} onSelectOffer={onSelectOffer} />}
+          <AnnualSpotlight offers={offers} onSelectOffer={onSelectOffer} />
+        </>
+      )}
 
-      <section className="plans-v2__trust" aria-label="Confiança e suporte">
-        <article className="plans-v2__trust-contact">
-          <span className="plans-v2__trust-icon" aria-hidden="true">
-            <i className="fa-solid fa-comments" />
-          </span>
+      <section className="pricing-trust" aria-label="Benefícios da plataforma">
+        <div className="pricing-trust__items">
+          {TRUST_ITEMS.map((item) => (
+            <article key={item.title}>
+              <span aria-hidden="true"><i className={`fa-solid ${item.icon}`} /></span>
+              <div><strong>{item.title}</strong><small>{item.text}</small></div>
+            </article>
+          ))}
+        </div>
+        <div className="pricing-trust__contact">
           <div>
-            <strong>Precisa de outra composição?</strong>
-            <span>Fale com a equipe para avaliar um plano personalizado.</span>
+            <strong>Precisa de uma composição diferente?</strong>
+            <span>Converse com a equipe sobre um plano personalizado.</span>
           </div>
           <button type="button" onClick={onContact}>Fale conosco</button>
-        </article>
-
-        {TRUST_ITEMS.map((item) => (
-          <article key={item.title}>
-            <span className="plans-v2__trust-icon" aria-hidden="true">
-              <i className={`fa-solid ${item.icon}`} />
-            </span>
-            <div>
-              <strong>{item.title}</strong>
-              <span>{item.text}</span>
-            </div>
-          </article>
-        ))}
+        </div>
       </section>
     </div>
   );
@@ -602,8 +464,8 @@ export function PublicPlans({
 
   const content = (
     <PlansContent
-      loading={loading}
       offers={offers}
+      loading={loading}
       unavailable={unavailable}
       onSelectOffer={onSelectOffer}
       onContact={onContact}
