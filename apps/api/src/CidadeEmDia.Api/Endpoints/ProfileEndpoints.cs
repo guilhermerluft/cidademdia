@@ -35,6 +35,75 @@ public static class ProfileEndpoints
             return MapUpdateResult(result);
         }).RequireAuthorization(AuthorizationPolicies.ProfileUpdate);
 
+        self.MapPost("/avatar/upload", async (
+            ProfileAvatarUploadRequest request,
+            IProfileService profileService,
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await profileService.RequestAvatarUploadAsync(
+                userId,
+                request.FileName,
+                request.ContentType,
+                request.SizeBytes,
+                cancellationToken);
+
+            return result.Succeeded && result.Upload is not null
+                ? Results.Ok(result.Upload)
+                : MapAvatarError(result.ErrorCode, result.ErrorDetail);
+        }).RequireAuthorization(AuthorizationPolicies.ProfileUpdate);
+
+        self.MapPost("/avatar/confirm", async (
+            ProfileAvatarConfirmRequest request,
+            IProfileService profileService,
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await profileService.ConfirmAvatarUploadAsync(
+                userId,
+                request.AvatarMediaId,
+                request.ContentType,
+                cancellationToken);
+
+            return result.Succeeded && result.Confirmation is not null
+                ? Results.Ok(result.Confirmation)
+                : MapAvatarError(result.ErrorCode, result.ErrorDetail);
+        }).RequireAuthorization(AuthorizationPolicies.ProfileUpdate);
+
+        self.MapGet("/avatar", async (
+            IProfileService profileService,
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await profileService.GetAvatarAsync(userId, cancellationToken);
+            return result.Succeeded && result.Avatar is not null
+                ? Results.Ok(result.Avatar)
+                : MapAvatarError(result.ErrorCode);
+        }).RequireAuthorization(AuthorizationPolicies.ProfileRead);
+
+        self.MapDelete("/avatar", async (
+            IProfileService profileService,
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken) =>
+        {
+            if (!TryGetCurrentUserId(principal, out var userId))
+                return Results.Unauthorized();
+
+            var result = await profileService.RemoveAvatarAsync(userId, cancellationToken);
+            return result.Succeeded && result.Profile is not null
+                ? Results.Ok(result.Profile)
+                : MapAvatarError(result.ErrorCode);
+        }).RequireAuthorization(AuthorizationPolicies.ProfileUpdate);
+
         var profiles = api.MapGroup("/profiles").RequireAuthorization();
 
         profiles.MapGet("/{userId:guid}", async (Guid userId, IProfileService profileService, ClaimsPrincipal principal, CancellationToken cancellationToken) =>
@@ -72,8 +141,24 @@ public static class ProfileEndpoints
         };
     }
 
+    private static IResult MapAvatarError(string? errorCode, string? detail = null) =>
+        errorCode switch
+        {
+            "profile_not_found" or "avatar_not_found" or "avatar_object_missing" =>
+                Results.NotFound(new { error = errorCode, detail }),
+            "storage_not_configured" or "storage_verification_failed" =>
+                Results.Json(new { error = errorCode, detail }, statusCode: StatusCodes.Status503ServiceUnavailable),
+            _ => Results.BadRequest(new
+            {
+                error = errorCode ?? "invalid_avatar_request",
+                detail
+            })
+        };
+
     private static bool TryGetCurrentUserId(ClaimsPrincipal principal, out Guid userId) =>
         Guid.TryParse(principal.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
 
     public sealed record UpdateProfileRequest(string DisplayName, string? Document, string? Phone);
+    public sealed record ProfileAvatarUploadRequest(string FileName, string ContentType, long SizeBytes);
+    public sealed record ProfileAvatarConfirmRequest(Guid AvatarMediaId, string ContentType);
 }
