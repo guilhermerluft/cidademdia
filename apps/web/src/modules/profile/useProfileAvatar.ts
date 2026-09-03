@@ -1,12 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { AuthenticatedUser } from '../auth/types';
+import { PROFILE_AVATAR_CHANGED_EVENT } from './profileEvents';
 import { getMyProfileAvatar } from './profileService';
-
-const PROFILE_AVATAR_CHANGED_EVENT = 'cidademdia:profile-avatar-changed';
-
-export function notifyProfileAvatarChanged() {
-  window.dispatchEvent(new Event(PROFILE_AVATAR_CHANGED_EVENT));
-}
 
 export function useProfileAvatar(user?: AuthenticatedUser | null) {
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
