@@ -94,6 +94,16 @@ grep -q "status !== 'authenticated'" "$WEB/modules/profile/ProfileRoute.tsx" \
   || fail "rota /perfil não está protegida por autenticação"
 grep -q "api.get<PrivateUserProfile>('/profile')" "$WEB/modules/profile/profileService.ts" \
   || fail "Perfil não consome o endpoint privado existente"
+grep -q "api.put<PrivateUserProfile>('/profile'" "$WEB/modules/profile/profileService.ts" \
+  || fail "edição de documento/telefone não reutiliza PUT /profile"
+grep -q "'/profile/avatar/upload'" "$WEB/modules/profile/profileService.ts" \
+  || fail "upload de avatar não usa endpoint central do perfil"
+grep -q "'/profile/avatar/confirm'" "$WEB/modules/profile/profileService.ts" \
+  || fail "confirmação de avatar não usa endpoint central do perfil"
+grep -q 'prepareProfileAvatar' "$WEB/modules/profile/ProfilePage.tsx" \
+  || fail "tela de perfil não implementa upload confirmado de avatar"
+grep -q 'updateMyProfile' "$WEB/modules/profile/ProfilePage.tsx" \
+  || fail "tela de perfil não permite atualizar documento/telefone"
 grep -q 'href="/perfil"' "$WEB/app/layout/AppHeader.tsx" \
   || fail "dropdown do perfil não aponta para /perfil"
 
@@ -147,6 +157,8 @@ echo "centralized_navigation_access=OK"
 echo "public_occurrences_navigation=OK"
 echo "public_representatives_navigation=OK"
 echo "profile_route_separated_from_home=OK"
+echo "editable_profile=OK"
+echo "profile_avatar_flow=OK"
 echo "representatives_route_separated_from_home=OK"
 echo "shared_public_occurrence_location=OK"
 echo "shared_google_maps_loader=OK"
