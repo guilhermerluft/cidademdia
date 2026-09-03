@@ -27,4 +27,10 @@ public sealed class UserProfile : BaseEntity
         Phone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
         Touch();
     }
+
+    public void SetAvatar(Guid? avatarMediaId)
+    {
+        AvatarMediaId = avatarMediaId;
+        Touch();
+    }
 }
