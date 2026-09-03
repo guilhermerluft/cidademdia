@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { Brand, Button } from '../../components/ui';
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
@@ -346,24 +347,11 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
 
   return (
     <div className="public-home">
-      <header className="public-home__header">
-        <div className="public-home__header-inner">
-          <Brand className="public-home__brand" />
-
-          <nav className="public-home__desktop-nav" aria-label="Navegação principal">
-            <a className="public-home__nav-active" href="#inicio">Início</a>
-            <a href="#midias">Mídias</a>
-            <a href="#ocorrencias">Ocorrências</a>
-            <a href="/planos" onClick={(event) => { event.preventDefault(); navigate('/planos'); }}>Planos</a>
-            <a href="#como-funciona">Como funciona</a>
-          </nav>
-
-          <div className="public-home__header-actions">
-            <Button variant="ghost" onClick={onLogin}>Entrar</Button>
-            <Button onClick={onRegister}>Criar conta</Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        active="home"
+        onLogin={onLogin}
+        onRegister={onRegister}
+      />
 
       <main>
         <section className="public-home__hero" id="inicio" aria-labelledby="public-home-title">
@@ -567,13 +555,11 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
         </div>
       </footer>
 
-      <nav className="public-home__bottom-nav" aria-label="Navegação mobile">
-        <a href="#inicio"><span aria-hidden="true">⌂</span>Início</a>
-        <a href="#ocorrencias"><span aria-hidden="true">☷</span>Ocorrências</a>
-        <a href="#midias"><span aria-hidden="true">▶</span>Mídias</a>
-        <a href="#planos"><span aria-hidden="true">◇</span>Planos</a>
-        <button type="button" onClick={onLogin}><span aria-hidden="true">○</span>Entrar</button>
-      </nav>
+      <AppBottomNavigation
+        active="home"
+        onLogin={onLogin}
+        onRegister={onRegister}
+      />
     </div>
   );
 }
