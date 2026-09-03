@@ -1,7 +1,10 @@
 .plans-page {
   min-height: 100vh;
   color: var(--ced-color-text-strong);
-  background: #f7fafc;
+  background:
+    radial-gradient(circle at 12% 12%, rgba(72, 146, 207, .12), transparent 24%),
+    radial-gradient(circle at 88% 4%, rgba(227, 222, 86, .12), transparent 20%),
+    linear-gradient(180deg, #ffffff 0%, #f7fafc 52%, #f3f7fa 100%);
 }
 
 .plans-page,
@@ -35,7 +38,7 @@
 }
 
 .plans-page__header-inner,
-.pricing-page,
+.plans-page__content,
 .plans-page__footer-inner {
   width: min(1360px, calc(100% - 48px));
   margin-inline: auto;
@@ -124,655 +127,729 @@
   border-radius: 18px;
 }
 
+.plans-page__content {
+  padding: clamp(44px, 6vw, 82px) 0 56px;
+}
+
 .plans-page--embedded {
   width: 100%;
   background: transparent;
 }
 
-.pricing-page {
-  padding: clamp(38px, 5vw, 64px) 0 54px;
-}
-
-.plans-page--embedded .pricing-page {
+.plans-page--embedded .plans-page__content {
   width: 100%;
-  padding-top: 18px;
-  padding-bottom: 28px;
+  padding-top: 22px;
+  padding-bottom: 32px;
 }
 
-.pricing-page__intro {
-  display: grid;
-  grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr);
-  align-items: end;
-  gap: clamp(28px, 5vw, 72px);
-  margin-bottom: 30px;
+.plans-page__intro {
+  max-width: 900px;
+  margin: 0 auto clamp(38px, 5vw, 64px);
+  text-align: center;
 }
 
-.pricing-page__intro > div {
-  max-width: 780px;
-}
-
-.pricing-page__kicker {
+.plans-page__intro-kicker,
+.plans-page__catalog-heading > span {
   display: inline-flex;
   align-items: center;
-  min-height: 29px;
-  padding: 0 12px;
-  border-left: 4px solid var(--ced-color-brand-green);
+  min-height: 30px;
+  padding: 0 13px;
+  border: 1px solid rgba(25, 98, 169, .12);
+  border-radius: 999px;
   color: var(--ced-color-primary-700);
-  background: rgba(255,255,255,.85);
+  background: var(--ced-gradient-brand-soft);
   font-size: .72rem;
-  font-weight: 900;
-  letter-spacing: .1em;
-  text-transform: uppercase;
-}
-
-.pricing-page__intro h1 {
-  max-width: 720px;
-  margin: 14px 0 0;
-  color: var(--ced-color-navy-900);
-  font-size: clamp(2.5rem, 5vw, 4.9rem);
-  line-height: .96;
-  letter-spacing: -.06em;
-  font-weight: 950;
-}
-
-.pricing-page__intro p {
-  max-width: 470px;
-  margin: 0;
-  color: var(--ced-color-text-muted);
-  font-size: 1rem;
-  line-height: 1.65;
-}
-
-.pricing-cycle {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 24px;
-  padding: 12px 14px 12px 18px;
-  border: 1px solid var(--ced-color-border);
-  background: #fff;
-  box-shadow: 0 8px 24px rgba(20,66,105,.05);
-}
-
-.pricing-cycle__label {
-  color: var(--ced-color-navy-800);
-  font-size: .78rem;
-  font-weight: 900;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-}
-
-.pricing-cycle__options {
-  display: inline-flex;
-  width: fit-content;
-  padding: 4px;
-  background: #eef3f6;
-}
-
-.pricing-cycle__options button {
-  min-width: 112px;
-  display: grid;
-  gap: 1px;
-  padding: 9px 16px;
-  border: 0;
-  color: #617181;
-  background: transparent;
-  cursor: pointer;
-  transition: 160ms ease;
-}
-
-.pricing-cycle__options button strong {
-  font-size: .82rem;
-}
-
-.pricing-cycle__options button small {
-  font-size: .64rem;
-  color: #8a98a5;
-}
-
-.pricing-cycle__options button.is-active {
-  color: #fff;
-  background: var(--ced-color-navy-800);
-  box-shadow: 0 8px 20px rgba(13,39,78,.16);
-}
-
-.pricing-cycle__options button.is-active small {
-  color: rgba(255,255,255,.7);
-}
-
-.pricing-cycle__options button:disabled {
-  opacity: .35;
-  cursor: not-allowed;
-}
-
-.pricing-cycle__annual-note {
-  justify-self: end;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  color: #897418;
-  font-size: .74rem;
-  font-weight: 800;
-}
-
-.pricing-cycle__annual-note i {
-  color: #c9ac23;
-}
-
-.pricing-grid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 18px;
-}
-
-.pricing-card {
-  --plan-accent: var(--ced-color-brand-blue);
-  position: relative;
-  overflow: hidden;
-  display: flex;
-  min-height: 520px;
-  flex-direction: column;
-  border: 1px solid #dbe5eb;
-  background: #fff;
-  box-shadow: 0 16px 34px rgba(20,66,105,.08);
-}
-
-.pricing-card--green { --plan-accent: var(--ced-color-brand-green); }
-.pricing-card--sky { --plan-accent: var(--ced-color-brand-sky); }
-
-.pricing-card__accent {
-  height: 6px;
-  background: var(--plan-accent);
-}
-
-.pricing-card__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 22px 22px 0;
-}
-
-.pricing-card__icon {
-  width: 50px;
-  height: 50px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--plan-accent);
-  background: color-mix(in srgb, var(--plan-accent) 12%, white);
-  font-size: 1.15rem;
-  transform: rotate(-3deg);
-}
-
-.pricing-card__eyebrow {
-  padding: 6px 9px;
-  border: 1px solid color-mix(in srgb, var(--plan-accent) 25%, white);
-  color: color-mix(in srgb, var(--plan-accent) 80%, #173d72);
-  background: color-mix(in srgb, var(--plan-accent) 7%, white);
-  font-size: .65rem;
-  font-weight: 900;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.pricing-card__title {
-  padding: 18px 22px 0;
-}
-
-.pricing-card__title > span {
-  color: #8996a2;
-  font-size: .68rem;
   font-weight: 900;
   letter-spacing: .09em;
   text-transform: uppercase;
 }
 
-.pricing-card__title h2 {
-  margin: 3px 0 9px;
-  color: var(--ced-color-navy-900);
-  font-size: 2rem;
-  line-height: 1;
-  letter-spacing: -.045em;
+.plans-page__intro h1 {
+  margin: 18px 0 18px;
+  font-size: clamp(2.7rem, 6vw, 5.6rem);
+  line-height: .9;
+  letter-spacing: -.065em;
+  font-weight: 950;
 }
 
-.pricing-card__title p {
-  min-height: 62px;
-  margin: 0;
-  color: #667887;
-  font-size: .85rem;
-  line-height: 1.5;
+.plans-page__intro h1 span {
+  display: block;
 }
 
-.pricing-card__metrics {
+.plans-page__headline-blue {
+  color: #155fa8;
+}
+
+.plans-page__headline-green {
+  color: #5f9f3d;
+}
+
+.plans-page__headline-yellow {
+  color: #d0b72c;
+}
+
+.plans-page__intro p {
+  max-width: 720px;
+  margin: 0 auto;
+  color: #566879;
+  font-size: clamp(1rem, 1.6vw, 1.16rem);
+  line-height: 1.65;
+}
+
+.plans-page__intro-line {
+  display: block;
+  width: min(420px, 72%);
+  height: 4px;
+  margin: 24px auto 0;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #1477d4 0%, #4f9290 47%, #6aa53d 70%, #e3de56 100%);
+}
+
+.plans-page__benefits {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin: 20px 22px 0;
-  border-top: 1px solid #e4eaef;
-  border-bottom: 1px solid #e4eaef;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-bottom: clamp(54px, 7vw, 86px);
+  padding: 24px 0;
+  border-top: 1px solid #e0e8ef;
+  border-bottom: 1px solid #e0e8ef;
+  background: rgba(255, 255, 255, .76);
 }
 
-.pricing-card__metrics div {
+.plans-page__benefits article {
   min-width: 0;
   display: grid;
-  justify-items: center;
-  gap: 7px;
-  padding: 15px 7px;
-  text-align: center;
+  grid-template-columns: 48px 1fr;
+  gap: 13px;
+  align-items: center;
+  padding: 4px clamp(12px, 2vw, 24px);
 }
 
-.pricing-card__metrics div + div {
-  border-left: 1px solid #e4eaef;
+.plans-page__benefits article + article {
+  border-left: 1px solid #e5ebf0;
 }
 
-.pricing-card__metrics i {
-  color: var(--plan-accent);
-  font-size: .9rem;
+.plans-page__benefit-icon {
+  width: 46px;
+  height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  font-size: 1.08rem;
 }
 
-.pricing-card__metrics span {
-  color: #748391;
-  font-size: .66rem;
-  line-height: 1.3;
+.plans-page__benefit-icon--blue {
+  color: #1265ac;
+  background: #eaf4ff;
 }
 
-.pricing-card__metrics strong {
-  color: #34495c;
+.plans-page__benefit-icon--green {
+  color: #528c37;
+  background: #edf7e8;
+}
+
+.plans-page__benefit-icon--orange {
+  color: #bd701e;
+  background: #fff2e3;
+}
+
+.plans-page__benefit-icon--yellow {
+  color: #9b8411;
+  background: #fff9d8;
+}
+
+.plans-page__benefits h2 {
+  margin: 0 0 4px;
+  color: #143058;
+  font-size: .93rem;
+  line-height: 1.25;
+}
+
+.plans-page__benefits p {
+  margin: 0;
+  color: #6a7886;
   font-size: .76rem;
-}
-
-.pricing-card__price-block {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  margin: 18px 22px 22px;
-  padding: 18px;
-  background: #f8fafb;
-}
-
-.pricing-card__cycle-label {
-  color: color-mix(in srgb, var(--plan-accent) 80%, #173d72);
-  font-size: .7rem;
-  font-weight: 900;
-  letter-spacing: .08em;
-  text-transform: uppercase;
-}
-
-.pricing-card__price {
-  display: flex;
-  align-items: end;
-  gap: 7px;
-  margin-top: 6px;
-}
-
-.pricing-card__price strong {
-  color: var(--ced-color-navy-900);
-  font-size: clamp(2rem, 3.2vw, 2.75rem);
-  line-height: 1;
-  letter-spacing: -.055em;
-}
-
-.pricing-card__price > span {
-  padding-bottom: 3px;
-  color: #758594;
-  font-size: .7rem;
-  font-weight: 700;
-}
-
-.pricing-card__price-block > small {
-  margin-top: 6px;
-  color: #83919d;
-  font-size: .7rem;
-}
-
-.pricing-card__signup {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin-top: 14px;
-  color: #667684;
-  font-size: .72rem;
-  font-weight: 700;
-}
-
-.pricing-card__signup i {
-  color: var(--plan-accent);
-}
-
-.pricing-card__price-block > button {
-  min-height: 44px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-top: auto;
-  padding: 0 16px;
-  border: 0;
-  color: #fff;
-  background: var(--ced-color-navy-800);
-  font-size: .78rem;
-  font-weight: 900;
-  cursor: pointer;
-  transition: transform 160ms ease, background 160ms ease;
-}
-
-.pricing-card__price-block > button:hover {
-  transform: translateY(-1px);
-  background: var(--ced-color-primary-700);
-}
-
-.pricing-card__unavailable {
-  min-height: 170px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 8px;
-  color: #7a8995;
-  text-align: center;
-}
-
-.pricing-card__unavailable i {
-  color: var(--plan-accent);
-  font-size: 1.2rem;
-}
-
-.pricing-card__unavailable strong {
-  color: #43576a;
-}
-
-.pricing-card__unavailable span {
-  max-width: 220px;
-  font-size: .75rem;
   line-height: 1.45;
 }
 
-.annual-spotlight {
-  position: relative;
-  overflow: hidden;
-  display: grid;
-  grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
-  gap: clamp(30px, 5vw, 74px);
-  margin-top: 22px;
-  padding: clamp(30px, 4vw, 50px);
-  border: 1px solid rgba(227,222,86,.45);
-  color: #fff;
-  background:
-    radial-gradient(circle at 85% 12%, rgba(227,222,86,.14), transparent 22%),
-    radial-gradient(circle at 12% 90%, rgba(72,146,207,.12), transparent 25%),
-    linear-gradient(135deg, #0d274e 0%, #102f55 54%, #173d62 100%);
-  box-shadow: 0 26px 60px rgba(13,39,78,.2);
+.plans-page__catalog-heading {
+  max-width: 760px;
+  margin: 0 auto 30px;
+  text-align: center;
 }
 
-.annual-spotlight::after {
+.plans-page__catalog-heading h2 {
+  margin: 11px 0 7px;
+  color: #0d274e;
+  font-size: clamp(1.7rem, 3vw, 2.55rem);
+  letter-spacing: -.04em;
+}
+
+.plans-page__catalog-heading p {
+  margin: 0;
+  color: #667788;
+  font-size: .92rem;
+}
+
+.plans-page__catalog-state {
+  min-height: 76px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: 1px dashed #bdd0df;
+  border-radius: 16px;
+  color: #53697d;
+  background: rgba(255, 255, 255, .8);
+  font-weight: 700;
+}
+
+.plans-page__catalog-state--error {
+  border-color: #efc8cc;
+  color: #a52f3a;
+  background: #fff7f7;
+}
+
+.plans-page__plans-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 18px;
+  align-items: stretch;
+}
+
+.plans-page__plan-card,
+.plans-page__mega-card {
+  min-width: 0;
+  border-radius: 24px;
+}
+
+.plans-page__plan-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  border: 1px solid #dce6ed;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(20, 66, 105, .09);
+}
+
+.plans-page__plan-card--blue {
+  border-top: 4px solid #1962a9;
+}
+
+.plans-page__plan-card--green {
+  border-top: 4px solid #69a53d;
+}
+
+.plans-page__plan-card--sky {
+  border-top: 4px solid #4892cf;
+}
+
+.plans-page__posting-badge {
+  align-self: flex-start;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border-radius: 999px;
+  color: #52677c;
+  background: #f0f5f8;
+  font-size: .68rem;
+  font-weight: 850;
+  text-transform: uppercase;
+  letter-spacing: .035em;
+}
+
+.plans-page__plan-title {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 20px 2px 14px;
+}
+
+.plans-page__plan-icon {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 15px;
+  color: #fff;
+  font-size: 1.08rem;
+  box-shadow: 0 8px 18px rgba(20, 66, 105, .16);
+}
+
+.plans-page__plan-card--blue .plans-page__plan-icon {
+  background: #1962a9;
+}
+
+.plans-page__plan-card--green .plans-page__plan-icon {
+  background: #69a53d;
+}
+
+.plans-page__plan-card--sky .plans-page__plan-icon {
+  background: #4892cf;
+}
+
+.plans-page__plan-title small {
+  display: block;
+  margin-bottom: 1px;
+  color: #8796a4;
+  font-size: .65rem;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.plans-page__plan-title h2 {
+  margin: 0;
+  color: #0d274e;
+  font-size: 1.35rem;
+  line-height: 1.1;
+}
+
+.plans-page__signup-fee {
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 13px;
+  padding: 6px 10px;
+  border: 1px solid #d8e3ea;
+  border-radius: 10px;
+  color: #294c6e;
+  background: #f8fbfd;
+  font-size: .74rem;
+  font-weight: 850;
+}
+
+.plans-page__plan-summary {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 6px;
+  margin-bottom: 15px;
+  padding: 11px 12px;
+  border-radius: 12px;
+  background: #f7fafc;
+  color: #5a6c7b;
+  font-size: .72rem;
+}
+
+.plans-page__plan-summary span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.plans-page__plan-summary i {
+  width: 15px;
+  color: #4382b8;
+  text-align: center;
+}
+
+.plans-page__payments {
+  display: grid;
+  gap: 10px;
+}
+
+.plans-page__payment {
+  padding: 12px;
+  border: 1px solid #e0e6ec;
+  border-left-width: 4px;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.plans-page__payment--basic {
+  border-left-color: #1962a9;
+}
+
+.plans-page__payment--bronze {
+  border-left-color: #b84f45;
+}
+
+.plans-page__payment--silver {
+  border-left-color: #8d98a3;
+}
+
+.plans-page__payment--gold {
+  border-color: #b89922;
+  color: #fff;
+  background:
+    radial-gradient(circle at 92% 8%, rgba(227, 222, 86, .16), transparent 30%),
+    linear-gradient(145deg, #102743 0%, #132f50 62%, #1b3c5d 100%);
+  box-shadow: inset 0 0 0 1px rgba(227, 222, 86, .08);
+}
+
+.plans-page__payment-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #243f5c;
+  font-size: .74rem;
+  font-weight: 900;
+}
+
+.plans-page__payment--gold .plans-page__payment-heading {
+  color: #f8f5df;
+}
+
+.plans-page__payment-heading small {
+  padding: 3px 6px;
+  border-radius: 999px;
+  color: #4c3b00;
+  background: #e3de56;
+  font-size: .55rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.plans-page__payment-price {
+  min-height: 52px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 7px;
+}
+
+.plans-page__payment-price del {
+  width: 100%;
+  color: #96a3ae;
+  font-size: .68rem;
+}
+
+.plans-page__payment--gold .plans-page__payment-price del {
+  color: #b8c2cc;
+}
+
+.plans-page__payment-price strong {
+  color: #123b62;
+  font-size: 1.15rem;
+  letter-spacing: -.03em;
+}
+
+.plans-page__payment--gold .plans-page__payment-price strong {
+  color: #f6df59;
+  font-size: 1.25rem;
+}
+
+.plans-page__payment-price span {
+  color: #778592;
+  font-size: .61rem;
+}
+
+.plans-page__payment--gold .plans-page__payment-price span {
+  color: #d3dce4;
+}
+
+.plans-page__installment {
+  margin: 0 0 9px;
+  color: #d6dee5;
+  font-size: .61rem;
+  line-height: 1.4;
+}
+
+.plans-page__choose-button {
+  width: 100%;
+  min-height: 34px;
+  padding: 5px 8px;
+  border: 1px solid #1962a9;
+  border-radius: 9px;
+  color: #155a99;
+  background: #fff;
+  font-size: .68rem;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform var(--ced-transition-fast), box-shadow var(--ced-transition-fast), background var(--ced-transition-fast);
+}
+
+.plans-page__payment--bronze .plans-page__choose-button {
+  border-color: #b84f45;
+  color: #a23c34;
+}
+
+.plans-page__payment--silver .plans-page__choose-button {
+  border-color: #909ba5;
+  color: #66727c;
+}
+
+.plans-page__payment--gold .plans-page__choose-button {
+  border-color: #e3de56;
+  color: #342e00;
+  background: #e3de56;
+  box-shadow: 0 7px 16px rgba(227, 222, 86, .16);
+}
+
+.plans-page__choose-button:not(:disabled):hover,
+.plans-page__choose-button:not(:disabled):focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(20, 66, 105, .12);
+}
+
+.plans-page__choose-button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
+}
+
+.plans-page__payment-unavailable {
+  display: grid;
+  gap: 4px;
+  color: #778694;
+  font-size: .66rem;
+}
+
+.plans-page__payment-unavailable strong {
+  color: #4f6273;
+}
+
+.plans-page__payment-unavailable .plans-page__choose-button {
+  margin-top: 6px;
+}
+
+.plans-page__mega-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 22px 18px 18px;
+  border: 2px solid #d6bd48;
+  color: #fff;
+  text-align: center;
+  background:
+    radial-gradient(circle at 15% 12%, rgba(255,255,255,.75) 0 1px, transparent 1.6px),
+    radial-gradient(circle at 82% 18%, rgba(227,222,86,.85) 0 1.2px, transparent 1.8px),
+    radial-gradient(circle at 68% 52%, rgba(255,255,255,.5) 0 1px, transparent 1.7px),
+    radial-gradient(circle at 26% 68%, rgba(227,222,86,.65) 0 1.1px, transparent 1.8px),
+    linear-gradient(155deg, #08162b 0%, #102946 52%, #0a1c33 100%);
+  background-size: 74px 74px, 93px 93px, 111px 111px, 127px 127px, auto;
+  box-shadow: 0 22px 54px rgba(8, 22, 43, .25), inset 0 0 34px rgba(227, 222, 86, .06);
+}
+
+.plans-page__mega-card::after {
   content: '';
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,.8) 0 1px, transparent 1.4px),
-    radial-gradient(circle, rgba(227,222,86,.72) 0 1px, transparent 1.4px);
-  background-size: 96px 96px, 137px 137px;
-  opacity: .22;
+  background: linear-gradient(135deg, transparent 0 55%, rgba(227,222,86,.05) 75%, transparent 100%);
 }
 
-.annual-spotlight > * {
+.plans-page__mega-card > * {
   position: relative;
   z-index: 1;
 }
 
-.annual-spotlight__badge {
+.plans-page__mega-badge {
+  min-height: 28px;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  width: fit-content;
-  padding: 7px 11px;
-  color: #413800;
-  background: var(--ced-color-brand-yellow);
+  padding: 0 12px;
+  border-radius: 999px;
+  color: #332c00;
+  background: linear-gradient(90deg, #d7c346, #f0e66a, #c8ae32);
+  box-shadow: 0 8px 22px rgba(227, 222, 86, .2);
   font-size: .66rem;
   font-weight: 950;
-  letter-spacing: .1em;
+  letter-spacing: .08em;
 }
 
-.annual-spotlight__eyebrow {
-  display: block;
-  margin-top: 22px;
-  color: #f0dc63;
-  font-size: .76rem;
-  font-weight: 900;
-  letter-spacing: .1em;
+.plans-page__mega-star {
+  margin: 22px 0 11px;
+  color: #f1df64;
+  font-size: 3.1rem;
+  filter: drop-shadow(0 0 16px rgba(227,222,86,.34));
+}
+
+.plans-page__mega-eyebrow {
+  color: #9fb4c6;
+  font-size: .64rem;
+  font-weight: 850;
+  letter-spacing: .11em;
   text-transform: uppercase;
 }
 
-.annual-spotlight h2 {
-  max-width: 630px;
-  margin: 8px 0 14px;
-  color: #fff;
-  font-size: clamp(2rem, 4vw, 3.55rem);
-  line-height: 1;
-  letter-spacing: -.055em;
+.plans-page__mega-card h2 {
+  margin: 5px 0 9px;
+  color: #fff7ba;
+  font-size: 1.48rem;
+  line-height: 1.05;
+  letter-spacing: -.035em;
 }
 
-.annual-spotlight__copy > p {
-  max-width: 570px;
-  margin: 0;
-  color: #c7d3de;
-  font-size: .9rem;
-  line-height: 1.6;
+.plans-page__mega-card > p {
+  margin: 0 0 16px;
+  color: #c3d0db;
+  font-size: .75rem;
+  line-height: 1.5;
 }
 
-.annual-spotlight__benefits {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 20px;
+.plans-page__mega-condition {
+  width: 100%;
+  display: grid;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding: 13px 10px;
+  border: 1px solid rgba(255,255,255,.13);
+  border-radius: 13px;
+  background: rgba(255,255,255,.06);
 }
 
-.annual-spotlight__benefits span {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  padding: 8px 10px;
-  border: 1px solid rgba(255,255,255,.12);
-  background: rgba(255,255,255,.05);
-  color: #dbe4eb;
-  font-size: .7rem;
+.plans-page__mega-condition span {
+  color: #93a9bc;
+  font-size: .59rem;
   font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
 }
 
-.annual-spotlight__benefits i {
-  color: #e3de56;
-}
-
-.annual-spotlight__offers {
-  display: grid;
-  align-content: center;
-  gap: 10px;
-}
-
-.annual-spotlight__offers article {
-  display: grid;
-  grid-template-columns: minmax(110px, .8fr) minmax(170px, 1fr) 42px;
-  align-items: center;
-  gap: 16px;
-  min-height: 84px;
-  padding: 14px 14px 14px 18px;
-  border: 1px solid rgba(255,255,255,.11);
-  background: rgba(255,255,255,.07);
-}
-
-.annual-spotlight__offer-name,
-.annual-spotlight__offer-price {
-  display: grid;
-  gap: 3px;
-}
-
-.annual-spotlight__offer-name span {
+.plans-page__mega-condition strong {
   color: #fff;
-  font-size: .92rem;
-  font-weight: 900;
+  font-size: 1.05rem;
 }
 
-.annual-spotlight__offer-name small,
-.annual-spotlight__offer-price small {
-  color: #aebdca;
-  font-size: .66rem;
+.plans-page__mega-condition small {
+  color: #b9c7d2;
+  font-size: .61rem;
 }
 
-.annual-spotlight__offer-price del {
-  color: #9dacb8;
-  font-size: .68rem;
+.plans-page__mega-condition--yellow {
+  border-color: rgba(227,222,86,.38);
+  background: rgba(227,222,86,.1);
 }
 
-.annual-spotlight__offer-price strong {
-  color: #f3e36c;
-  font-size: 1.15rem;
+.plans-page__mega-condition--yellow strong {
+  color: #f1df64;
 }
 
-.annual-spotlight__offers article > button {
-  width: 42px;
-  height: 42px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border: 0;
-  color: #263300;
-  background: var(--ced-color-brand-yellow);
-  cursor: pointer;
-  transition: transform 160ms ease;
-}
-
-.annual-spotlight__offers article > button:hover {
-  transform: translateX(2px);
-}
-
-.annual-spotlight__empty {
-  min-height: 180px;
+.plans-page__mega-prices {
+  width: 100%;
   display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  border: 1px dashed rgba(255,255,255,.2);
-  color: #c7d3de;
-  text-align: center;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 13px;
+  border-top: 1px solid rgba(255,255,255,.12);
 }
 
-.annual-spotlight__empty i {
-  color: #e3de56;
+.plans-page__mega-prices > span {
+  margin-bottom: 2px;
+  color: #91a7b9;
+  font-size: .59rem;
+  font-weight: 850;
+  letter-spacing: .07em;
+  text-transform: uppercase;
 }
 
-.pricing-trust {
-  margin-top: 24px;
-  border: 1px solid var(--ced-color-border);
-  background: #fff;
-}
-
-.pricing-trust__items {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.pricing-trust__items article {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 40px 1fr;
-  gap: 10px;
-  align-items: center;
-  padding: 18px;
-}
-
-.pricing-trust__items article + article {
-  border-left: 1px solid #e3e9ee;
-}
-
-.pricing-trust__items article > span {
-  width: 40px;
-  height: 40px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--ced-color-primary-700);
-  background: #edf5fb;
-}
-
-.pricing-trust__items strong,
-.pricing-trust__items small {
-  display: block;
-}
-
-.pricing-trust__items strong {
-  color: #263d51;
-  font-size: .76rem;
-}
-
-.pricing-trust__items small {
-  margin-top: 3px;
-  color: #7a8995;
-  font-size: .66rem;
-  line-height: 1.35;
-}
-
-.pricing-trust__contact {
+.plans-page__mega-prices > div {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 22px;
-  padding: 16px 18px;
-  border-top: 1px solid #e3e9ee;
-  background: #f9fbfc;
+  gap: 10px;
+  color: #d6e0e8;
 }
 
-.pricing-trust__contact strong,
-.pricing-trust__contact span {
-  display: block;
+.plans-page__mega-prices small {
+  font-size: .64rem;
 }
 
-.pricing-trust__contact strong {
-  color: #253e52;
-  font-size: .8rem;
-}
-
-.pricing-trust__contact span {
-  margin-top: 2px;
-  color: #7b8996;
-  font-size: .7rem;
-}
-
-.pricing-trust__contact button {
-  min-height: 38px;
-  padding: 0 15px;
-  border: 1px solid var(--ced-color-primary-600);
-  color: var(--ced-color-primary-700);
-  background: #fff;
+.plans-page__mega-prices strong {
+  color: #f1df64;
   font-size: .72rem;
-  font-weight: 900;
-  cursor: pointer;
 }
 
-.pricing-state {
-  min-height: 140px;
-  display: flex;
+.plans-page__mega-benefits {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.plans-page__mega-benefits div {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  color: #c8d4de;
+  font-size: .56rem;
+  line-height: 1.2;
+}
+
+.plans-page__mega-benefits i {
+  color: #e3de56;
+  font-size: .9rem;
+}
+
+.plans-page__complementary {
+  display: grid;
+  grid-template-columns: 1.35fr repeat(4, 1fr);
+  margin-top: clamp(54px, 7vw, 84px);
+  padding: 25px 0;
+  border-top: 1px solid #dce6ed;
+  border-bottom: 1px solid #dce6ed;
+}
+
+.plans-page__complementary article {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 10px;
+  align-content: start;
+  padding: 3px 18px;
+}
+
+.plans-page__complementary article + article {
+  border-left: 1px solid #e0e8ef;
+}
+
+.plans-page__complementary article > i {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  margin-bottom: 20px;
-  border: 1px dashed var(--ced-color-border-strong);
-  color: var(--ced-color-text-muted);
-  background: rgba(255,255,255,.7);
+  border-radius: 10px;
+  color: #1962a9;
+  background: #eaf4fc;
 }
 
-.pricing-state--error {
-  border-color: #efc0c5;
-  color: var(--ced-color-danger-700);
-  background: var(--ced-color-danger-50);
+.plans-page__complementary strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #173d62;
+  font-size: .76rem;
 }
 
-.plans-page__route-loading {
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 18px;
+.plans-page__complementary span {
+  display: block;
+  color: #6f7e8b;
+  font-size: .66rem;
+  line-height: 1.45;
+}
+
+.plans-page__complementary-contact {
+  grid-template-columns: 34px 1fr !important;
+}
+
+.plans-page__complementary-contact button {
+  grid-column: 2;
+  justify-self: start;
+  min-height: 31px;
+  margin-top: 8px;
+  padding: 0 12px;
+  border: 1px solid #1962a9;
+  border-radius: 9px;
+  color: #155a99;
+  background: #fff;
+  font-size: .65rem;
+  font-weight: 900;
+  cursor: pointer;
 }
 
 .plans-page__footer {
@@ -809,40 +886,42 @@
 
 @media (max-width: 1180px) {
   .plans-page__header-inner,
-  .pricing-page,
+  .plans-page__content,
   .plans-page__footer-inner {
     width: min(100% - 36px, 1100px);
   }
 
-  .pricing-cycle {
-    grid-template-columns: auto 1fr;
-  }
-
-  .pricing-cycle__annual-note {
-    grid-column: 1 / -1;
-    justify-self: start;
-  }
-
-  .pricing-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .pricing-card:last-child {
-    grid-column: 1 / -1;
-    width: min(100%, 540px);
-    justify-self: center;
-  }
-
-  .pricing-trust__items {
+  .plans-page__benefits {
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .pricing-trust__items article:nth-child(3) {
+  .plans-page__benefits article:nth-child(3) {
     border-left: 0;
   }
 
-  .pricing-trust__items article:nth-child(n+3) {
-    border-top: 1px solid #e3e9ee;
+  .plans-page__benefits article:nth-child(n+3) {
+    margin-top: 18px;
+    padding-top: 18px;
+    border-top: 1px solid #e5ebf0;
+  }
+
+  .plans-page__plans-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .plans-page__complementary {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0;
+  }
+
+  .plans-page__complementary article {
+    min-height: 112px;
+    padding-block: 16px;
+    border-top: 1px solid #e0e8ef;
+  }
+
+  .plans-page__complementary article:nth-child(odd) {
+    border-left: 0;
   }
 }
 
@@ -871,24 +950,11 @@
     padding-inline: 12px;
     font-size: .76rem;
   }
-
-  .pricing-page__intro,
-  .annual-spotlight {
-    grid-template-columns: 1fr;
-  }
-
-  .pricing-page__intro {
-    gap: 18px;
-  }
-
-  .pricing-page__intro p {
-    max-width: 680px;
-  }
 }
 
 @media (max-width: 720px) {
   .plans-page__header-inner,
-  .pricing-page,
+  .plans-page__content,
   .plans-page__footer-inner {
     width: min(100% - 24px, 680px);
   }
@@ -915,94 +981,60 @@
     display: none;
   }
 
-  .pricing-page {
-    padding-top: 28px;
+  .plans-page__content {
+    padding-top: 38px;
   }
 
-  .pricing-page__intro h1 {
-    font-size: clamp(2.25rem, 12vw, 3.6rem);
+  .plans-page__intro {
+    margin-bottom: 38px;
   }
 
-  .pricing-cycle {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 12px;
+  .plans-page__intro h1 {
+    font-size: clamp(2.4rem, 14vw, 4rem);
   }
 
-  .pricing-cycle__options {
-    width: 100%;
+  .plans-page__intro p {
+    font-size: .92rem;
   }
 
-  .pricing-cycle__options button {
-    min-width: 0;
-    flex: 1;
-    padding-inline: 8px;
-  }
-
-  .pricing-cycle__annual-note {
-    grid-column: auto;
-  }
-
-  .pricing-grid {
+  .plans-page__benefits,
+  .plans-page__plans-grid,
+  .plans-page__complementary {
     grid-template-columns: 1fr;
   }
 
-  .pricing-card,
-  .pricing-card:last-child {
-    width: 100%;
-    min-height: 0;
-    grid-column: auto;
+  .plans-page__benefits {
+    padding: 10px 0;
   }
 
-  .pricing-card__title p {
-    min-height: 0;
-  }
-
-  .pricing-card__metrics {
-    grid-template-columns: 1fr;
-  }
-
-  .pricing-card__metrics div {
-    grid-template-columns: 22px 1fr;
-    justify-items: start;
-    text-align: left;
-  }
-
-  .pricing-card__metrics div + div {
-    border-top: 1px solid #e4eaef;
+  .plans-page__benefits article,
+  .plans-page__benefits article:nth-child(3),
+  .plans-page__benefits article:nth-child(n+3) {
+    margin: 0;
+    padding: 15px 4px;
+    border-top: 0;
     border-left: 0;
   }
 
-  .annual-spotlight {
-    padding: 26px 20px;
+  .plans-page__benefits article + article {
+    border-top: 1px solid #e5ebf0;
   }
 
-  .annual-spotlight__offers article {
-    grid-template-columns: 1fr auto 40px;
-    gap: 10px;
+  .plans-page__plan-card,
+  .plans-page__mega-card {
+    border-radius: 20px;
   }
 
-  .annual-spotlight__offer-price {
-    text-align: right;
-  }
-
-  .pricing-trust__items {
-    grid-template-columns: 1fr;
-  }
-
-  .pricing-trust__items article + article,
-  .pricing-trust__items article:nth-child(3) {
-    border-top: 1px solid #e3e9ee;
+  .plans-page__complementary article,
+  .plans-page__complementary article:nth-child(odd) {
+    min-height: 0;
+    padding: 16px 4px;
     border-left: 0;
+    border-top: 1px solid #e0e8ef;
   }
 
-  .pricing-trust__contact {
-    align-items: stretch;
-    flex-direction: column;
-  }
-
-  .pricing-trust__contact button {
-    width: 100%;
+  .plans-page__complementary article:first-child {
+    border-top: 0;
   }
 
   .plans-page__footer-inner {
