@@ -9,7 +9,7 @@ namespace CidadeEmDia.Infrastructure.Occurrences;
 internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccurrenceGeoSearchService
 {
     private const int MaxPageSize = 50;
-    private const int MaxPublicLimit = 12;
+    private const int DefaultPublicPageSize = 12;
     private const decimal DefaultPublicRadiusKm = 25m;
     private const decimal MaxRadiusKm = 100m;
     private const string DefaultPublicCity = "São Paulo";
@@ -173,11 +173,18 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
         if (!string.IsNullOrWhiteSpace(city))
             query = query.Where(x => EF.Functions.ILike(x.AddressText, $"%{city}%"));
 
-        var limit = Math.Clamp(input.Limit, 1, MaxPublicLimit);
+        var page = Math.Max(input.Page, 1);
+        var pageSize = Math.Clamp(input.PageSize <= 0 ? DefaultPublicPageSize : input.PageSize, 1, MaxPageSize);
+        var totalItems = await query.CountAsync(cancellationToken);
+        var totalPages = totalItems == 0
+            ? 0
+            : (int)Math.Ceiling(totalItems / (double)pageSize);
+
         var rows = await query
             .OrderByDescending(x => x.CreatedAt)
             .ThenByDescending(x => x.Id)
-            .Take(limit)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
 
         var categoryIds = rows
@@ -211,7 +218,12 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
             })
             .ToArray();
 
-        return PublicOccurrenceSearchResult.Success(items);
+        return PublicOccurrenceSearchResult.Success(new PublicOccurrencePage(
+            items,
+            page,
+            pageSize,
+            totalItems,
+            totalPages));
     }
 
     private IQueryable<Occurrence> CreateRadiusQuery(
