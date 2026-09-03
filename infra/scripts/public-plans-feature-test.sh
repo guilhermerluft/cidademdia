@@ -74,6 +74,8 @@ grep -q "<AppHeader" "$WT/apps/web/src/app/layout/DashboardShell.tsx" \
   || fail "Dashboard não usa AppHeader compartilhado"
 grep -q "<AppHeader" "$WT/apps/web/src/modules/plans/PlansRoute.tsx" \
   || fail "rota de Planos não usa AppHeader compartilhado"
+grep -q "<AppHeader" "$WT/apps/web/src/modules/occurrences/PublicOccurrencesRoute.tsx" \
+  || fail "rota de Ocorrências não usa AppHeader compartilhado"
 ! grep -q "PublicPlansHeader" "$WT/apps/web/src/modules/plans/PublicPlans.tsx" \
   || fail "header duplicado ainda existe em PublicPlans"
 ! grep -q "public-home__header" "$WT/apps/web/src/modules/home/PublicHome.tsx" \
@@ -83,8 +85,10 @@ grep -q "<AppHeader" "$WT/apps/web/src/modules/plans/PlansRoute.tsx" \
 
 grep -q "id: 'plans'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "Planos ausente da fonte central de navegação"
-grep -q "restrictedSubaccountPermission: 'occurrence.read.targeted'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
-  || fail "regra de permissão de ocorrência da subconta não está centralizada"
+grep -q "href: '/ocorrencias'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
+  || fail "Ocorrências não aponta para /ocorrencias na navegação central"
+grep -q "permissions.includes('occurrence.read.targeted')" "$WT/apps/web/src/modules/home/HomeAccountModules.tsx" \
+  || fail "permissão privada de ocorrência da subconta não está preservada nos módulos da conta"
 
 APP_HEADER_IMPL_COUNT="$(grep -R --include='*.tsx' -F 'export function AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
 test "$APP_HEADER_IMPL_COUNT" = "1" \
@@ -93,8 +97,8 @@ APP_HEADER_MARKUP_COUNT="$(grep -F '<header className="app-header"' "$WT/apps/we
 test "$APP_HEADER_MARKUP_COUNT" = "1" \
   || fail "AppHeader deve possuir exatamente 1 markup de header global; encontrado $APP_HEADER_MARKUP_COUNT"
 APP_HEADER_USAGE_COUNT="$(grep -R --include='*.tsx' -F '<AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
-test "$APP_HEADER_USAGE_COUNT" -ge "3" \
-  || fail "AppHeader deveria ser reutilizado por Home, Planos e Dashboard; usos encontrados: $APP_HEADER_USAGE_COUNT"
+test "$APP_HEADER_USAGE_COUNT" -ge "4" \
+  || fail "AppHeader deveria ser reutilizado por Home, Planos, Ocorrências e shell autenticado; usos encontrados: $APP_HEADER_USAGE_COUNT"
 echo "home_frozen_visual_assets=OK"
 echo "shared_app_header_implementation=OK"
 echo "shared_app_header_reuse=$APP_HEADER_USAGE_COUNT"
@@ -224,12 +228,12 @@ async function validateHomeDesktop() {
   await page.locator('.app-header').waitFor({ state: 'visible' });
 
   const labels = await publicHeaderLabels(page);
-  if (labels.join('|') !== 'Início|Planos') {
+  if (labels.join('|') !== 'Início|Planos|Ocorrências') {
     throw new Error(`header público da Home inesperado: ${labels.join('|')}`);
   }
 
-  const plansHeader = page.locator('.app-header__nav a[href="/planos"]');
-  await plansHeader.waitFor({ state: 'visible' });
+  await page.locator('.app-header__nav a[href="/planos"]').waitFor({ state: 'visible' });
+  await page.locator('.app-header__nav a[href="/ocorrencias"]').waitFor({ state: 'visible' });
 
   const plansSectionVisible = await page.locator('.public-home__plans').isVisible();
   if (plansSectionVisible) throw new Error('seção de Planos voltou para a Home');
@@ -251,7 +255,7 @@ async function validatePlans(viewport, screenshot, mobile) {
   await page.locator('.app-header').waitFor({ state: 'visible' });
 
   const labels = await publicHeaderLabels(page);
-  if (labels.join('|') !== 'Início|Planos') {
+  if (labels.join('|') !== 'Início|Planos|Ocorrências') {
     throw new Error(`header público de Planos inesperado: ${labels.join('|')}`);
   }
 
@@ -287,9 +291,10 @@ async function validatePlans(viewport, screenshot, mobile) {
 
   if (!mobile) {
     await page.locator('.app-header__nav a[href="/planos"]').waitFor({ state: 'visible' });
+    await page.locator('.app-header__nav a[href="/ocorrencias"]').waitFor({ state: 'visible' });
   } else {
     const bottomLabels = await page.locator('.app-bottom-nav__item').allInnerTexts();
-    for (const expected of ['Início', 'Planos', 'Entrar', 'Criar conta']) {
+    for (const expected of ['Início', 'Planos', 'Ocorrências', 'Entrar', 'Criar conta']) {
       if (!bottomLabels.some(label => label.includes(expected))) {
         throw new Error(`bottom nav público sem ${expected}`);
       }
@@ -315,7 +320,7 @@ async function validateHomeMobileSharedNavigation() {
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
   await page.locator('.app-bottom-nav').waitFor({ state: 'visible' });
   const labels = await page.locator('.app-bottom-nav__item').allInnerTexts();
-  for (const expected of ['Início', 'Planos', 'Entrar', 'Criar conta']) {
+  for (const expected of ['Início', 'Planos', 'Ocorrências', 'Entrar', 'Criar conta']) {
     if (!labels.some(label => label.includes(expected))) {
       throw new Error(`bottom nav compartilhado da Home sem ${expected}`);
     }
@@ -376,7 +381,7 @@ echo "HOME FROZEN VISUAL ASSETS: OK"
 echo "SHARED APP HEADER IMPLEMENTATION: OK"
 echo "SHARED APP HEADER REUSE: $APP_HEADER_USAGE_COUNT"
 echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
-echo "PUBLIC HEADER HOME/PLANOS: OK"
+echo "PUBLIC HEADER HOME/PLANOS/OCORRÊNCIAS: OK"
 echo "AUTHENTICATED SHELL USES SHARED HEADER: OK"
 echo "SHARED MOBILE NAVIGATION: OK"
 echo "HOME CTA -> /planos: OK"
