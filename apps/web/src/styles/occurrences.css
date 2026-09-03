@@ -230,7 +230,7 @@
 
 .occurrence-geo-filter__fields {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.42fr);
+  grid-template-columns: 1fr;
   gap: var(--ced-space-3);
 }
 
@@ -269,10 +269,10 @@
 }
 
 .occurrence-geo-filter__toolbar {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: var(--ced-space-3);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ced-space-2);
+  min-width: 0;
 }
 
 .occurrence-geo-filter__location {
@@ -288,11 +288,24 @@
 }
 
 .occurrence-geo-filter__actions {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: stretch;
   gap: var(--ced-space-2);
-  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.occurrence-geo-filter__actions .ced-button {
+  min-width: 0;
+}
+
+.occurrence-geo-filter__clear {
+  width: 42px;
+  min-width: 42px;
+  padding-inline: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.95rem;
 }
 
 .occurrence-list {
@@ -392,19 +405,13 @@
 
   .occurrence-form-card__header,
   .occurrence-list-card__header,
-  .occurrence-location__header,
-  .occurrence-geo-filter__toolbar {
+  .occurrence-location__header {
     align-items: stretch;
     flex-direction: column;
   }
 
   .occurrence-geo-filter__actions {
-    justify-content: stretch;
-  }
-
-  .occurrence-geo-filter__actions .ced-button,
-  .occurrence-geo-filter__location .ced-button {
-    width: 100%;
+    grid-template-columns: minmax(0, 1fr) 42px;
   }
 
   .occurrence-form__actions {
