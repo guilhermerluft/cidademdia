@@ -163,6 +163,27 @@ try {
   console.log('desktop_profile_hover=OK');
   console.log('logout_hidden_until_dropdown=OK');
 
+  const accountBox = await account.boundingBox();
+  const panelBox = await panelItem.boundingBox();
+  if (!accountBox || !panelBox) {
+    throw new Error('não foi possível medir a transição entre perfil e dropdown');
+  }
+
+  await page.mouse.move(
+    accountBox.x + accountBox.width / 2,
+    accountBox.y + accountBox.height - 2,
+  );
+  await page.mouse.move(
+    panelBox.x + panelBox.width / 2,
+    panelBox.y + panelBox.height / 2,
+    { steps: 18 },
+  );
+  await page.waitForTimeout(320);
+  if (!(await panelItem.isVisible())) {
+    throw new Error('dropdown fechou durante a transição real do mouse até Painel');
+  }
+  console.log('desktop_pointer_transition=OK');
+
   await page.screenshot({ path: '/work/header-dropdown-desktop.png', fullPage: false });
 
   await panelItem.click();
@@ -230,6 +251,7 @@ echo "HOME PRIVATE MODULES REMOVED: OK"
 echo "PERMISSION-DRIVEN PANEL: OK"
 echo "PROFILE DROPDOWN: OK"
 echo "DESKTOP HOVER: OK"
+echo "DESKTOP POINTER TRANSITION: OK"
 echo "MOBILE CLICK: OK"
 echo "LOGOUT ONLY IN DROPDOWN: OK"
 echo "QA CLEANUP: OK"
