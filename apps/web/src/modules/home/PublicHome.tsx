@@ -12,6 +12,7 @@ import {
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
 import { HomeAccountModules } from './HomeAccountModules';
+import { HowItWorksModal } from './HowItWorksModal';
 import {
   listPublicOccurrences,
   listPublicPlans,
@@ -150,6 +151,7 @@ export function PublicHome({
   const [occurrenceLocationLabel, setOccurrenceLocationLabel] = useState(DEFAULT_PUBLIC_OCCURRENCE_CITY);
   const [showAllOccurrences, setShowAllOccurrences] = useState(false);
   const [plans, setPlans] = useState<PublicPlanOffer[]>([]);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const slidesPerView = useSlidesPerView();
 
   useEffect(() => {
@@ -278,10 +280,6 @@ export function PublicHome({
     setMediaPage((current) => (current + direction + mediaPages.length) % mediaPages.length);
   }
 
-  function scrollTo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-  }
-
   return (
     <div className="public-home">
       <AppHeader
@@ -311,7 +309,7 @@ export function PublicHome({
 
               <div className="public-home__hero-actions">
                 <Button size="lg" onClick={() => navigate('/planos')}>Conheça os planos</Button>
-                <button className="public-home__outline-cta" type="button" onClick={() => scrollTo('como-funciona')}>
+                <button className="public-home__outline-cta" type="button" onClick={() => setHowItWorksOpen(true)}>
                   <span className="public-home__cta-play" aria-hidden="true">▶</span>
                   Como funciona
                 </button>
@@ -500,6 +498,8 @@ export function PublicHome({
           )}
         </div>
       </footer>
+
+      <HowItWorksModal open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
 
       <AppBottomNavigation
         active="home"
