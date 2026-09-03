@@ -169,10 +169,19 @@ async function validate(viewport, screenshot) {
   await page.locator('.public-occurrences').waitFor({ state: 'visible', timeout: 15000 });
   await page.locator('.app-header').waitFor({ state: 'visible' });
 
-  const occurrenceLink = page.locator('.app-header__nav a[href="/ocorrencias"]');
-  await occurrenceLink.waitFor({ state: 'visible' });
-  const current = await occurrenceLink.getAttribute('aria-current');
-  if (current !== 'page') throw new Error('Ocorrências não está ativa no header');
+  const mobile = viewport.width <= 720;
+  if (mobile) {
+    await page.locator('.app-bottom-nav').waitFor({ state: 'visible' });
+    const occurrenceLink = page.locator('.app-bottom-nav a[href="/ocorrencias"]');
+    await occurrenceLink.waitFor({ state: 'visible' });
+    const current = await occurrenceLink.getAttribute('aria-current');
+    if (current !== 'page') throw new Error('Ocorrências não está ativa na navegação mobile');
+  } else {
+    const occurrenceLink = page.locator('.app-header__nav a[href="/ocorrencias"]');
+    await occurrenceLink.waitFor({ state: 'visible' });
+    const current = await occurrenceLink.getAttribute('aria-current');
+    if (current !== 'page') throw new Error('Ocorrências não está ativa no header');
+  }
 
   const city = page.getByRole('textbox', { name: 'Cidade', exact: true });
   const radius = page.getByRole('spinbutton', { name: 'Raio em km', exact: true });
@@ -252,6 +261,7 @@ echo "INITIAL GEOLOCATION / SÃO PAULO FALLBACK: OK"
 echo "CURRENT LOCATION FILTER: OK"
 echo "MAP PIN FILTER: OK"
 echo "SHARED HEADER: OK"
+echo "SHARED MOBILE NAVIGATION: OK"
 echo "DESKTOP: OK"
 echo "MOBILE: OK"
 echo "MAIN WORKTREE: CLEAN"
