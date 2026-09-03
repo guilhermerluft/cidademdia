@@ -53,7 +53,7 @@ echo "HEAD: $EXPECTED_HEAD"
 echo "MAIN: $(git -C "$ROOT" rev-parse HEAD)"
 
 echo
-echo "=== 1. HOME CONGELADA / ESCOPO AUTORIZADO ==="
+echo "=== 1. HOME CONGELADA / HEADER ÚNICO ==="
 git -C "$WT" cat-file -e "$APPROVED_HOME_HEAD^{commit}" 2>/dev/null \
   || fail "checkpoint aprovado da Home não está disponível no clone"
 
@@ -63,18 +63,35 @@ for path in \
   apps/web/src/modules/home/home-assets.css \
   apps/web/src/modules/home/assets/hero-city.svg; do
   git -C "$WT" diff --quiet "$APPROVED_HOME_HEAD" "$EXPECTED_HEAD" -- "$path" \
-    || fail "arquivo congelado da Home foi alterado: $path"
+    || fail "arquivo visual congelado da Home foi alterado: $path"
 done
 
-HOME_DIFF="$(git -C "$WT" diff --unified=0 "$APPROVED_HOME_HEAD" "$EXPECTED_HEAD" -- apps/web/src/modules/home/PublicHome.tsx)"
-printf '%s\n' "$HOME_DIFF" | grep -q "useNavigate" || fail "navegação /planos não foi ligada à Home"
-printf '%s\n' "$HOME_DIFF" | grep -q "navigate('/planos')" || fail "CTA Conheça os planos não aponta para /planos"
-echo "home_frozen_visuals=OK"
-echo "home_authorized_navigation_only=OK"
+grep -q "<AppHeader" "$WT/apps/web/src/modules/home/PublicHome.tsx" \
+  || fail "Home não usa AppHeader compartilhado"
+grep -q "navigate('/planos')" "$WT/apps/web/src/modules/home/PublicHome.tsx" \
+  || fail "CTA Conheça os planos não aponta para /planos"
+grep -q "<AppHeader" "$WT/apps/web/src/app/layout/DashboardShell.tsx" \
+  || fail "Dashboard não usa AppHeader compartilhado"
+grep -q "<AppHeader" "$WT/apps/web/src/modules/plans/PlansRoute.tsx" \
+  || fail "rota de Planos não usa AppHeader compartilhado"
+! grep -q "PublicPlansHeader" "$WT/apps/web/src/modules/plans/PublicPlans.tsx" \
+  || fail "header duplicado ainda existe em PublicPlans"
+! grep -q "public-home__header" "$WT/apps/web/src/modules/home/PublicHome.tsx" \
+  || fail "markup antigo do header da Home ainda existe"
+! grep -q "dashboard-header" "$WT/apps/web/src/app/layout/DashboardShell.tsx" \
+  || fail "markup antigo do header autenticado ainda existe"
 
-grep -q "label: 'Planos'.*href: '/planos'" "$WT/apps/web/src/app/layout/DashboardShell.tsx" \
-  || fail "Planos ausente da navegação autenticada"
-echo "authenticated_header_plans_source=OK"
+grep -q "id: 'plans'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
+  || fail "Planos ausente da fonte central de navegação"
+grep -q "restrictedSubaccountPermission: 'occurrence.read.targeted'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
+  || fail "regra de permissão de ocorrência da subconta não está centralizada"
+
+HEADER_MARKUP_COUNT="$(grep -R --include='*.tsx' -F '<header className=' "$WT/apps/web/src" | wc -l | tr -d ' ')"
+test "$HEADER_MARKUP_COUNT" = "1" \
+  || fail "esperado exatamente 1 markup de header compartilhado; encontrado $HEADER_MARKUP_COUNT"
+echo "home_frozen_visual_assets=OK"
+echo "shared_header_markup=OK"
+echo "central_navigation_rules=OK"
 
 echo
 echo "=== 2. MERCADO PAGO ANTES ==="
@@ -158,7 +175,7 @@ docker exec "$WEB_ID" sh -lc 'grep -R -q "Adesão única" /usr/share/nginx/html/
 echo "plans_bundle=OK"
 
 echo
-echo "=== 6. HOME -> PLANOS / PLANOS DESKTOP E MOBILE ==="
+echo "=== 6. HEADER COMPARTILHADO / PLANOS DESKTOP E MOBILE ==="
 docker run --rm -i \
   --network host \
   -v "$QA_DIR:/work" \
@@ -189,19 +206,23 @@ async function openPage(viewport) {
   return { context, page, errors };
 }
 
+async function publicHeaderLabels(page) {
+  return page.locator('.app-header__nav .app-header__nav-item').allInnerTexts();
+}
+
 async function validateHomeDesktop() {
   const { context, page, errors } = await openPage({ width: 1440, height: 1000 });
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.app-header').waitFor({ state: 'visible' });
 
-  const plansHeader = page.locator('.public-home__desktop-nav a[href="/planos"]');
-  await plansHeader.waitFor({ state: 'visible' });
-
-  const mediaHeaderVisible = await page.locator('.public-home__desktop-nav a[href="#midias"]').isVisible();
-  const occurrencesHeaderVisible = await page.locator('.public-home__desktop-nav a[href="#ocorrencias"]').isVisible();
-  if (mediaHeaderVisible || occurrencesHeaderVisible) {
-    throw new Error('Mídias/Ocorrências voltaram a aparecer no header congelado da Home');
+  const labels = await publicHeaderLabels(page);
+  if (labels.join('|') !== 'Início|Planos') {
+    throw new Error(`header público da Home inesperado: ${labels.join('|')}`);
   }
+
+  const plansHeader = page.locator('.app-header__nav a[href="/planos"]');
+  await plansHeader.waitFor({ state: 'visible' });
 
   const plansSectionVisible = await page.locator('.public-home__plans').isVisible();
   if (plansSectionVisible) throw new Error('seção de Planos voltou para a Home');
@@ -220,6 +241,12 @@ async function validatePlans(viewport, screenshot, mobile) {
   await page.goto(`${process.env.BASE}/planos`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.plans-page').waitFor({ state: 'visible', timeout: 15000 });
   await page.locator('.plans-page__plans-grid').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.app-header').waitFor({ state: 'visible' });
+
+  const labels = await publicHeaderLabels(page);
+  if (labels.join('|') !== 'Início|Planos') {
+    throw new Error(`header público de Planos inesperado: ${labels.join('|')}`);
+  }
 
   const title = await page.locator('#plans-page-title').innerText();
   for (const expected of ['PLANOS PARA', 'TODOS OS', 'TIPOS DE GESTÃO']) {
@@ -252,7 +279,14 @@ async function validatePlans(viewport, screenshot, mobile) {
   await page.getByRole('button', { name: 'Fale conosco' }).waitFor({ state: 'visible' });
 
   if (!mobile) {
-    await page.locator('.plans-page__nav a[href="/planos"]').waitFor({ state: 'visible' });
+    await page.locator('.app-header__nav a[href="/planos"]').waitFor({ state: 'visible' });
+  } else {
+    const bottomLabels = await page.locator('.app-bottom-nav__item').allInnerTexts();
+    for (const expected of ['Início', 'Planos', 'Entrar', 'Criar conta']) {
+      if (!bottomLabels.some(label => label.includes(expected))) {
+        throw new Error(`bottom nav público sem ${expected}`);
+      }
+    }
   }
 
   const dims = await page.evaluate(() => ({
@@ -268,14 +302,17 @@ async function validatePlans(viewport, screenshot, mobile) {
   await context.close();
 }
 
-async function validateHomeMobileFrozen() {
+async function validateHomeMobileSharedNavigation() {
   const { context, page, errors } = await openPage({ width: 390, height: 844 });
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
-  const plansVisible = await page.locator('.public-home__bottom-nav a[href="/planos"]').isVisible();
-  if (plansVisible) throw new Error('Planos apareceu no bottom nav sem autorização expressa');
-  const visibleItems = await page.locator('.public-home__bottom-nav > *:visible').count();
-  if (visibleItems !== 4) throw new Error(`bottom nav congelado deveria manter 4 itens, recebeu ${visibleItems}`);
+  await page.locator('.app-bottom-nav').waitFor({ state: 'visible' });
+  const labels = await page.locator('.app-bottom-nav__item').allInnerTexts();
+  for (const expected of ['Início', 'Planos', 'Entrar', 'Criar conta']) {
+    if (!labels.some(label => label.includes(expected))) {
+      throw new Error(`bottom nav compartilhado da Home sem ${expected}`);
+    }
+  }
   if (errors.length) throw new Error(`pageerror na Home mobile: ${errors.join(' | ')}`);
   await context.close();
 }
@@ -283,8 +320,8 @@ async function validateHomeMobileFrozen() {
 try {
   await validateHomeDesktop();
   console.log('home_to_plans=OK');
-  await validateHomeMobileFrozen();
-  console.log('home_mobile_frozen=OK');
+  await validateHomeMobileSharedNavigation();
+  console.log('home_mobile_shared_navigation=OK');
   await validatePlans({ width: 1440, height: 1000 }, 'plans-desktop.png', false);
   console.log('plans_desktop=OK');
   await validatePlans({ width: 390, height: 844 }, 'plans-mobile.png', true);
@@ -328,10 +365,12 @@ echo
 echo "============================================================"
 echo "PUBLIC PLANS — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
-echo "HOME FROZEN VISUALS: OK"
-echo "HOME MOBILE NAV FROZEN: OK"
-echo "PUBLIC HEADER PLANOS: OK"
-echo "AUTHENTICATED HEADER PLANOS SOURCE: OK"
+echo "HOME FROZEN VISUAL ASSETS: OK"
+echo "SHARED HEADER MARKUP: OK"
+echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
+echo "PUBLIC HEADER HOME/PLANOS: OK"
+echo "AUTHENTICATED SHELL USES SHARED HEADER: OK"
+echo "SHARED MOBILE NAVIGATION: OK"
 echo "HOME CTA -> /planos: OK"
 echo "BILLING CATALOG: OK"
 echo "BENEFITS: 4"
