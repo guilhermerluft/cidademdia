@@ -20,6 +20,7 @@ import './modules/home/home.css';
 import './styles/responsive.css';
 import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
+import './modules/home/home-session.css';
 import './modules/plans/plans.css';
 import './modules/plans/plans-payment-inline.css';
 import './modules/plans/plans-gold-commercial.css';
