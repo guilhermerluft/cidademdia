@@ -21,6 +21,8 @@ grep -q '<AppHeader' "$WEB/modules/plans/PlansRoute.tsx" \
   || fail "Planos não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/modules/occurrences/PublicOccurrencesRoute.tsx" \
   || fail "Ocorrências não usa AppHeader compartilhado"
+grep -q '<AppHeader' "$WEB/modules/panel/UserPanelRoute.tsx" \
+  || fail "Painel não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/app/layout/DashboardShell.tsx" \
   || fail "shell autenticado não usa AppHeader compartilhado"
 
@@ -41,7 +43,7 @@ grep -q 'user={effectiveUser}' "$WEB/app/App.tsx" \
 grep -q 'permissions={navigationAccess.permissions}' "$WEB/app/App.tsx" \
   || fail "Home autenticada não recebe permissões centralizadas"
 grep -q 'onLogout={logout}' "$WEB/app/App.tsx" \
-  || fail "Home autenticada não recebe logout no componente compartilhado"
+  || fail "Home autenticada não entrega logout ao header compartilhado"
 
 ! grep -q 'DashboardHome' "$WEB/app/App.tsx" \
   || fail "App ainda referencia DashboardHome"
@@ -52,19 +54,47 @@ grep -q 'onLogout={logout}' "$WEB/app/App.tsx" \
 
 grep -q 'export function useNavigationAccess' "$WEB/app/layout/AppNavigation.tsx" \
   || fail "estado de acesso não está centralizado em useNavigationAccess"
+grep -q 'export function getUserPanelAccess' "$WEB/app/layout/AppNavigation.tsx" \
+  || fail "permissões do painel não estão centralizadas"
+grep -q "permissions.includes('occurrence.read.targeted')" "$WEB/app/layout/AppNavigation.tsx" \
+  || fail "painel não respeita occurrence.read.targeted"
+grep -q "permissions.includes('chat.read')" "$WEB/app/layout/AppNavigation.tsx" \
+  || fail "painel não respeita chat.read"
 grep -q "href: '/ocorrencias'" "$WEB/app/layout/AppNavigation.tsx" \
   || fail "Ocorrências não aponta para /ocorrencias"
 grep -A6 "id: 'occurrences'" "$WEB/app/layout/AppNavigation.tsx" | grep -q 'public: true' \
   || fail "listagem pública de ocorrências não está visível para visitantes"
 
-grep -q "permissions.includes('occurrence.read.targeted')" "$WEB/modules/home/HomeAccountModules.tsx" \
-  || fail "módulos privados da Home não respeitam permissão de leitura de ocorrências"
-grep -q "permissions.includes('chat.read')" "$WEB/modules/home/HomeAccountModules.tsx" \
-  || fail "módulos da Home não respeitam permissão de leitura de chat"
-grep -q "user.roles.includes('MASTER')" "$WEB/modules/home/HomeAccountModules.tsx" \
-  || fail "módulos da Home não controlam acesso Master"
-grep -q "user.roles.includes('ADMIN')" "$WEB/modules/home/HomeAccountModules.tsx" \
-  || fail "módulos da Home não controlam acesso Admin"
+grep -q 'path="/painel"' "$WEB/main.tsx" \
+  || fail "rota /painel não registrada"
+grep -q 'getUserPanelAccess(user, navigationAccess.permissions)' "$WEB/modules/panel/UserPanelRoute.tsx" \
+  || fail "rota /painel não usa regra central de acesso"
+grep -q 'panelAccess.canAccessPanel' "$WEB/modules/panel/UserPanelRoute.tsx" \
+  || fail "rota /painel não bloqueia usuário sem permissão"
+grep -q 'OccurrenceCenter' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "Minhas ocorrências não foi movido para /painel"
+grep -q 'OccurrenceAssignmentPanel' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "ocorrências Master/subconta não foram movidas para /painel"
+grep -q 'ChatInbox' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "Conversas não foi movido para /painel"
+
+! grep -q 'OccurrenceCenter' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "Minhas ocorrências voltou a ser renderizado na Home"
+! grep -q 'OccurrenceAssignmentPanel' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "ocorrências privadas voltaram a ser renderizadas na Home"
+! grep -q 'ChatInbox' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "Conversas voltou a ser renderizado na Home"
+
+grep -q 'getUserPanelAccess(user, permissions)' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "dropdown do perfil não usa a mesma regra de acesso do painel"
+grep -q 'href="/painel"' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "dropdown do perfil não contém acesso ao painel"
+grep -q 'app-header__account-dropdown' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "dropdown do perfil não está implementado"
+grep -q 'app-header__account-menu-item--logout' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "Sair não está dentro do dropdown do perfil"
+! grep -q 'app-header__logout' "$WEB/app/layout/AppHeader.tsx" \
+  || fail "logout voltou a ficar sempre visível no header"
 
 grep -q 'requestBrowserCoordinates' "$WEB/modules/home/PublicHome.tsx" \
   || fail "Home não reutiliza a resolução central de localização pública"
@@ -85,5 +115,7 @@ echo "centralized_navigation_access=OK"
 echo "public_occurrences_navigation=OK"
 echo "shared_public_occurrence_location=OK"
 echo "shared_google_maps_loader=OK"
-echo "permission_driven_home_modules=OK"
+echo "user_panel_permissions=OK"
+echo "home_private_operations_removed=OK"
+echo "account_dropdown_logout=OK"
 echo "FRONTEND ARCHITECTURE: OK"
