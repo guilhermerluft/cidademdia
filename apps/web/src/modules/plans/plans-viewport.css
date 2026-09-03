@@ -9,9 +9,9 @@
     height: calc(100dvh - 86px);
     overflow: hidden;
     background:
-      radial-gradient(circle at 82% 2%, rgba(70, 180, 255, .28), transparent 24%),
-      radial-gradient(circle at 96% 18%, rgba(227, 222, 86, .18), transparent 18%),
-      linear-gradient(135deg, #071d67 0%, #082a8b 40%, #0749bd 72%, #086fd4 100%);
+      radial-gradient(circle at 8% 8%, rgba(31, 112, 191, .08), transparent 24%),
+      radial-gradient(circle at 92% 8%, rgba(117, 170, 69, .08), transparent 22%),
+      linear-gradient(180deg, #f9fbfd 0%, #f4f8fb 100%);
   }
 
   .plans-page__content {
@@ -19,13 +19,13 @@
     box-sizing: border-box;
     padding: 10px 0 8px;
     display: grid;
-    grid-template-columns: minmax(250px, .82fr) minmax(0, 2.5fr);
+    grid-template-columns: minmax(245px, .82fr) minmax(0, 2.6fr);
     grid-template-rows: auto minmax(0, 1fr) auto;
     grid-template-areas:
       "intro benefits"
       "catalog catalog"
       "complementary complementary";
-    column-gap: 18px;
+    column-gap: 16px;
     row-gap: 8px;
   }
 
@@ -42,82 +42,90 @@
   }
 
   .plans-page__intro h1 {
-    margin: 0 0 7px;
-    font-size: clamp(2rem, 2.65vw, 3rem);
-    line-height: .91;
-    letter-spacing: -.05em;
+    margin: 0 0 6px;
+    font-size: clamp(1.9rem, 2.55vw, 2.8rem);
+    line-height: .92;
+    letter-spacing: -.052em;
   }
 
-  .plans-page__headline-blue {
-    color: #ffffff;
-  }
-
-  .plans-page__headline-green {
-    color: #57c747;
-  }
-
-  .plans-page__headline-yellow {
-    color: #f4cf32;
-  }
+  .plans-page__headline-blue { color: #155fa8; }
+  .plans-page__headline-green { color: #5f9f3d; }
+  .plans-page__headline-yellow { color: #caa928; }
 
   .plans-page__intro p {
     max-width: 390px;
     margin: 0;
-    color: rgba(255, 255, 255, .9);
-    font-size: .72rem;
-    line-height: 1.35;
+    color: #5d6d7d;
+    font-size: .7rem;
+    line-height: 1.34;
   }
 
   .plans-page__intro-line {
     width: 145px;
     height: 3px;
-    margin: 8px 0 0;
-    background: linear-gradient(90deg, #58d9ff, #58c84b 55%, #f4cf32);
+    margin: 7px 0 0;
+    background: linear-gradient(90deg, #1477d4 0%, #6aae49 58%, #e0c943 100%);
   }
 
   .plans-page__benefits {
     grid-area: benefits;
+    align-self: center;
     margin: 0;
-    padding: 4px 0;
-    align-self: stretch;
-    border: 0;
-    background: transparent;
+    padding: 8px 10px;
+    border: 1px solid #e1e9f0;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, .86);
+    box-shadow: 0 10px 28px rgba(26, 66, 104, .06);
   }
 
   .plans-page__benefits article {
-    grid-template-columns: 38px 1fr;
-    gap: 9px;
-    padding: 3px 12px;
+    grid-template-columns: 36px 1fr;
+    gap: 8px;
+    padding: 2px 10px;
   }
 
   .plans-page__benefits article + article {
-    border-left-color: rgba(255, 255, 255, .3);
+    border-left-color: #e5ebf1;
   }
 
   .plans-page__benefit-icon {
-    width: 36px;
-    height: 36px;
+    width: 34px;
+    height: 34px;
     border-radius: 11px;
-    font-size: .9rem;
-    background: rgba(255, 255, 255, .1);
+    font-size: .84rem;
   }
 
-  .plans-page__benefit-icon--blue { color: #62d8ff; }
-  .plans-page__benefit-icon--green { color: #72db54; }
-  .plans-page__benefit-icon--orange { color: #ffa430; }
-  .plans-page__benefit-icon--yellow { color: #f7db3e; }
+  .plans-page__benefit-icon--blue {
+    color: #1469b2;
+    background: #edf6ff;
+  }
+
+  .plans-page__benefit-icon--green {
+    color: #5f963e;
+    background: #eff8ea;
+  }
+
+  .plans-page__benefit-icon--orange {
+    color: #c97a24;
+    background: #fff4e7;
+  }
+
+  .plans-page__benefit-icon--yellow {
+    color: #9c8410;
+    background: #fff9df;
+  }
 
   .plans-page__benefits h2 {
-    margin-bottom: 2px;
-    color: #ffffff;
-    font-size: .72rem;
-    line-height: 1.15;
+    margin: 0 0 2px;
+    color: #173858;
+    font-size: .68rem;
+    line-height: 1.14;
   }
 
   .plans-page__benefits p {
-    color: rgba(255, 255, 255, .82);
-    font-size: .58rem;
-    line-height: 1.28;
+    color: #6c7b89;
+    font-size: .54rem;
+    line-height: 1.24;
   }
 
   .plans-page__catalog {
@@ -132,12 +140,12 @@
   }
 
   .plans-page__catalog-state {
-    min-height: 44px;
+    min-height: 42px;
     margin: 0 0 6px;
-    border-color: rgba(255, 255, 255, .35);
-    color: #ffffff;
-    background: rgba(255, 255, 255, .09);
-    font-size: .72rem;
+    border-color: #cbd9e5;
+    color: #52697d;
+    background: rgba(255, 255, 255, .9);
+    font-size: .7rem;
   }
 
   .plans-page__plans-grid {
@@ -153,26 +161,35 @@
     height: 100%;
     min-height: 0;
     box-sizing: border-box;
-    border-radius: 16px;
+    border-radius: 18px;
   }
 
   .plans-page__plan-card {
     padding: 9px 10px 10px;
-    border-width: 1px;
-    box-shadow: 0 8px 24px rgba(2, 16, 70, .24);
+    border: 1px solid #dce6ee;
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+    box-shadow: 0 10px 30px rgba(22, 62, 99, .075);
   }
 
-  .plans-page__plan-card--blue,
-  .plans-page__plan-card--green,
+  .plans-page__plan-card--blue {
+    border-top: 3px solid #1c6fb7;
+  }
+
+  .plans-page__plan-card--green {
+    border-top: 3px solid #67a544;
+  }
+
   .plans-page__plan-card--sky {
-    border-top-width: 3px;
+    border-top: 3px solid #4a96cf;
   }
 
   .plans-page__posting-badge {
     min-height: 21px;
     gap: 5px;
     padding: 0 7px;
-    font-size: .52rem;
+    color: #526a7e;
+    background: #f1f6fa;
+    font-size: .5rem;
   }
 
   .plans-page__plan-title {
@@ -184,8 +201,9 @@
     width: 34px;
     height: 34px;
     flex-basis: 34px;
-    border-radius: 50%;
-    font-size: .85rem;
+    border-radius: 11px;
+    font-size: .82rem;
+    box-shadow: none;
   }
 
   .plans-page__plan-title small {
@@ -193,7 +211,8 @@
   }
 
   .plans-page__plan-title h2 {
-    font-size: 1rem;
+    font-size: .98rem;
+    color: #102f50;
   }
 
   .plans-page__signup-fee {
@@ -201,8 +220,11 @@
     gap: 5px;
     margin-bottom: 5px;
     padding: 3px 6px;
+    border-color: #dbe6ee;
     border-radius: 7px;
-    font-size: .55rem;
+    color: #35556f;
+    background: #f8fbfd;
+    font-size: .53rem;
   }
 
   .plans-page__plan-summary {
@@ -210,8 +232,11 @@
     gap: 5px;
     margin-bottom: 5px;
     padding: 5px 6px;
-    border-radius: 7px;
-    font-size: .52rem;
+    border: 1px solid #e7edf2;
+    border-radius: 8px;
+    color: #5d6e7d;
+    background: #fbfcfd;
+    font-size: .5rem;
   }
 
   .plans-page__plan-summary span {
@@ -236,19 +261,41 @@
     display: grid;
     grid-template-rows: auto minmax(0, 1fr) auto;
     align-content: stretch;
+    border: 1px solid #e1e8ee;
     border-left-width: 3px;
     border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .plans-page__payment--basic { border-left-color: #1b6bb1; }
+  .plans-page__payment--bronze { border-left-color: #b85a4f; }
+  .plans-page__payment--silver { border-left-color: #8d99a5; }
+
+  .plans-page__payment--gold {
+    border: 1px solid #d7bf57;
+    border-left-width: 3px;
+    border-left-color: #c3a62d;
+    color: #20374c;
+    background: linear-gradient(135deg, #fffdf3 0%, #fff9dc 100%);
+    box-shadow: none;
   }
 
   .plans-page__payment-heading {
     gap: 5px;
     margin-bottom: 3px;
-    font-size: .54rem;
+    color: #2d465d;
+    font-size: .52rem;
+  }
+
+  .plans-page__payment--gold .plans-page__payment-heading {
+    color: #6f5e0c;
   }
 
   .plans-page__payment-heading small {
     padding: 2px 4px;
-    font-size: .42rem;
+    color: #5d4b00;
+    background: #f0df7d;
+    font-size: .4rem;
   }
 
   .plans-page__payment-price {
@@ -258,35 +305,55 @@
   }
 
   .plans-page__payment-price del {
-    font-size: .5rem;
+    color: #98a4ae;
+    font-size: .48rem;
   }
 
   .plans-page__payment-price strong,
   .plans-page__payment--gold .plans-page__payment-price strong {
-    font-size: .78rem;
+    color: #173f64;
+    font-size: .76rem;
+  }
+
+  .plans-page__payment--gold .plans-page__payment-price strong {
+    color: #9d8213;
   }
 
   .plans-page__payment-price span {
-    font-size: .47rem;
+    color: #788692;
+    font-size: .45rem;
+  }
+
+  .plans-page__payment--gold .plans-page__payment-price span {
+    color: #756c45;
   }
 
   .plans-page__installment {
     margin: 1px 0 3px;
-    font-size: .46rem;
-    line-height: 1.2;
+    color: #726b4f;
+    font-size: .44rem;
+    line-height: 1.18;
   }
 
   .plans-page__choose-button {
     min-height: 22px;
     padding: 2px 5px;
     border-radius: 6px;
-    font-size: .49rem;
+    font-size: .47rem;
+    background: #ffffff;
+  }
+
+  .plans-page__payment--gold .plans-page__choose-button {
+    border-color: #d0b53d;
+    color: #4d4108;
+    background: #efd95d;
+    box-shadow: none;
   }
 
   .plans-page__payment-unavailable {
     align-content: center;
     gap: 2px;
-    font-size: .48rem;
+    font-size: .46rem;
   }
 
   .plans-page__payment-unavailable .plans-page__choose-button {
@@ -294,73 +361,98 @@
   }
 
   .plans-page__mega-card {
-    padding: 9px 10px 10px;
-    border-width: 2px;
-    box-shadow: 0 8px 26px rgba(2, 16, 70, .36), inset 0 0 24px rgba(227, 222, 86, .08);
+    padding: 10px 11px;
+    border: 1px solid #d9c464;
+    color: #f7fbff;
+    background:
+      radial-gradient(circle at 84% 14%, rgba(239, 217, 93, .17), transparent 23%),
+      linear-gradient(150deg, #102c47 0%, #173a59 58%, #224c68 100%);
+    box-shadow: 0 12px 30px rgba(14, 45, 70, .16);
   }
 
   .plans-page__mega-badge {
     min-height: 21px;
     padding: 0 8px;
-    font-size: .5rem;
+    color: #4a3d00;
+    background: #f0da62;
+    box-shadow: none;
+    font-size: .48rem;
   }
 
   .plans-page__mega-star {
-    margin: 6px 0 4px;
-    font-size: 2rem;
+    margin: 6px 0 3px;
+    color: #f2dc67;
+    font-size: 1.8rem;
+    filter: none;
   }
 
   .plans-page__mega-eyebrow {
-    font-size: .48rem;
+    color: #a9bdcb;
+    font-size: .46rem;
   }
 
   .plans-page__mega-card h2 {
     margin: 2px 0 4px;
-    font-size: 1.05rem;
+    color: #fff8cf;
+    font-size: 1.02rem;
   }
 
   .plans-page__mega-card > p {
     margin-bottom: 5px;
-    font-size: .56rem;
-    line-height: 1.25;
+    color: #d2dde5;
+    font-size: .53rem;
+    line-height: 1.22;
   }
 
   .plans-page__mega-condition {
     gap: 1px;
     margin-bottom: 5px;
     padding: 6px;
+    border-color: rgba(255,255,255,.15);
     border-radius: 8px;
+    background: rgba(255,255,255,.055);
   }
 
   .plans-page__mega-condition span {
-    font-size: .45rem;
+    font-size: .43rem;
   }
 
   .plans-page__mega-condition strong {
-    font-size: .78rem;
+    font-size: .76rem;
   }
 
   .plans-page__mega-condition small {
-    font-size: .47rem;
+    font-size: .45rem;
+  }
+
+  .plans-page__mega-condition--yellow {
+    border-color: rgba(239, 217, 93, .42);
+    background: rgba(239, 217, 93, .08);
+  }
+
+  .plans-page__mega-condition--yellow strong {
+    color: #f1dd6c;
   }
 
   .plans-page__mega-prices {
     gap: 2px;
     margin-top: 1px;
     padding-top: 5px;
+    border-top-color: rgba(255,255,255,.12);
   }
 
   .plans-page__mega-prices > span {
     margin-bottom: 0;
-    font-size: .44rem;
+    font-size: .42rem;
   }
 
   .plans-page__mega-prices small {
-    font-size: .47rem;
+    font-size: .45rem;
   }
 
   .plans-page__mega-prices strong {
-    font-size: .53rem;
+    color: #f1dd6c;
+    font-size: .51rem;
   }
 
   .plans-page__mega-benefits {
@@ -370,18 +462,23 @@
 
   .plans-page__mega-benefits div {
     gap: 3px;
-    font-size: .45rem;
+    color: #d2dde5;
+    font-size: .43rem;
   }
 
   .plans-page__mega-benefits i {
-    font-size: .72rem;
+    color: #f1dd6c;
+    font-size: .7rem;
   }
 
   .plans-page__complementary {
     grid-area: complementary;
     margin: 0;
-    padding: 6px 0 2px;
-    border-color: rgba(255, 255, 255, .35);
+    padding: 7px 10px;
+    border: 1px solid #dde7ee;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .9);
+    box-shadow: 0 8px 24px rgba(24, 64, 100, .05);
   }
 
   .plans-page__complementary article {
@@ -391,28 +488,28 @@
   }
 
   .plans-page__complementary article + article {
-    border-left-color: rgba(255, 255, 255, .3);
+    border-left-color: #e3eaf0;
   }
 
   .plans-page__complementary article > i {
     width: 25px;
     height: 25px;
     border-radius: 8px;
-    color: #ffffff;
-    background: rgba(255, 255, 255, .14);
-    font-size: .7rem;
+    color: #1767aa;
+    background: #edf5fb;
+    font-size: .68rem;
   }
 
   .plans-page__complementary strong {
     margin-bottom: 1px;
-    color: #ffffff;
-    font-size: .56rem;
+    color: #25445f;
+    font-size: .54rem;
   }
 
   .plans-page__complementary span {
-    color: rgba(255, 255, 255, .82);
-    font-size: .48rem;
-    line-height: 1.2;
+    color: #72808d;
+    font-size: .46rem;
+    line-height: 1.18;
   }
 
   .plans-page__complementary-contact {
@@ -423,10 +520,10 @@
     min-height: 22px;
     margin-top: 3px;
     padding: 0 8px;
-    border-color: rgba(255, 255, 255, .72);
-    color: #ffffff;
-    background: rgba(255, 255, 255, .1);
-    font-size: .48rem;
+    border-color: #1a6cb0;
+    color: #155e9e;
+    background: #ffffff;
+    font-size: .46rem;
   }
 
   .plans-page__footer {
@@ -442,32 +539,36 @@
   }
 
   .plans-page__intro h1 {
-    font-size: clamp(1.75rem, 2.3vw, 2.45rem);
+    font-size: clamp(1.7rem, 2.22vw, 2.35rem);
   }
 
   .plans-page__intro p {
-    font-size: .64rem;
+    font-size: .62rem;
   }
 
   .plans-page__intro-line {
     margin-top: 5px;
   }
 
+  .plans-page__benefits {
+    padding-block: 6px;
+  }
+
   .plans-page__benefit-icon {
-    width: 32px;
-    height: 32px;
+    width: 31px;
+    height: 31px;
   }
 
   .plans-page__benefits article {
-    grid-template-columns: 34px 1fr;
+    grid-template-columns: 33px 1fr;
   }
 
   .plans-page__benefits h2 {
-    font-size: .66rem;
+    font-size: .63rem;
   }
 
   .plans-page__benefits p {
-    font-size: .52rem;
+    font-size: .5rem;
   }
 
   .plans-page__posting-badge {
@@ -508,7 +609,7 @@
 
   .plans-page__mega-star {
     margin: 4px 0 2px;
-    font-size: 1.65rem;
+    font-size: 1.55rem;
   }
 
   .plans-page__mega-card > p {
@@ -525,6 +626,7 @@
   }
 
   .plans-page__complementary {
-    padding-top: 4px;
+    padding-top: 5px;
+    padding-bottom: 5px;
   }
 }
