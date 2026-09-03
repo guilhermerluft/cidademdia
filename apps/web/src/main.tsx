@@ -1,9 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter } from 'react-router-dom';
+import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { App } from './app/App';
 import { AuthProvider } from './modules/auth/AuthProvider';
+import { PlansRoute } from './modules/plans/PlansRoute';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './styles/global.css';
 import './styles/dashboard.css';
@@ -27,7 +28,10 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
-          <App />
+          <Routes>
+            <Route path="/planos" element={<PlansRoute />} />
+            <Route path="*" element={<App />} />
+          </Routes>
         </AuthProvider>
       </BrowserRouter>
     </QueryClientProvider>
