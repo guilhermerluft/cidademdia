@@ -7,6 +7,7 @@ import { AuthProvider } from './modules/auth/AuthProvider';
 import { PlansRoute } from './modules/plans/PlansRoute';
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import './styles/global.css';
+import './styles/app-header.css';
 import './styles/dashboard.css';
 import './styles/subaccounts.css';
 import './styles/occurrences.css';
