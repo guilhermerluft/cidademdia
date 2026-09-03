@@ -1,4 +1,5 @@
 import { api } from '../../services/api';
+import { notifyProfileAvatarChanged } from './profileEvents';
 
 export interface PrivateUserProfile {
   userId: string;
@@ -77,7 +78,9 @@ export async function confirmProfileAvatar(upload: ProfileAvatarUpload) {
 export async function prepareProfileAvatar(file: File) {
   const upload = await requestProfileAvatarUpload(file);
   await uploadProfileAvatarBinary(upload, file);
-  return confirmProfileAvatar(upload);
+  const confirmation = await confirmProfileAvatar(upload);
+  notifyProfileAvatarChanged();
+  return confirmation;
 }
 
 export async function getMyProfileAvatar() {
@@ -87,5 +90,6 @@ export async function getMyProfileAvatar() {
 
 export async function removeMyProfileAvatar() {
   const { data } = await api.delete<PrivateUserProfile>('/profile/avatar');
+  notifyProfileAvatarChanged();
   return data;
 }
