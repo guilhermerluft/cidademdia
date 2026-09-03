@@ -215,17 +215,21 @@
   background: rgba(255, 255, 255, .99);
   box-shadow: 0 18px 54px rgba(16, 48, 88, .16);
   opacity: 0;
+  visibility: hidden;
   pointer-events: none;
   transform: translateY(-6px);
   transition:
     opacity var(--ced-transition-fast),
-    transform var(--ced-transition-fast);
+    transform var(--ced-transition-fast),
+    visibility 0s linear var(--ced-transition-fast);
 }
 
 .app-header__account-menu--open .app-header__account-dropdown {
   opacity: 1;
+  visibility: visible;
   pointer-events: auto;
   transform: translateY(0);
+  transition-delay: 0s;
 }
 
 .app-header__account-menu-item {
@@ -300,8 +304,10 @@
 @media (hover: hover) and (pointer: fine) {
   .app-header__account-menu:hover .app-header__account-dropdown {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
     transform: translateY(0);
+    transition-delay: 0s;
   }
 
   .app-header__account-menu:hover .app-header__account-chevron {
