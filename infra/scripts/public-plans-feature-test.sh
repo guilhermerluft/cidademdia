@@ -143,18 +143,20 @@ print('billing_catalog_intervals=' + ','.join(str(x) for x in sorted({int(i['bil
 PY
 
 echo
-echo "=== 5. BUNDLE / ROTA / ESTRUTURA ==="
+echo "=== 5. BUNDLE / ROTA / NOVA ESTRUTURA ==="
 WEB_ID="$(compose ps -q web)"
 test -n "$WEB_ID" || fail "container web da feature não encontrado"
 
 docker exec "$WEB_ID" sh -lc 'grep -R -q "TIPOS DE GESTÃO" /usr/share/nginx/html/assets' \
   || fail "headline da página de Planos ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'grep -R -q "Ciclo de contratação" /usr/share/nginx/html/assets' \
+  || fail "seletor de ciclo ausente do bundle"
 docker exec "$WEB_ID" sh -lc 'grep -R -q "MEGA PROMOÇÃO" /usr/share/nginx/html/assets' \
-  || fail "card Mega Promoção ausente do bundle"
+  || fail "destaque Mega Promoção ausente do bundle"
 docker exec "$WEB_ID" sh -lc 'grep -R -q "/billing/catalog" /usr/share/nginx/html/assets' \
   || fail "catálogo real de billing ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "Adesão única" /usr/share/nginx/html/assets' \
-  || fail "informação de adesão ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'grep -R -q "Fale conosco" /usr/share/nginx/html/assets' \
+  || fail "faixa de confiança/contato ausente do bundle"
 echo "plans_bundle=OK"
 
 echo
@@ -194,8 +196,7 @@ async function validateHomeDesktop() {
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
 
-  const plansHeader = page.locator('.public-home__desktop-nav a[href="/planos"]');
-  await plansHeader.waitFor({ state: 'visible' });
+  await page.locator('.public-home__desktop-nav a[href="/planos"]').waitFor({ state: 'visible' });
 
   const mediaHeaderVisible = await page.locator('.public-home__desktop-nav a[href="#midias"]').isVisible();
   const occurrencesHeaderVisible = await page.locator('.public-home__desktop-nav a[href="#ocorrencias"]').isVisible();
@@ -219,36 +220,56 @@ async function validatePlans(viewport, screenshot, mobile) {
   const { context, page, errors } = await openPage(viewport);
   await page.goto(`${process.env.BASE}/planos`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.plans-page').waitFor({ state: 'visible', timeout: 15000 });
-  await page.locator('.plans-page__plans-grid').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.plans-v2').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.plans-v2__plan-grid').waitFor({ state: 'visible', timeout: 15000 });
 
   const title = await page.locator('#plans-page-title').innerText();
   for (const expected of ['PLANOS PARA', 'TODOS OS', 'TIPOS DE GESTÃO']) {
     if (!title.includes(expected)) throw new Error(`headline ausente: ${expected}`);
   }
 
-  const benefitCount = await page.locator('.plans-page__benefits article').count();
+  const benefitCount = await page.locator('.plans-v2__benefits article').count();
   if (benefitCount !== 4) throw new Error(`benefícios gerais: esperado 4, recebeu ${benefitCount}`);
 
-  const planCardCount = await page.locator('.plans-page__plan-card').count();
+  const cycleCount = await page.locator('.plans-v2__cycle-option').count();
+  if (cycleCount !== 4) throw new Error(`ciclos: esperado 4, recebeu ${cycleCount}`);
+
+  const pressedCount = await page.locator('.plans-v2__cycle-option[aria-pressed="true"]').count();
+  if (pressedCount !== 1) throw new Error(`seletor de ciclo deveria ter 1 opção ativa, recebeu ${pressedCount}`);
+
+  const enabledCycles = page.locator('.plans-v2__cycle-option:not([disabled])');
+  const enabledCount = await enabledCycles.count();
+  if (enabledCount > 1) {
+    const current = page.locator('.plans-v2__cycle-option[aria-pressed="true"]');
+    const currentText = await current.innerText();
+    const alternative = enabledCycles.filter({ hasNotText: currentText }).first();
+    if (await alternative.count()) {
+      await alternative.click();
+      const newActiveText = await page.locator('.plans-v2__cycle-option[aria-pressed="true"]').innerText();
+      if (newActiveText === currentText) throw new Error('seletor de ciclo não atualizou a condição ativa');
+    }
+  }
+
+  const planCardCount = await page.locator('.plans-v2__plan-card').count();
   if (planCardCount !== 3) throw new Error(`cards principais: esperado 3, recebeu ${planCardCount}`);
 
-  const planNames = await page.locator('.plans-page__plan-card .plans-page__plan-title h2').allInnerTexts();
+  const planNames = await page.locator('.plans-v2__plan-card .plans-v2__plan-title h3').allInnerTexts();
   for (const expected of ['Individual', 'Master 5', 'Master 10']) {
     if (!planNames.includes(expected)) throw new Error(`plano ausente: ${expected}`);
   }
 
-  const paymentCount = await page.locator('.plans-page__plan-card .plans-page__payment').count();
-  if (paymentCount !== 12) throw new Error(`sub-blocos de pagamento: esperado 12, recebeu ${paymentCount}`);
+  const pricePanelCount = await page.locator('.plans-v2__plan-card .plans-v2__price-panel').count();
+  if (pricePanelCount !== 3) throw new Error(`painéis de preço: esperado 3, recebeu ${pricePanelCount}`);
 
-  const mega = page.locator('.plans-page__mega-card');
-  await mega.waitFor({ state: 'visible' });
-  const megaText = await mega.innerText();
-  for (const expected of ['MEGA PROMOÇÃO', 'PLANO OURO ANUAL', 'ISENTA', '11 MENSALIDADES']) {
-    if (!megaText.includes(expected)) throw new Error(`Mega Promoção sem texto: ${expected}`);
+  const premium = page.locator('.plans-v2__premium');
+  await premium.waitFor({ state: 'visible' });
+  const premiumText = await premium.innerText();
+  for (const expected of ['MEGA PROMOÇÃO', 'Ouro Anual']) {
+    if (!premiumText.includes(expected)) throw new Error(`destaque anual sem texto: ${expected}`);
   }
 
-  const complementaryCount = await page.locator('.plans-page__complementary article').count();
-  if (complementaryCount !== 5) throw new Error(`faixa complementar: esperado 5, recebeu ${complementaryCount}`);
+  const trustCount = await page.locator('.plans-v2__trust article').count();
+  if (trustCount !== 5) throw new Error(`faixa de confiança: esperado 5, recebeu ${trustCount}`);
   await page.getByRole('button', { name: 'Fale conosco' }).waitFor({ state: 'visible' });
 
   if (!mobile) {
@@ -335,9 +356,10 @@ echo "AUTHENTICATED HEADER PLANOS SOURCE: OK"
 echo "HOME CTA -> /planos: OK"
 echo "BILLING CATALOG: OK"
 echo "BENEFITS: 4"
+echo "BILLING CYCLE SELECTOR: OK"
 echo "PRIMARY PLAN CARDS: 3"
-echo "MEGA PROMOÇÃO: OK"
-echo "COMPLEMENTARY INFO: 5"
+echo "ANNUAL PREMIUM: OK"
+echo "TRUST INFO: 5"
 echo "DESKTOP: OK"
 echo "MOBILE: OK"
 echo "WEB HOME: $FINAL_HOME"
