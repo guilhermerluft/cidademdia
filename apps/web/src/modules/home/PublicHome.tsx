@@ -2,8 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { Brand, Button } from '../../components/ui';
+import type { AuthenticatedUser } from '../auth/types';
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
+import { HomeAccountModules } from './HomeAccountModules';
 import {
   listPublicOccurrences,
   listPublicPlans,
@@ -12,8 +14,11 @@ import {
 } from './homeService';
 
 interface PublicHomeProps {
-  onLogin: () => void;
-  onRegister: () => void;
+  user?: AuthenticatedUser | null;
+  permissions?: readonly string[];
+  onLogin?: () => void;
+  onRegister?: () => void;
+  onLogout?: () => void | Promise<void>;
 }
 
 const DEFAULT_CITY = 'São Paulo';
@@ -176,7 +181,7 @@ function OccurrenceCard({ occurrence }: { occurrence: PublicOccurrenceItem }) {
   );
 }
 
-function PlanCard({ offer, onRegister }: { offer: PublicPlanOffer; onRegister: () => void }) {
+function PlanCard({ offer, onStart }: { offer: PublicPlanOffer; onStart: () => void }) {
   const intervalLabel = offer.billingIntervalMonths === 1
     ? 'mensal'
     : offer.billingIntervalMonths === 3
@@ -197,12 +202,18 @@ function PlanCard({ offer, onRegister }: { offer: PublicPlanOffer; onRegister: (
         <li>{offer.subaccountLimit} subconta{offer.subaccountLimit === 1 ? '' : 's'}</li>
         <li>{offer.monthlyPublicationLimit} publicaç{offer.monthlyPublicationLimit === 1 ? 'ão' : 'ões'} por mês</li>
       </ul>
-      <Button variant="soft" onClick={onRegister}>Começar</Button>
+      <Button variant="soft" onClick={onStart}>Começar</Button>
     </article>
   );
 }
 
-export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
+export function PublicHome({
+  user,
+  permissions = [],
+  onLogin,
+  onRegister,
+  onLogout,
+}: PublicHomeProps) {
   const navigate = useNavigate();
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
@@ -335,6 +346,9 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
 
   const visibleOccurrences = showAllOccurrences ? occurrences : occurrences.slice(0, 3);
   const visiblePlans = plans.slice(0, 4);
+  const handlePlanStart = user
+    ? () => navigate('/planos')
+    : (onRegister ?? (() => navigate('/planos')));
 
   function goToMediaPage(direction: number) {
     if (mediaPages.length <= 1) return;
@@ -349,8 +363,11 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
     <div className="public-home">
       <AppHeader
         active="home"
+        user={user}
+        permissions={permissions}
         onLogin={onLogin}
         onRegister={onRegister}
+        onLogout={onLogout}
       />
 
       <main>
@@ -501,9 +518,11 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
             </div>
           )}
 
-          <p className="public-home__visitor-note">
-            Você está vendo informações públicas. Para registrar, acompanhar ou interagir com uma ocorrência, entre ou crie sua conta.
-          </p>
+          {!user && (
+            <p className="public-home__visitor-note">
+              Você está vendo informações públicas. Para registrar, acompanhar ou interagir com uma ocorrência, entre ou crie sua conta.
+            </p>
+          )}
         </section>
 
         <section className="public-home__section public-home__plans" id="planos">
@@ -519,12 +538,12 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
 
           {visiblePlans.length > 0 ? (
             <div className="public-home__plan-grid">
-              {visiblePlans.map((offer) => <PlanCard offer={offer} onRegister={onRegister} key={offer.offerId} />)}
+              {visiblePlans.map((offer) => <PlanCard offer={offer} onStart={handlePlanStart} key={offer.offerId} />)}
             </div>
           ) : (
             <div className="public-home__empty public-home__empty--compact">
-              <strong>Consulte os planos disponíveis criando sua conta.</strong>
-              <Button variant="soft" onClick={onRegister}>Criar conta</Button>
+              <strong>Consulte os planos disponíveis na página dedicada.</strong>
+              <Button variant="soft" onClick={() => navigate('/planos')}>Ver planos</Button>
             </div>
           )}
         </section>
@@ -542,21 +561,27 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
             <article><span>03</span><h3>Acompanhe</h3><p>Veja status, respostas e histórico em um único lugar.</p></article>
           </div>
         </section>
+
+        {user && <HomeAccountModules user={user} permissions={permissions} />}
       </main>
 
       <footer className="public-home__footer">
         <div className="public-home__footer-inner">
           <Brand compact />
           <p>CIDADEMDIA — conectando cidadãos e quem pode resolver.</p>
-          <div className="public-home__footer-actions">
-            <button type="button" onClick={onLogin}>Entrar</button>
-            <button type="button" onClick={onRegister}>Criar conta</button>
-          </div>
+          {!user && (onLogin || onRegister) && (
+            <div className="public-home__footer-actions">
+              {onLogin && <button type="button" onClick={onLogin}>Entrar</button>}
+              {onRegister && <button type="button" onClick={onRegister}>Criar conta</button>}
+            </div>
+          )}
         </div>
       </footer>
 
       <AppBottomNavigation
         active="home"
+        user={user}
+        permissions={permissions}
         onLogin={onLogin}
         onRegister={onRegister}
       />
