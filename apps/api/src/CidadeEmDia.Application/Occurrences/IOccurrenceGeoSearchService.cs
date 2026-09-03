@@ -15,7 +15,8 @@ public sealed record PublicOccurrenceSearchInput(
     decimal? Latitude,
     decimal? Longitude,
     decimal? RadiusKm,
-    int Limit);
+    int Page,
+    int PageSize);
 
 public sealed record PublicOccurrenceItem(
     Guid Id,
@@ -29,17 +30,24 @@ public sealed record PublicOccurrenceItem(
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt);
 
+public sealed record PublicOccurrencePage(
+    IReadOnlyList<PublicOccurrenceItem> Items,
+    int Page,
+    int PageSize,
+    int TotalItems,
+    int TotalPages);
+
 public sealed record PublicOccurrenceSearchResult(
     bool Succeeded,
-    IReadOnlyList<PublicOccurrenceItem> Items,
+    PublicOccurrencePage? Page,
     string? ErrorCode = null,
     string? ErrorDetail = null)
 {
-    public static PublicOccurrenceSearchResult Success(IReadOnlyList<PublicOccurrenceItem> items) =>
-        new(true, items);
+    public static PublicOccurrenceSearchResult Success(PublicOccurrencePage page) =>
+        new(true, page);
 
     public static PublicOccurrenceSearchResult Failure(string errorCode, string? errorDetail = null) =>
-        new(false, Array.Empty<PublicOccurrenceItem>(), errorCode, errorDetail);
+        new(false, null, errorCode, errorDetail);
 }
 
 public interface IOccurrenceGeoSearchService
