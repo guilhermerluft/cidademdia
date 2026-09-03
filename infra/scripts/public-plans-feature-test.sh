@@ -86,11 +86,18 @@ grep -q "id: 'plans'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
 grep -q "restrictedSubaccountPermission: 'occurrence.read.targeted'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "regra de permissão de ocorrência da subconta não está centralizada"
 
-HEADER_MARKUP_COUNT="$(grep -R --include='*.tsx' -F '<header className=' "$WT/apps/web/src" | wc -l | tr -d ' ')"
-test "$HEADER_MARKUP_COUNT" = "1" \
-  || fail "esperado exatamente 1 markup de header compartilhado; encontrado $HEADER_MARKUP_COUNT"
+APP_HEADER_IMPL_COUNT="$(grep -R --include='*.tsx' -F 'export function AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
+test "$APP_HEADER_IMPL_COUNT" = "1" \
+  || fail "esperado exatamente 1 componente AppHeader; encontrado $APP_HEADER_IMPL_COUNT"
+APP_HEADER_MARKUP_COUNT="$(grep -F '<header className="app-header"' "$WT/apps/web/src/app/layout/AppHeader.tsx" | wc -l | tr -d ' ')"
+test "$APP_HEADER_MARKUP_COUNT" = "1" \
+  || fail "AppHeader deve possuir exatamente 1 markup de header global; encontrado $APP_HEADER_MARKUP_COUNT"
+APP_HEADER_USAGE_COUNT="$(grep -R --include='*.tsx' -F '<AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
+test "$APP_HEADER_USAGE_COUNT" -ge "3" \
+  || fail "AppHeader deveria ser reutilizado por Home, Planos e Dashboard; usos encontrados: $APP_HEADER_USAGE_COUNT"
 echo "home_frozen_visual_assets=OK"
-echo "shared_header_markup=OK"
+echo "shared_app_header_implementation=OK"
+echo "shared_app_header_reuse=$APP_HEADER_USAGE_COUNT"
 echo "central_navigation_rules=OK"
 
 echo
@@ -366,7 +373,8 @@ echo "============================================================"
 echo "PUBLIC PLANS — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
 echo "HOME FROZEN VISUAL ASSETS: OK"
-echo "SHARED HEADER MARKUP: OK"
+echo "SHARED APP HEADER IMPLEMENTATION: OK"
+echo "SHARED APP HEADER REUSE: $APP_HEADER_USAGE_COUNT"
 echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
 echo "PUBLIC HEADER HOME/PLANOS: OK"
 echo "AUTHENTICATED SHELL USES SHARED HEADER: OK"
