@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardShell } from '../../app/layout/DashboardShell';
 import { Brand } from '../../components/ui';
 import { useAuth } from '../auth/AuthProvider';
-import { PublicPlans } from './PublicPlans';
+import { PublicPlansV3 } from './PublicPlansV3';
 
 export function PlansRoute() {
   const navigate = useNavigate();
@@ -20,7 +20,7 @@ export function PlansRoute() {
   if (status === 'authenticated' && user) {
     return (
       <DashboardShell user={user} onLogout={logout}>
-        <PublicPlans
+        <PublicPlansV3
           embedded
           onHome={() => navigate('/')}
           onLogin={() => navigate('/')}
@@ -32,7 +32,7 @@ export function PlansRoute() {
   }
 
   return (
-    <PublicPlans
+    <PublicPlansV3
       onHome={() => navigate('/')}
       onLogin={() => navigate('/')}
       onRegister={() => navigate('/')}
