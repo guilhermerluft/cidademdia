@@ -8,6 +8,7 @@ import { getPrimaryRoleLabel } from '../../app/layout/AppNavigation';
 
 interface HomeAccountModulesProps {
   user: AuthenticatedUser;
+  permissions?: readonly string[];
 }
 
 export function HomeAccountModules({ user }: HomeAccountModulesProps) {
