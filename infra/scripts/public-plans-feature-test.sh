@@ -219,6 +219,7 @@ async function validatePlans(viewport, screenshot, mobile) {
   const { context, page, errors } = await openPage(viewport);
   await page.goto(`${process.env.BASE}/planos`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.plans-page').waitFor({ state: 'visible', timeout: 15000 });
+  await page.locator('.plans-page__plans-grid').waitFor({ state: 'visible', timeout: 15000 });
 
   const title = await page.locator('#plans-page-title').innerText();
   for (const expected of ['PLANOS PARA', 'TODOS OS', 'TIPOS DE GESTÃO']) {
