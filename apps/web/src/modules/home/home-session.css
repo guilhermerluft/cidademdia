@@ -1,0 +1,44 @@
+.public-home__account-zone {
+  width: min(1360px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 18px 0 56px;
+  display: grid;
+  gap: 30px;
+}
+
+.public-home__account-module {
+  scroll-margin-top: 96px;
+}
+
+.public-home__account-profile {
+  scroll-margin-top: 96px;
+}
+
+.public-home__account-role {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 14px;
+  border: 1px solid rgba(25, 98, 169, 0.16);
+  border-radius: 999px;
+  background: rgba(25, 98, 169, 0.06);
+  color: var(--ced-color-primary-700);
+  font-size: var(--ced-font-size-xs);
+  font-weight: 900;
+}
+
+#conta-ocorrencias,
+#gestao-midias,
+#equipe,
+#admin,
+#perfil {
+  scroll-margin-top: 96px;
+}
+
+@media (max-width: 720px) {
+  .public-home__account-zone {
+    width: min(100% - 28px, 1360px);
+    padding-bottom: 86px;
+    gap: 22px;
+  }
+}
