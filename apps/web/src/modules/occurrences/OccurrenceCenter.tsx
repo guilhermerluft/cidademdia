@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
@@ -139,11 +139,6 @@ export function OccurrenceCenter() {
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const selectedCategory = useMemo(
-    () => categories.find((category) => category.id === form.categoryId) ?? null,
-    [categories, form.categoryId],
-  );
-
   async function loadOccurrenceData() {
     const [nextCategories, nextOccurrences] = await Promise.all([
       listOccurrenceCategories(),
@@ -259,7 +254,6 @@ export function OccurrenceCenter() {
                 <h3 id="occurrence-center-title">Conte o que está acontecendo</h3>
                 <p>O conteúdo publicado fica preservado. Novas informações serão adicionadas depois como complementos.</p>
               </div>
-              {selectedCategory ? <Badge variant="primary">{selectedCategory.name}</Badge> : null}
             </div>
 
             <form className="occurrence-form" onSubmit={handleSubmit}>
