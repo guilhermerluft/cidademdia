@@ -61,7 +61,12 @@ grep -q 'path="/painel"' "$WT/apps/web/src/main.tsx" || fail "rota /painel não 
 grep -q 'getUserPanelAccess' "$WT/apps/web/src/modules/panel/UserPanelRoute.tsx" || fail "rota não usa acesso central"
 grep -q 'href="/painel"' "$WT/apps/web/src/app/layout/AppHeader.tsx" || fail "dropdown não aponta para /painel"
 ! grep -q 'app-header__logout' "$WT/apps/web/src/app/layout/AppHeader.tsx" || fail "logout voltou a ficar exposto no header"
+! grep -q 'selectedCategory' "$WT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx" || fail "badge dinâmico de categoria voltou ao header de Nova ocorrência"
+grep -q 'geocodePublicOccurrenceCity' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "filtro privado não reutiliza geocodificação compartilhada"
+grep -q 'requestBrowserCoordinates' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "filtro privado não reutiliza geolocalização compartilhada"
+grep -q 'type="number"' "$WT/apps/web/src/modules/occurrences/OccurrenceGeoFilter.tsx" || fail "raio privado não usa input numérico padronizado"
 echo "panel_architecture=OK"
+echo "occurrence_tracking_filter_architecture=OK"
 
 echo
 echo "=== 2. BUILD / DEPLOY FEATURE ==="
@@ -191,6 +196,13 @@ try {
   await page.getByRole('heading', { name: 'Painel', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await page.getByRole('heading', { name: 'Minhas ocorrências', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
   await page.getByText('Conversas', { exact: true }).first().waitFor({ state: 'visible', timeout: 15000 });
+
+  await page.getByRole('textbox', { name: 'Cidade', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByRole('spinbutton', { name: 'Raio em km', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByRole('button', { name: 'Usar minha localização', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByRole('button', { name: 'Filtrar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  await page.getByRole('button', { name: 'Limpar', exact: true }).waitFor({ state: 'visible', timeout: 15000 });
+  console.log('occurrence_tracking_filters=OK');
   console.log('citizen_panel_modules=OK');
 
   await page.screenshot({ path: '/work/user-panel-desktop.png', fullPage: true });
@@ -252,6 +264,8 @@ echo "PERMISSION-DRIVEN PANEL: OK"
 echo "PROFILE DROPDOWN: OK"
 echo "DESKTOP HOVER: OK"
 echo "DESKTOP POINTER TRANSITION: OK"
+echo "OCCURRENCE TRACKING FILTERS: OK"
+echo "NEW OCCURRENCE HEADER: OK"
 echo "MOBILE CLICK: OK"
 echo "LOGOUT ONLY IN DROPDOWN: OK"
 echo "QA CLEANUP: OK"
