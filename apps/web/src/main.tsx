@@ -18,6 +18,7 @@ import './modules/home/home.css';
 import './styles/responsive.css';
 import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
+import './modules/plans/plans.css';
 
 const queryClient = new QueryClient();
 
