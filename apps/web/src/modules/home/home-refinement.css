@@ -84,7 +84,7 @@
 .public-home__hero {
   position: relative;
   min-height: 420px;
-  background-image: url('https://upload.wikimedia.org/wikipedia/commons/2/29/IbirapueraDusk.jpg');
+  background-image: url('./assets/hero-city.svg');
   background-position: center 46%;
   background-size: cover;
   background-repeat: no-repeat;
