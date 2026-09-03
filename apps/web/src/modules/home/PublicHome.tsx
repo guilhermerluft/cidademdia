@@ -3,6 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { Brand, Button } from '../../components/ui';
 import type { AuthenticatedUser } from '../auth/types';
+import { PublicOccurrenceCard } from '../occurrences/PublicOccurrenceCard';
+import {
+  DEFAULT_PUBLIC_OCCURRENCE_CITY,
+  DEFAULT_PUBLIC_OCCURRENCE_RADIUS_KM,
+  requestBrowserCoordinates,
+} from '../occurrences/publicOccurrenceLocation';
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
 import { HomeAccountModules } from './HomeAccountModules';
@@ -21,63 +27,11 @@ interface PublicHomeProps {
   onLogout?: () => void | Promise<void>;
 }
 
-const DEFAULT_CITY = 'São Paulo';
-const DEFAULT_RADIUS_KM = 25;
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
-}
-
 function formatMoney(valueInCents: number) {
   return new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
   }).format(valueInCents / 100);
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case 'NOVA': return 'Nova';
-    case 'RECEBIDA': return 'Recebida';
-    case 'EM_ANALISE': return 'Em análise';
-    case 'EM_ANDAMENTO': return 'Em andamento';
-    case 'AGUARDANDO_INFORMACAO': return 'Aguardando informação';
-    case 'RESOLVIDA': return 'Resolvida';
-    default: return status.replaceAll('_', ' ').toLowerCase();
-  }
-}
-
-function getStatusClass(status: string) {
-  switch (status) {
-    case 'RESOLVIDA': return 'resolved';
-    case 'EM_ANDAMENTO': return 'progress';
-    case 'EM_ANALISE': return 'analysis';
-    case 'AGUARDANDO_INFORMACAO': return 'waiting';
-    case 'RECEBIDA': return 'received';
-    default: return 'new';
-  }
-}
-
-function getCategoryTone(slug: string) {
-  const normalized = slug.toLowerCase();
-  if (normalized.includes('ilumin')) return 'blue';
-  if (normalized.includes('limpeza') || normalized.includes('lixo')) return 'green';
-  if (normalized.includes('transito') || normalized.includes('trânsito')) return 'orange';
-  if (normalized.includes('segur')) return 'purple';
-  return 'red';
-}
-
-function getCategorySymbol(slug: string) {
-  const normalized = slug.toLowerCase();
-  if (normalized.includes('ilumin')) return '☀';
-  if (normalized.includes('limpeza') || normalized.includes('lixo')) return '♻';
-  if (normalized.includes('transito') || normalized.includes('trânsito')) return '↔';
-  if (normalized.includes('segur')) return '◆';
-  if (normalized.includes('buraco') || normalized.includes('infra')) return '△';
-  return '●';
 }
 
 function useSlidesPerView() {
@@ -151,36 +105,6 @@ function VideoCard({ post }: { post: PostItem }) {
   );
 }
 
-function OccurrenceCard({ occurrence }: { occurrence: PublicOccurrenceItem }) {
-  const tone = getCategoryTone(occurrence.categorySlug);
-
-  return (
-    <article className="public-home__occurrence-card">
-      <div className={`public-home__occurrence-thumb public-home__occurrence-thumb--${tone}`} aria-hidden="true">
-        <span>{getCategorySymbol(occurrence.categorySlug)}</span>
-      </div>
-
-      <div className="public-home__occurrence-main">
-        <span className={`public-home__category public-home__category--${tone}`}>
-          {getCategorySymbol(occurrence.categorySlug)} {occurrence.categoryName || 'Ocorrência urbana'}
-        </span>
-        <h3>{occurrence.title}</h3>
-        <p className="public-home__occurrence-location">
-          <span aria-hidden="true">●</span> {occurrence.addressText}
-        </p>
-        {occurrence.description && <p className="public-home__occurrence-description">{occurrence.description}</p>}
-      </div>
-
-      <div className="public-home__occurrence-meta">
-        <span className={`public-home__occurrence-status public-home__occurrence-status--${getStatusClass(occurrence.status)}`}>
-          {getStatusLabel(occurrence.status)}
-        </span>
-        <span className="public-home__occurrence-time"><span aria-hidden="true">◷</span> {formatTime(occurrence.updatedAt)}</span>
-      </div>
-    </article>
-  );
-}
-
 function PlanCard({ offer, onStart }: { offer: PublicPlanOffer; onStart: () => void }) {
   const intervalLabel = offer.billingIntervalMonths === 1
     ? 'mensal'
@@ -223,7 +147,7 @@ export function PublicHome({
   const [occurrences, setOccurrences] = useState<PublicOccurrenceItem[]>([]);
   const [occurrencesLoading, setOccurrencesLoading] = useState(true);
   const [occurrencesUnavailable, setOccurrencesUnavailable] = useState(false);
-  const [occurrenceLocationLabel, setOccurrenceLocationLabel] = useState(DEFAULT_CITY);
+  const [occurrenceLocationLabel, setOccurrenceLocationLabel] = useState(DEFAULT_PUBLIC_OCCURRENCE_CITY);
   const [showAllOccurrences, setShowAllOccurrences] = useState(false);
   const [plans, setPlans] = useState<PublicPlanOffer[]>([]);
   const slidesPerView = useSlidesPerView();
@@ -274,15 +198,15 @@ export function PublicHome({
 
     async function useFallbackCity() {
       try {
-        const items = await listPublicOccurrences({ city: DEFAULT_CITY, limit: 6 });
+        const items = await listPublicOccurrences({ city: DEFAULT_PUBLIC_OCCURRENCE_CITY, limit: 6 });
         if (!active) return;
         setOccurrences(items);
-        setOccurrenceLocationLabel(DEFAULT_CITY);
+        setOccurrenceLocationLabel(DEFAULT_PUBLIC_OCCURRENCE_CITY);
         setOccurrencesUnavailable(false);
       } catch {
         if (!active) return;
         setOccurrences([]);
-        setOccurrenceLocationLabel(DEFAULT_CITY);
+        setOccurrenceLocationLabel(DEFAULT_PUBLIC_OCCURRENCE_CITY);
         setOccurrencesUnavailable(true);
       } finally {
         if (active) setOccurrencesLoading(false);
@@ -294,7 +218,7 @@ export function PublicHome({
         const items = await listPublicOccurrences({
           latitude,
           longitude,
-          radiusKm: DEFAULT_RADIUS_KM,
+          radiusKm: DEFAULT_PUBLIC_OCCURRENCE_RADIUS_KM,
           limit: 6,
         });
         if (!active) return;
@@ -311,15 +235,14 @@ export function PublicHome({
     setOccurrencesLoading(true);
     setOccurrencesUnavailable(false);
 
-    if (!('geolocation' in navigator)) {
-      void useFallbackCity();
-    } else {
-      navigator.geolocation.getCurrentPosition(
-        (position) => void useCoordinates(position.coords.latitude, position.coords.longitude),
-        () => void useFallbackCity(),
-        { enableHighAccuracy: false, timeout: 5500, maximumAge: 10 * 60 * 1000 },
-      );
-    }
+    void requestBrowserCoordinates().then((coordinates) => {
+      if (!active) return;
+      if (coordinates) {
+        void useCoordinates(coordinates.latitude, coordinates.longitude);
+      } else {
+        void useFallbackCity();
+      }
+    });
 
     return () => { active = false; };
   }, []);
@@ -497,8 +420,8 @@ export function PublicHome({
               </div>
             </div>
             {occurrences.length > 3 && (
-              <button className="public-home__see-all" type="button" onClick={() => setShowAllOccurrences((value) => !value)}>
-                {showAllOccurrences ? 'Ver menos' : 'Ver todas'} <span aria-hidden="true">›</span>
+              <button className="public-home__see-all" type="button" onClick={() => navigate('/ocorrencias')}>
+                Ver todas <span aria-hidden="true">›</span>
               </button>
             )}
           </div>
@@ -509,7 +432,7 @@ export function PublicHome({
             </div>
           ) : visibleOccurrences.length > 0 ? (
             <div className="public-home__occurrence-list">
-              {visibleOccurrences.map((occurrence) => <OccurrenceCard occurrence={occurrence} key={occurrence.id} />)}
+              {visibleOccurrences.map((occurrence) => <PublicOccurrenceCard occurrence={occurrence} key={occurrence.id} />)}
             </div>
           ) : (
             <div className="public-home__empty">
