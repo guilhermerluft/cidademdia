@@ -11,7 +11,14 @@ export type AppNavigationId =
   | 'admin'
   | 'profile';
 
-export type AppNavigationIconName = AppNavigationId | 'notifications' | 'login' | 'register';
+export type AppNavigationIconName =
+  | AppNavigationId
+  | 'notifications'
+  | 'login'
+  | 'register'
+  | 'panel'
+  | 'logout'
+  | 'chevron';
 
 export interface AppNavigationItem {
   id: AppNavigationId;
@@ -27,6 +34,15 @@ export interface AppNavigationItem {
 export interface NavigationAccessState {
   permissions: string[];
   subaccountContextActive: boolean | null;
+}
+
+export type UserPanelMode = 'citizen' | 'master' | 'subaccount' | 'none';
+
+export interface UserPanelAccess {
+  mode: UserPanelMode;
+  canViewOccurrences: boolean;
+  canViewChat: boolean;
+  canAccessPanel: boolean;
 }
 
 export const APP_NAVIGATION: readonly AppNavigationItem[] = [
@@ -94,6 +110,38 @@ export function isRestrictedSubaccount(user: AuthenticatedUser) {
   return user.roles.includes('SUBACCOUNT')
     && !user.roles.includes('MASTER')
     && !user.roles.includes('ADMIN');
+}
+
+export function getUserPanelAccess(
+  user: AuthenticatedUser,
+  permissions: readonly string[] = [],
+): UserPanelAccess {
+  const isMaster = user.roles.includes('MASTER');
+  const isAdmin = user.roles.includes('ADMIN');
+  const isSubaccount = isRestrictedSubaccount(user);
+  const isCitizen = !isMaster && !isAdmin && !isSubaccount;
+
+  const mode: UserPanelMode = isMaster
+    ? 'master'
+    : isSubaccount
+      ? 'subaccount'
+      : isCitizen
+        ? 'citizen'
+        : 'none';
+
+  const canViewOccurrences = isCitizen
+    || isMaster
+    || (isSubaccount && permissions.includes('occurrence.read.targeted'));
+  const canViewChat = isCitizen
+    || isMaster
+    || (isSubaccount && permissions.includes('chat.read'));
+
+  return {
+    mode,
+    canViewOccurrences,
+    canViewChat,
+    canAccessPanel: canViewOccurrences || canViewChat,
+  };
 }
 
 export function getVisibleNavigation(
@@ -217,5 +265,11 @@ export function AppNavigationIcon({ name }: { name: AppNavigationIconName }) {
       return <svg {...common}><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>;
     case 'register':
       return <svg {...common}><circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0"/><path d="M19 8v6"/><path d="M16 11h6"/></svg>;
+    case 'panel':
+      return <svg {...common}><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg>;
+    case 'logout':
+      return <svg {...common}><path d="M10 17l5-5-5-5"/><path d="M15 12H3"/><path d="M14 3h5a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-5"/></svg>;
+    case 'chevron':
+      return <svg {...common}><path d="m7 9.5 5 5 5-5"/></svg>;
   }
 }
