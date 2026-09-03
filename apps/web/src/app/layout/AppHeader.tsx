@@ -1,15 +1,17 @@
+import { useEffect, useRef, useState } from 'react';
 import { Brand, Button } from '../../components/ui';
 import type { AuthenticatedUser } from '../../modules/auth/types';
 import {
   AppNavigationIcon,
   getInitials,
   getPrimaryRoleLabel,
+  getUserPanelAccess,
   getVisibleNavigation,
   type AppNavigationId,
 } from './AppNavigation';
 
 interface AppHeaderProps {
-  active: AppNavigationId;
+  active?: AppNavigationId;
   user?: AuthenticatedUser | null;
   permissions?: readonly string[];
   onLogin?: () => void;
@@ -26,6 +28,30 @@ export function AppHeader({
   onLogout,
 }: AppHeaderProps) {
   const navigation = getVisibleNavigation(user, permissions);
+  const panelAccess = user ? getUserPanelAccess(user, permissions) : null;
+  const [accountOpen, setAccountOpen] = useState(false);
+  const accountMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!accountOpen) return;
+
+    function handlePointerDown(event: PointerEvent) {
+      if (!accountMenuRef.current?.contains(event.target as Node)) {
+        setAccountOpen(false);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') setAccountOpen(false);
+    }
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [accountOpen]);
 
   return (
     <header className="app-header">
@@ -55,17 +81,59 @@ export function AppHeader({
                 <span className="app-header__notification-dot" aria-hidden="true" />
               </button>
 
-              <div className="app-header__account">
-                <div className="app-header__avatar" aria-hidden="true">{getInitials(user.displayName)}</div>
-                <div className="app-header__account-copy">
-                  <strong>{user.displayName}</strong>
-                  <span>{getPrimaryRoleLabel(user.roles)}</span>
+              <div
+                className={accountOpen ? 'app-header__account-menu app-header__account-menu--open' : 'app-header__account-menu'}
+                ref={accountMenuRef}
+                onMouseEnter={() => setAccountOpen(true)}
+                onMouseLeave={() => setAccountOpen(false)}
+              >
+                <button
+                  className="app-header__account"
+                  type="button"
+                  aria-haspopup="menu"
+                  aria-expanded={accountOpen}
+                  aria-label={`Abrir menu de ${user.displayName}`}
+                  onClick={() => setAccountOpen((current) => !current)}
+                >
+                  <span className="app-header__avatar" aria-hidden="true">{getInitials(user.displayName)}</span>
+                  <span className="app-header__account-copy">
+                    <strong>{user.displayName}</strong>
+                    <span>{getPrimaryRoleLabel(user.roles)}</span>
+                  </span>
+                  <span className="app-header__account-chevron" aria-hidden="true">
+                    <AppNavigationIcon name="chevron" />
+                  </span>
+                </button>
+
+                <div className="app-header__account-dropdown" role="menu" aria-label="Menu da conta">
+                  {panelAccess?.canAccessPanel && (
+                    <a className="app-header__account-menu-item" href="/painel" role="menuitem">
+                      <AppNavigationIcon name="panel" />
+                      <span>
+                        <strong>Painel</strong>
+                        <small>Ocorrências e conversas</small>
+                      </span>
+                    </a>
+                  )}
+
+                  {onLogout && (
+                    <button
+                      className="app-header__account-menu-item app-header__account-menu-item--logout"
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setAccountOpen(false);
+                        void onLogout();
+                      }}
+                    >
+                      <AppNavigationIcon name="logout" />
+                      <span>
+                        <strong>Sair</strong>
+                        <small>Encerrar sessão</small>
+                      </span>
+                    </button>
+                  )}
                 </div>
-                {onLogout && (
-                  <button className="app-header__logout" type="button" onClick={() => void onLogout()}>
-                    Sair
-                  </button>
-                )}
               </div>
             </>
           ) : (
