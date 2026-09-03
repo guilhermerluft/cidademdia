@@ -1,0 +1,32 @@
+.representatives-page-shell {
+  min-height: 100vh;
+  background: linear-gradient(180deg, #fbfdff 0%, var(--ced-color-canvas) 100%);
+}
+
+.representatives-page {
+  min-height: calc(100vh - 78px);
+  padding: clamp(1.5rem, 4vw, 3rem) 0 clamp(5rem, 9vw, 7rem);
+}
+
+.representatives-page__container {
+  width: min(1180px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.representatives-page .institution-directory {
+  scroll-margin-top: 96px;
+}
+
+.representatives-page--loading {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 1rem;
+  color: var(--ced-color-text-muted);
+}
+
+@media (max-width: 720px) {
+  .representatives-page__container {
+    width: min(100% - 28px, 1180px);
+  }
+}
