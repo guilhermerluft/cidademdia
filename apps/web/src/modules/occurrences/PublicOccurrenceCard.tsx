@@ -1,4 +1,6 @@
 import type { KeyboardEvent } from 'react';
+import { requestCommercialSignup } from '../../components/commercialSignup';
+import { getAccessToken } from '../../services/api';
 import type { PublicOccurrenceItem } from '../home/homeService';
 import { OccurrenceSupportButton } from './OccurrenceSupportButton';
 import './public-occurrence-card.css';
@@ -61,12 +63,23 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
   const tone = getCategoryTone(occurrence.categorySlug);
   const interactive = Boolean(onOpen);
 
+  function handleOpen() {
+    if (!onOpen) return;
+
+    if (!getAccessToken()) {
+      requestCommercialSignup('details');
+      return;
+    }
+
+    onOpen(occurrence);
+  }
+
   function handleCardKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (!onOpen || event.target !== event.currentTarget) return;
     if (event.key !== 'Enter' && event.key !== ' ') return;
 
     event.preventDefault();
-    onOpen(occurrence);
+    handleOpen();
   }
 
   return (
@@ -75,7 +88,7 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
       data-occurrence-id={occurrence.id}
       tabIndex={interactive ? 0 : undefined}
       aria-label={interactive ? `Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}` : undefined}
-      onClick={onOpen ? () => onOpen(occurrence) : undefined}
+      onClick={onOpen ? handleOpen : undefined}
       onKeyDown={interactive ? handleCardKeyDown : undefined}
     >
       {occurrence.coverMedia ? (
