@@ -31,12 +31,6 @@ export interface PublicOccurrenceDetails {
   description: string | null;
   status: string;
   addressText: string;
-  postalCode: string | null;
-  stateCode: string | null;
-  latitude: number;
-  longitude: number;
-  externalProtocolNumber: string | null;
-  externalProtocolAgency: string | null;
   createdAt: string;
   updatedAt: string;
   media: PublicOccurrenceMediaItem[];
