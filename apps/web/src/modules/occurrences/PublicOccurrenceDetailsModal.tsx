@@ -122,18 +122,7 @@ export function PublicOccurrenceDetailsModal({ occurrence, onClose }: PublicOccu
           <section className="public-occurrence-details__section public-occurrence-details__location">
             <h3>Localização</h3>
             <p>{occurrence.addressText}</p>
-            {(occurrence.postalCode || occurrence.stateCode) && (
-              <small>{[occurrence.postalCode, occurrence.stateCode].filter(Boolean).join(' · ')}</small>
-            )}
           </section>
-
-          {(occurrence.externalProtocolNumber || occurrence.externalProtocolAgency) && (
-            <section className="public-occurrence-details__section">
-              <h3>Protocolo externo</h3>
-              {occurrence.externalProtocolNumber && <p>{occurrence.externalProtocolNumber}</p>}
-              {occurrence.externalProtocolAgency && <small>{occurrence.externalProtocolAgency}</small>}
-            </section>
-          )}
         </div>
       </div>
     </div>
