@@ -18,6 +18,7 @@ HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 LOCATION="$ROOT/apps/web/src/modules/occurrences/OccurrenceLocationPicker.tsx"
 CARD="$ROOT/apps/web/src/modules/occurrences/PublicOccurrenceCard.tsx"
+CARD_CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrence-card.css"
 LIST="$ROOT/apps/web/src/modules/occurrences/PublicOccurrences.tsx"
 MODAL="$ROOT/apps/web/src/modules/occurrences/PublicOccurrenceDetailsModal.tsx"
 SUPPORT="$ROOT/apps/web/src/modules/occurrences/OccurrenceSupportButton.tsx"
@@ -25,7 +26,7 @@ CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrences.css"
 
 for file in \
   "$CONTRACTS" "$SERVICE" "$GEO_ENDPOINTS" "$CREATE_ENDPOINTS" "$CREATE_SERVICE" \
-  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$CARD" "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
+  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$CARD" "$CARD_CSS" "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -69,12 +70,17 @@ grep -q 'supportOccurrence' "$HOME_SERVICE" || fail "client de apoio autenticado
 grep -q 'occurrence.coverMedia.readUrl' "$CARD" || fail "card não usa primeira foto como capa"
 grep -q 'Protocolo {occurrence.externalProtocolNumber}' "$CARD" || fail "protocolo não está destacado no card público"
 grep -q 'OccurrenceSupportButton' "$CARD" || fail "card público não exibe botão de apoio"
+grep -q "import './public-occurrence-card.css'" "$CARD" || fail "card público não carrega layout próprio das ações"
+grep -q 'public-occurrence-open-button' "$CARD" || fail "ação explícita de abertura não possui classe estável"
 grep -q 'OccurrenceSupportButton' "$MODAL" || fail "detalhe público não exibe botão de apoio"
 grep -q "public-occurrence-support__icon.*↑" "$SUPPORT" || fail "apoio não usa seta para cima"
 grep -q 'initialCount' "$SUPPORT" || fail "botão de apoio não exibe contagem pública"
 grep -q 'getAccessToken' "$SUPPORT" || fail "botão de apoio não diferencia sessão autenticada"
 grep -q 'object-fit: cover' "$CSS" || fail "foto de capa não preenche a área disponível"
 grep -q 'public-occurrence-support' "$CSS" || fail "estilo do apoio público ausente"
+grep -q 'grid-template-columns: minmax(0, 1fr) auto' "$CARD_CSS" || fail "ações do card não possuem layout em duas colunas"
+grep -q 'public-occurrence-open-button' "$CARD_CSS" || fail "botão de abertura não está posicionado no layout do card"
+grep -q 'public-occurrence-support--card' "$CARD_CSS" || fail "botão de apoio não está protegido contra recorte no card"
 grep -q 'data-occurrence-id={occurrence.id}' "$CARD" || fail "card público não possui seletor estável para E2E"
 grep -q 'aria-label={`Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`}' "$CARD" || fail "card público não possui ação explícita e acessível de abertura"
 grep -q 'onClick={onOpen ? () => onOpen(occurrence) : undefined}' "$CARD" || fail "área do card não permanece clicável"
@@ -104,6 +110,7 @@ echo "public_occurrence_public_protocol=OK"
 echo "public_occurrence_support_count=OK"
 echo "public_occurrence_support_button=OK"
 echo "public_occurrence_card_actions_separated=OK"
+echo "public_occurrence_card_actions_visible=OK"
 echo "public_occurrence_clickable_card=OK"
 echo "public_occurrence_details_dialog=OK"
 echo "public_occurrence_full_gallery=OK"
