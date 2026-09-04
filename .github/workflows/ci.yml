@@ -65,6 +65,9 @@ jobs:
       - name: Architecture guard
         run: bash ../../infra/scripts/frontend-architecture-test.sh
 
+      - name: Occurrence media presentation guard
+        run: bash ../../infra/scripts/occurrence-media-presentation-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 
