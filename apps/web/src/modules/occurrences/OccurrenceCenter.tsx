@@ -332,7 +332,18 @@ export function OccurrenceCenter() {
             </div>
 
             <form className="occurrence-form" onSubmit={handleSubmit} noValidate>
-              <label>
+              <label className="occurrence-form__protocol-field occurrence-form__full">
+                Número do protocolo <span className="occurrence-required-marker" aria-hidden="true">*</span>
+                <input
+                  required
+                  value={form.externalProtocolNumber}
+                  onChange={(event) => updateField('externalProtocolNumber', event.target.value)}
+                  placeholder="Ex.: 2026-000123"
+                />
+                <small>Esse protocolo identifica a solicitação junto ao órgão ou serviço relacionado.</small>
+              </label>
+
+              <label className="occurrence-form__paired-field">
                 Categoria <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
                   required
@@ -347,7 +358,7 @@ export function OccurrenceCenter() {
                 </select>
               </label>
 
-              <label>
+              <label className="occurrence-form__paired-field">
                 Conta Master <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
                   required
@@ -363,7 +374,7 @@ export function OccurrenceCenter() {
                 <small>A ocorrência ficará aguardando o aceite da conta Master selecionada.</small>
               </label>
 
-              <label className="occurrence-form__title-field">
+              <label className="occurrence-form__title-field occurrence-form__full">
                 Título <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
                   required
@@ -371,17 +382,6 @@ export function OccurrenceCenter() {
                   onChange={(event) => updateField('title', event.target.value)}
                   placeholder="Ex.: Buraco grande na via"
                 />
-              </label>
-
-              <label className="occurrence-form__protocol-field">
-                Número do protocolo <span className="occurrence-required-marker" aria-hidden="true">*</span>
-                <input
-                  required
-                  value={form.externalProtocolNumber}
-                  onChange={(event) => updateField('externalProtocolNumber', event.target.value)}
-                  placeholder="Ex.: 2026-000123"
-                />
-                <small>Esse protocolo identifica a solicitação junto ao órgão ou serviço relacionado.</small>
               </label>
 
               <label className="occurrence-form__full">
