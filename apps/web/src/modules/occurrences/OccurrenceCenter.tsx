@@ -10,6 +10,7 @@ import {
 } from './occurrenceService';
 import { OccurrenceGeoFilter } from './OccurrenceGeoFilter';
 import { OccurrenceLocationPicker } from './OccurrenceLocationPicker';
+import { OccurrenceMediaGallery } from './OccurrenceMediaGallery';
 import type { OccurrenceCategory, OccurrencePage } from './types';
 
 const ACCEPTED_MEDIA_TYPES = 'image/jpeg,image/png,image/webp,video/mp4,video/webm';
@@ -410,6 +411,10 @@ export function OccurrenceCenter() {
                     <h4>{occurrence.title}</h4>
                     <p>{occurrence.categoryName}</p>
                     <small>{occurrence.addressText}</small>
+                    <OccurrenceMediaGallery
+                      occurrenceId={occurrence.id}
+                      occurrenceCode={occurrence.publicCode}
+                    />
                     <time dateTime={occurrence.createdAt}>Publicada em {formatDate(occurrence.createdAt)}</time>
                   </article>
                 ))}
