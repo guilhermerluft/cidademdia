@@ -63,7 +63,7 @@ trap cleanup_qa_user EXIT
 mkdir -p "$QA_DIR"
 
 echo "============================================================"
-echo "PUBLIC OCCURRENCE COVER + DETAILS — FEATURE HOMOLOG"
+echo "PUBLIC OCCURRENCE CREATION + DETAILS + SUPPORT — FEATURE HOMOLOG"
 echo "============================================================"
 echo "HEAD: $EXPECTED_HEAD"
 echo "MAIN: $(git -C "$ROOT" rev-parse HEAD)"
@@ -132,8 +132,8 @@ const context = await browser.newContext({
   permissions: [],
 });
 const page = await context.newPage();
-const errors = [];
-page.on('pageerror', error => errors.push(error.message));
+const pageErrors = [];
+page.on('pageerror', error => pageErrors.push(error.message));
 
 async function protectedRequest(method, url, token, options = {}) {
   return context.request.fetch(url, {
@@ -156,8 +156,8 @@ async function createImage(token, fileName) {
   if (request.status() !== 201) {
     throw new Error(`solicitação ${fileName} falhou: ${request.status()} ${await request.text()}`);
   }
-  const upload = await request.json();
 
+  const upload = await request.json();
   const binary = await fetch(upload.uploadUrl, {
     method: 'PUT',
     headers: { 'Content-Type': 'image/png' },
@@ -173,6 +173,7 @@ async function createImage(token, fileName) {
   if (confirm.status() !== 200) {
     throw new Error(`confirmação ${fileName} falhou: ${confirm.status()} ${await confirm.text()}`);
   }
+
   const confirmed = await confirm.json();
   if (confirmed.status !== 'READY') throw new Error(`${fileName} não ficou READY`);
   return confirmed;
@@ -199,6 +200,41 @@ function occurrencePayload(categoryId, masterUserId, title, mediaIds) {
   };
 }
 
+async function waitForLoadedImage(locator) {
+  await locator.waitFor({ state: 'visible', timeout: 10000 });
+  await locator.evaluate(async element => {
+    if (
+      element instanceof HTMLImageElement
+      && element.complete
+      && element.naturalWidth > 0
+      && element.naturalHeight > 0
+    ) return;
+
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => reject(new Error(`timeout aguardando imagem: ${element.currentSrc || element.src}`)), 10000);
+      const cleanup = () => {
+        clearTimeout(timeout);
+        element.removeEventListener('load', onLoad);
+        element.removeEventListener('error', onError);
+      };
+      const onLoad = () => { cleanup(); resolve(); };
+      const onError = () => { cleanup(); reject(new Error(`erro carregando imagem: ${element.currentSrc || element.src}`)); };
+      element.addEventListener('load', onLoad, { once: true });
+      element.addEventListener('error', onError, { once: true });
+    });
+  });
+
+  const state = await locator.evaluate(element => ({
+    complete: element.complete,
+    width: element.naturalWidth,
+    height: element.naturalHeight,
+    src: element.currentSrc || element.src,
+  }));
+  if (!state.complete || state.width < 1 || state.height < 1) {
+    throw new Error(`imagem não carregou: ${JSON.stringify(state)}`);
+  }
+}
+
 try {
   const register = await context.request.post(`${process.env.BASE}/api/v1/auth/register`, {
     data: {
@@ -215,13 +251,13 @@ try {
   const token = session.accessToken;
   console.log('public_occurrence_qa_auth=OK');
 
-  const categories = await protectedRequest(
+  const categoriesResponse = await protectedRequest(
     'GET',
     `${process.env.BASE}/api/v1/occurrences/categories`,
     token,
   );
-  if (categories.status() !== 200) throw new Error(`categorias falharam: ${categories.status()}`);
-  const category = (await categories.json())[0];
+  if (categoriesResponse.status() !== 200) throw new Error(`categorias falharam: ${categoriesResponse.status()}`);
+  const category = (await categoriesResponse.json())[0];
   if (!category?.id) throw new Error('nenhuma categoria ativa disponível');
 
   const mastersResponse = await protectedRequest(
@@ -294,15 +330,9 @@ try {
   const publicPage = await publicList.json();
   const listed = publicPage.items.find(item => item.id === occurrence.id);
   if (!listed) throw new Error('ocorrência QA não apareceu na listagem pública');
-  if (listed.coverMedia?.id !== first.id) {
-    throw new Error(`primeira foto não virou capa: ${JSON.stringify(listed.coverMedia)}`);
-  }
-  if (listed.externalProtocolNumber !== protocolNumber) {
-    throw new Error(`protocolo não apareceu na listagem pública: ${JSON.stringify(listed)}`);
-  }
-  if (listed.supportCount !== 0) {
-    throw new Error(`contagem inicial de apoios deveria ser zero: ${JSON.stringify(listed)}`);
-  }
+  if (listed.coverMedia?.id !== first.id) throw new Error(`primeira foto não virou capa: ${JSON.stringify(listed.coverMedia)}`);
+  if (listed.externalProtocolNumber !== protocolNumber) throw new Error(`protocolo não apareceu na listagem pública: ${JSON.stringify(listed)}`);
+  if (listed.supportCount !== 0) throw new Error(`contagem inicial de apoios deveria ser zero: ${JSON.stringify(listed)}`);
   const coverRead = await fetch(listed.coverMedia.readUrl);
   if (!coverRead.ok) throw new Error(`URL pública assinada da capa falhou: ${coverRead.status}`);
   console.log('public_occurrence_first_photo_is_cover=OK');
@@ -323,21 +353,15 @@ try {
   }
   console.log('public_occurrence_authenticated_support=OK');
 
-  const detailsResponse = await context.request.get(
-    `${process.env.BASE}/api/v1/public/occurrences/${occurrence.id}`,
-  );
+  const detailsResponse = await context.request.get(`${process.env.BASE}/api/v1/public/occurrences/${occurrence.id}`);
   if (detailsResponse.status() !== 200) throw new Error(`detalhe público falhou: ${detailsResponse.status()}`);
   const details = await detailsResponse.json();
   if (details.media?.length !== 2) throw new Error(`galeria pública não retornou 2 mídias: ${JSON.stringify(details.media)}`);
   if (details.media[0].id !== first.id || details.media[1].id !== second.id) {
     throw new Error(`ordem da galeria não preservou upload: ${JSON.stringify(details.media)}`);
   }
-  if (details.externalProtocolNumber !== protocolNumber) {
-    throw new Error(`detalhe público não expôs o protocolo esperado: ${JSON.stringify(details)}`);
-  }
-  if (details.supportCount !== 1) {
-    throw new Error(`detalhe público não expôs a contagem de apoios: ${JSON.stringify(details)}`);
-  }
+  if (details.externalProtocolNumber !== protocolNumber) throw new Error(`detalhe público não expôs protocolo: ${JSON.stringify(details)}`);
+  if (details.supportCount !== 1) throw new Error(`detalhe público não expôs apoio: ${JSON.stringify(details)}`);
   for (const forbidden of ['postalCode', 'stateCode', 'latitude', 'longitude', 'externalProtocolAgency']) {
     if (Object.prototype.hasOwnProperty.call(details, forbidden)) {
       throw new Error(`detalhe público expôs campo privado: ${forbidden}`);
@@ -349,82 +373,39 @@ try {
   await page.goto(`${process.env.BASE}/ocorrencias`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-occurrences').waitFor({ state: 'visible', timeout: 15000 });
 
-  const card = page.getByRole('button', {
-    name: `Abrir ocorrência ${occurrence.publicCode}: ${title}`,
-    exact: true,
-  });
+  const card = page.locator(`.public-occurrences__card[data-occurrence-id="${occurrence.id}"]`);
   await card.waitFor({ state: 'visible', timeout: 20000 });
 
   const cover = card.locator('.public-occurrences__card-cover img');
-  await cover.waitFor({ state: 'visible', timeout: 10000 });
-  await page.waitForFunction((selector) => {
-    const image = document.querySelector(selector);
-    return image instanceof HTMLImageElement && image.complete && image.naturalWidth > 0;
-  }, `.public-occurrences__card[aria-label="Abrir ocorrência ${occurrence.publicCode}: ${title}"] .public-occurrences__card-cover img`);
+  await waitForLoadedImage(cover);
   console.log('public_occurrence_cover_visible=OK');
 
   await card.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
-  const supportButton = card.getByRole('button', { name: 'Entrar para apoiar ocorrência. 1 apoios', exact: true });
-  await supportButton.waitFor({ state: 'visible' });
+  const openButton = card.getByRole('button', {
+    name: `Abrir ocorrência ${occurrence.publicCode}: ${title}`,
+    exact: true,
+  });
+  const supportButton = card.getByRole('button', {
+    name: 'Entrar para apoiar ocorrência. 1 apoios',
+    exact: true,
+  });
+  await openButton.waitFor({ state: 'visible', timeout: 10000 });
+  await supportButton.waitFor({ state: 'visible', timeout: 10000 });
+  console.log('public_occurrence_card_actions_separated=OK');
   console.log('public_occurrence_protocol_and_support_visible=OK');
 
-  await card.click();
+  await card.getByRole('heading', { name: title, exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
   await dialog.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'visible' });
   await dialog.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
   await dialog.getByRole('button', { name: 'Entrar para apoiar ocorrência. 1 apoios', exact: true }).waitFor({ state: 'visible' });
+  console.log('public_occurrence_card_click_opens_detail=OK');
 
   const galleryImages = dialog.locator('.public-occurrence-details__media img');
   if (await galleryImages.count() !== 2) throw new Error(`modal não exibiu duas fotos: ${await galleryImages.count()}`);
   for (let index = 0; index < 2; index += 1) {
-    const image = galleryImages.nth(index);
-    await image.waitFor({ state: 'visible', timeout: 10000 });
-    await image.evaluate(async element => {
-      if (
-        element instanceof HTMLImageElement
-        && element.complete
-        && element.naturalWidth > 0
-        && element.naturalHeight > 0
-      ) {
-        return;
-      }
-
-      await new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error(`timeout aguardando imagem: ${element.currentSrc || element.src}`));
-        }, 10000);
-
-        const cleanup = () => {
-          clearTimeout(timeout);
-          element.removeEventListener('load', onLoad);
-          element.removeEventListener('error', onError);
-        };
-
-        const onLoad = () => {
-          cleanup();
-          resolve();
-        };
-
-        const onError = () => {
-          cleanup();
-          reject(new Error(`erro carregando imagem: ${element.currentSrc || element.src}`));
-        };
-
-        element.addEventListener('load', onLoad, { once: true });
-        element.addEventListener('error', onError, { once: true });
-      });
-    });
-
-    const state = await image.evaluate(element => ({
-      complete: element.complete,
-      width: element.naturalWidth,
-      height: element.naturalHeight,
-      src: element.currentSrc || element.src,
-    }));
-    if (!state.complete || state.width < 1 || state.height < 1) {
-      throw new Error(`foto ${index + 1} não carregou no detalhe: ${JSON.stringify(state)}`);
-    }
+    await waitForLoadedImage(galleryImages.nth(index));
   }
   console.log('public_occurrence_full_gallery_visible=OK');
 
@@ -434,7 +415,7 @@ try {
   console.log('public_occurrence_details_close=OK');
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await card.click();
+  await openButton.click();
   await dialog.waitFor({ state: 'visible', timeout: 10000 });
   const dialogBox = await dialog.boundingBox();
   if (!dialogBox || dialogBox.width > 390 || dialogBox.height > 844) {
@@ -443,7 +424,7 @@ try {
   await page.screenshot({ path: '/work/public-occurrence-details-mobile.png', fullPage: true });
   console.log('public_occurrence_details_mobile=OK');
 
-  if (errors.length) throw new Error(`pageerror: ${errors.join(' | ')}`);
+  if (pageErrors.length) throw new Error(`pageerror: ${pageErrors.join(' | ')}`);
 } finally {
   await context.close();
   await browser.close();
@@ -463,13 +444,13 @@ trap - EXIT
 test -z "$(git -C "$ROOT" status --porcelain)" || fail "main worktree ficou suja"
 echo "qa_cleanup=OK"
 echo "============================================================"
-echo "PUBLIC OCCURRENCE COVER + DETAILS — FEATURE HOMOLOG: OK"
+echo "PUBLIC OCCURRENCE CREATION + DETAILS + SUPPORT — FEATURE HOMOLOG: OK"
 echo "MASTER REQUIRED ON CREATE: OK"
 echo "PHOTO REQUIRED ON CREATE: OK"
 echo "INITIAL MASTER TARGET: OK"
 echo "FIRST PHOTO AS LIST COVER: OK"
-echo "COVER FILLS THUMBNAIL AREA: OK"
 echo "CLICKABLE OCCURRENCE CARD: OK"
+echo "SEPARATE OPEN/SUPPORT CONTROLS: OK"
 echo "PUBLIC PROTOCOL: OK"
 echo "PUBLIC SUPPORT COUNT: OK"
 echo "AUTHENTICATED SUPPORT: OK"
