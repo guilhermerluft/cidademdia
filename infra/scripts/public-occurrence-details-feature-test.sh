@@ -381,18 +381,48 @@ try {
   console.log('public_occurrence_cover_visible=OK');
 
   await card.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
-  const openButton = card.getByRole('button', {
-    name: `Abrir ocorrência ${occurrence.publicCode}: ${title}`,
-    exact: true,
-  });
   const authenticatedSupportButton = card.getByRole('button', {
     name: 'Apoiar ocorrência. 1 apoios',
     exact: true,
   });
-  await openButton.waitFor({ state: 'visible', timeout: 10000 });
   await authenticatedSupportButton.waitFor({ state: 'visible', timeout: 10000 });
-  console.log('public_occurrence_card_actions_separated=OK');
-  console.log('public_occurrence_authenticated_support_visible=OK');
+
+  if (await card.getByRole('button', { name: /^Abrir ocorrência / }).count() !== 0) {
+    throw new Error('card público ainda exibe botão Abrir');
+  }
+
+  const main = card.locator('.public-home__occurrence-main');
+  const mainBox = await main.boundingBox();
+  const supportBox = await authenticatedSupportButton.boundingBox();
+  if (!mainBox || !supportBox) {
+    throw new Error(`não foi possível medir apoio dentro do conteúdo principal: ${JSON.stringify({ mainBox, supportBox })}`);
+  }
+
+  const tolerance = 1;
+  const supportRight = supportBox.x + supportBox.width;
+  const mainRight = mainBox.x + mainBox.width;
+  const insideMain = supportBox.x >= mainBox.x - tolerance
+    && supportBox.y >= mainBox.y - tolerance
+    && supportRight <= mainRight + tolerance
+    && supportBox.y + supportBox.height <= mainBox.y + mainBox.height + tolerance;
+  if (!insideMain) {
+    throw new Error(`apoio saiu do border-box do public-home__occurrence-main: ${JSON.stringify({ mainBox, supportBox })}`);
+  }
+
+  const topInset = supportBox.y - mainBox.y;
+  const rightInset = mainRight - supportRight;
+  if (topInset < 8 || topInset > 12 || rightInset < 8 || rightInset > 12) {
+    throw new Error(`apoio não está no canto superior direito esperado: ${JSON.stringify({ topInset, rightInset, mainBox, supportBox })}`);
+  }
+  console.log('public_occurrence_support_inside_main=OK');
+  console.log('public_occurrence_no_open_button=OK');
+
+  await authenticatedSupportButton.click();
+  await page.waitForTimeout(200);
+  if (await page.getByRole('dialog').count() !== 0) {
+    throw new Error('clicar no apoio abriu os detalhes da ocorrência');
+  }
+  console.log('public_occurrence_support_does_not_open_detail=OK');
 
   await card.getByRole('heading', { name: title, exact: true }).click();
   const dialog = page.getByRole('dialog');
@@ -400,7 +430,7 @@ try {
   await dialog.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'visible' });
   await dialog.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
   await dialog.getByRole('button', { name: 'Apoiar ocorrência. 1 apoios', exact: true }).waitFor({ state: 'visible' });
-  console.log('public_occurrence_card_click_opens_detail=OK');
+  console.log('public_occurrence_row_click_opens_detail=OK');
 
   const galleryImages = dialog.locator('.public-occurrence-details__media img');
   if (await galleryImages.count() !== 2) throw new Error(`modal não exibiu duas fotos: ${await galleryImages.count()}`);
@@ -431,6 +461,10 @@ try {
       exact: true,
     }).waitFor({ state: 'visible', timeout: 10000 });
 
+    if (await anonymousCard.getByRole('button', { name: /^Abrir ocorrência / }).count() !== 0) {
+      throw new Error('card público anônimo ainda exibe botão Abrir');
+    }
+
     await anonymousCard.getByRole('heading', { name: title, exact: true }).click();
     const anonymousDialog = anonymousPage.getByRole('dialog');
     await anonymousDialog.waitFor({ state: 'visible', timeout: 15000 });
@@ -444,7 +478,7 @@ try {
   }
 
   await page.setViewportSize({ width: 390, height: 844 });
-  await openButton.click();
+  await card.getByRole('heading', { name: title, exact: true }).click();
   await dialog.waitFor({ state: 'visible', timeout: 10000 });
   const dialogBox = await dialog.boundingBox();
   if (!dialogBox || dialogBox.width > 390 || dialogBox.height > 844) {
@@ -478,8 +512,10 @@ echo "MASTER REQUIRED ON CREATE: OK"
 echo "PHOTO REQUIRED ON CREATE: OK"
 echo "INITIAL MASTER TARGET: OK"
 echo "FIRST PHOTO AS LIST COVER: OK"
-echo "CLICKABLE OCCURRENCE CARD: OK"
-echo "SEPARATE OPEN/SUPPORT CONTROLS: OK"
+echo "CLICKABLE OCCURRENCE ROW: OK"
+echo "NO OPEN BUTTON: OK"
+echo "SUPPORT INSIDE OCCURRENCE MAIN: OK"
+echo "SUPPORT DOES NOT OPEN DETAIL: OK"
 echo "PUBLIC PROTOCOL: OK"
 echo "PUBLIC SUPPORT COUNT: OK"
 echo "AUTHENTICATED SUPPORT: OK"
