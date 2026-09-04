@@ -4,6 +4,7 @@ import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { Brand, Button } from '../../components/ui';
 import type { AuthenticatedUser } from '../auth/types';
 import { PublicOccurrenceCard } from '../occurrences/PublicOccurrenceCard';
+import { PublicOccurrenceDetailsModal } from '../occurrences/PublicOccurrenceDetailsModal';
 import {
   DEFAULT_PUBLIC_OCCURRENCE_CITY,
   DEFAULT_PUBLIC_OCCURRENCE_RADIUS_KM,
@@ -14,8 +15,10 @@ import type { PostItem } from '../posts/types';
 import { HomeAccountModules } from './HomeAccountModules';
 import { HowItWorksModal } from './HowItWorksModal';
 import {
+  getPublicOccurrenceDetails,
   listPublicOccurrences,
   listPublicPlans,
+  type PublicOccurrenceDetails,
   type PublicOccurrenceItem,
   type PublicPlanOffer,
 } from './homeService';
@@ -150,6 +153,9 @@ export function PublicHome({
   const [occurrencesUnavailable, setOccurrencesUnavailable] = useState(false);
   const [occurrenceLocationLabel, setOccurrenceLocationLabel] = useState(DEFAULT_PUBLIC_OCCURRENCE_CITY);
   const [showAllOccurrences, setShowAllOccurrences] = useState(false);
+  const [selectedOccurrence, setSelectedOccurrence] = useState<PublicOccurrenceDetails | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
+  const [occurrenceDetailError, setOccurrenceDetailError] = useState<string | null>(null);
   const [plans, setPlans] = useState<PublicPlanOffer[]>([]);
   const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const slidesPerView = useSlidesPerView();
@@ -278,6 +284,20 @@ export function PublicHome({
   function goToMediaPage(direction: number) {
     if (mediaPages.length <= 1) return;
     setMediaPage((current) => (current + direction + mediaPages.length) % mediaPages.length);
+  }
+
+  async function openOccurrence(occurrence: PublicOccurrenceItem) {
+    if (detailLoadingId) return;
+    setDetailLoadingId(occurrence.id);
+    setOccurrenceDetailError(null);
+    try {
+      const details = await getPublicOccurrenceDetails(occurrence.id);
+      setSelectedOccurrence(details);
+    } catch {
+      setOccurrenceDetailError('Não foi possível abrir os detalhes dessa ocorrência. Tente novamente.');
+    } finally {
+      setDetailLoadingId(null);
+    }
   }
 
   return (
@@ -429,14 +449,24 @@ export function PublicHome({
               {[0, 1, 2].map((item) => <div className="public-home__occurrence-skeleton" key={item} />)}
             </div>
           ) : visibleOccurrences.length > 0 ? (
-            <div className="public-home__occurrence-list">
-              {visibleOccurrences.map((occurrence) => <PublicOccurrenceCard occurrence={occurrence} key={occurrence.id} />)}
+            <div className="public-home__occurrence-list" aria-busy={detailLoadingId ? 'true' : undefined}>
+              {visibleOccurrences.map((occurrence) => (
+                <PublicOccurrenceCard
+                  occurrence={occurrence}
+                  onOpen={openOccurrence}
+                  key={occurrence.id}
+                />
+              ))}
             </div>
           ) : (
             <div className="public-home__empty">
               <strong>{occurrencesUnavailable ? 'Não foi possível carregar as ocorrências agora.' : 'Nenhuma ocorrência aberta encontrada nesta região.'}</strong>
               <span>{occurrencesUnavailable ? 'Tente novamente em instantes.' : 'Novas demandas públicas aparecerão aqui quando forem registradas.'}</span>
             </div>
+          )}
+
+          {occurrenceDetailError && (
+            <p className="public-home__visitor-note" role="alert">{occurrenceDetailError}</p>
           )}
 
           {!user && (
@@ -500,6 +530,12 @@ export function PublicHome({
       </footer>
 
       <HowItWorksModal open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
+      {selectedOccurrence && (
+        <PublicOccurrenceDetailsModal
+          occurrence={selectedOccurrence}
+          onClose={() => setSelectedOccurrence(null)}
+        />
+      )}
 
       <AppBottomNavigation
         active="home"
