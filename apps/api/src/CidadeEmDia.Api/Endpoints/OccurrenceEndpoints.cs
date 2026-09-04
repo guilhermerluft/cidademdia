@@ -35,13 +35,23 @@ public static class OccurrenceEndpoints
             if (!TryGetCurrentUserId(principal, out var userId))
                 return Results.Unauthorized();
 
+            if (!TryValidateCreateRequest(request, out var addressText, out var validationError))
+            {
+                return Problem(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "invalid_input",
+                    validationError);
+            }
+
             var result = await creationService.CreateAsync(
                 userId,
+                request.MasterUserId,
                 new CreateOccurrenceInput(
                     request.CategoryId,
                     request.Title,
                     request.Description,
-                    request.AddressText,
+                    addressText,
                     request.Latitude,
                     request.Longitude,
                     request.PostalCode,
@@ -174,6 +184,77 @@ public static class OccurrenceEndpoints
         return api;
     }
 
+    private static bool TryValidateCreateRequest(
+        CreateOccurrenceRequest request,
+        out string addressText,
+        out string? error)
+    {
+        addressText = string.Empty;
+
+        if (request.MasterUserId == Guid.Empty)
+        {
+            error = "A Master account must be selected before publishing the occurrence.";
+            return false;
+        }
+
+        var street = request.Street?.Trim();
+        var number = request.Number?.Trim();
+        var neighborhood = request.Neighborhood?.Trim();
+        var city = request.City?.Trim();
+        var protocol = request.ExternalProtocolNumber?.Trim();
+
+        if (string.IsNullOrWhiteSpace(street))
+        {
+            error = "Street is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(number))
+        {
+            error = "Street number is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(neighborhood))
+        {
+            error = "Neighborhood is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(city))
+        {
+            error = "City is required.";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(protocol))
+        {
+            error = "External protocol number is required.";
+            return false;
+        }
+
+        if (street.Length > 220 || number.Length > 40 || neighborhood.Length > 160 || city.Length > 120)
+        {
+            error = "The structured address exceeds the allowed length.";
+            return false;
+        }
+
+        var stateCode = request.StateCode?.Trim().ToUpperInvariant();
+        var cityState = string.IsNullOrWhiteSpace(stateCode)
+            ? city
+            : $"{city} - {stateCode}";
+
+        addressText = $"{street}, {number} - {neighborhood}, {cityState}";
+        if (addressText.Length > 500)
+        {
+            error = "Occurrence address must contain at most 500 characters.";
+            return false;
+        }
+
+        error = null;
+        return true;
+    }
+
     private static IResult MapCreateFailure(CreateOccurrenceResult result, HttpContext httpContext) =>
         result.ErrorCode switch
         {
@@ -192,6 +273,16 @@ public static class OccurrenceEndpoints
                 StatusCodes.Status409Conflict,
                 result.ErrorCode,
                 "The occurrence category is inactive."),
+            "master_not_eligible" => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode,
+                result.ErrorDetail ?? "The selected Master account is not eligible to receive occurrences."),
+            "photo_required" => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode,
+                result.ErrorDetail ?? "At least one ready photo is required to publish an occurrence."),
             "media_not_ready_or_owned" or "media_persistence_conflict" or "media_attach_not_allowed" => Problem(
                 httpContext,
                 StatusCodes.Status409Conflict,
@@ -202,7 +293,7 @@ public static class OccurrenceEndpoints
                 StatusCodes.Status400BadRequest,
                 result.ErrorCode,
                 result.ErrorDetail),
-            "occurrence_persistence_conflict" => Problem(
+            "target_persistence_conflict" or "occurrence_persistence_conflict" => Problem(
                 httpContext,
                 StatusCodes.Status409Conflict,
                 result.ErrorCode,
@@ -259,15 +350,19 @@ public static class OccurrenceEndpoints
 
     public sealed record CreateOccurrenceRequest(
         Guid CategoryId,
+        Guid MasterUserId,
         string Title,
         string? Description,
-        string AddressText,
+        string Street,
+        string Number,
+        string Neighborhood,
+        string City,
         decimal Latitude,
         decimal Longitude,
         string? PostalCode,
         Guid? CityId,
         string? StateCode,
-        string? ExternalProtocolNumber,
+        string ExternalProtocolNumber,
         string? ExternalProtocolAgency,
         IReadOnlyList<Guid>? MediaIds = null);
 
