@@ -68,6 +68,9 @@ jobs:
       - name: Occurrence media presentation guard
         run: bash ../../infra/scripts/occurrence-media-presentation-guard.sh
 
+      - name: Public occurrence details guard
+        run: bash ../../infra/scripts/public-occurrence-details-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 
