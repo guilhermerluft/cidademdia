@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { toast } from '../../components/toast';
 import { getAccessToken } from '../../services/api';
 import { supportOccurrence } from '../home/homeService';
 
@@ -24,7 +25,7 @@ export function OccurrenceSupportButton({
   async function handleSupport() {
     const authenticated = Boolean(getAccessToken());
     if (!authenticated) {
-      window.alert('Entre ou crie sua conta para apoiar esta ocorrência.');
+      toast.info('Entre ou crie sua conta para apoiar esta ocorrência.');
       return;
     }
 
