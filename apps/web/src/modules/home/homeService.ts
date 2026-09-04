@@ -17,6 +17,8 @@ export interface PublicOccurrenceItem {
   description?: string | null;
   status: string;
   addressText: string;
+  externalProtocolNumber?: string | null;
+  supportCount: number;
   createdAt: string;
   updatedAt: string;
   coverMedia?: PublicOccurrenceMediaItem | null;
@@ -31,9 +33,18 @@ export interface PublicOccurrenceDetails {
   description: string | null;
   status: string;
   addressText: string;
+  externalProtocolNumber: string | null;
+  supportCount: number;
   createdAt: string;
   updatedAt: string;
   media: PublicOccurrenceMediaItem[];
+}
+
+export interface OccurrenceSupportItem {
+  occurrenceId: string;
+  supportCount: number;
+  supportedByRequester: boolean;
+  supportedAt: string | null;
 }
 
 export interface PublicOccurrenceQuery {
@@ -80,6 +91,11 @@ export async function searchPublicOccurrences(query: PublicOccurrenceQuery) {
 
 export async function getPublicOccurrenceDetails(occurrenceId: string) {
   const { data } = await api.get<PublicOccurrenceDetails>(`/public/occurrences/${occurrenceId}`);
+  return data;
+}
+
+export async function supportOccurrence(occurrenceId: string) {
+  const { data } = await api.post<OccurrenceSupportItem>(`/occurrences/${occurrenceId}/support`);
   return data;
 }
 

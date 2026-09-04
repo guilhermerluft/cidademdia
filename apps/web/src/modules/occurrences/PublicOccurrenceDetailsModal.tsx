@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import type { PublicOccurrenceDetails } from '../home/homeService';
+import { OccurrenceSupportButton } from './OccurrenceSupportButton';
 
 interface PublicOccurrenceDetailsModalProps {
   occurrence: PublicOccurrenceDetails;
@@ -63,18 +64,33 @@ export function PublicOccurrenceDetailsModal({ occurrence, onClose }: PublicOccu
       >
         <header className="public-occurrence-details__header">
           <div>
-            <span className="public-occurrence-details__code">{occurrence.publicCode}</span>
+            <div className="public-occurrence-breadcrumb public-occurrence-breadcrumb--details" aria-label="Identificação da ocorrência">
+              <span>{occurrence.publicCode}</span>
+              {occurrence.externalProtocolNumber ? (
+                <>
+                  <span aria-hidden="true">/</span>
+                  <strong>Protocolo {occurrence.externalProtocolNumber}</strong>
+                </>
+              ) : null}
+            </div>
             <h2 id="public-occurrence-details-title">{occurrence.title}</h2>
             <p>{occurrence.categoryName || 'Ocorrência urbana'}</p>
           </div>
-          <button
-            type="button"
-            className="public-occurrence-details__close"
-            aria-label="Fechar detalhes da ocorrência"
-            onClick={onClose}
-          >
-            <i className="fa-solid fa-xmark" aria-hidden="true" />
-          </button>
+          <div className="public-occurrence-details__header-actions">
+            <OccurrenceSupportButton
+              occurrenceId={occurrence.id}
+              initialCount={occurrence.supportCount}
+              className="public-occurrence-support--details"
+            />
+            <button
+              type="button"
+              className="public-occurrence-details__close"
+              aria-label="Fechar detalhes da ocorrência"
+              onClick={onClose}
+            >
+              <i className="fa-solid fa-xmark" aria-hidden="true" />
+            </button>
+          </div>
         </header>
 
         {occurrence.media.length > 0 ? (

@@ -36,6 +36,8 @@ public sealed record PublicOccurrenceItem(
     string? Description,
     string Status,
     string AddressText,
+    string? ExternalProtocolNumber,
+    int SupportCount,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     PublicOccurrenceMediaItem? CoverMedia);
@@ -53,8 +55,9 @@ public sealed record PublicOccurrenceDetails(
     [property: JsonIgnore] string? StateCode,
     [property: JsonIgnore] decimal Latitude,
     [property: JsonIgnore] decimal Longitude,
-    [property: JsonIgnore] string? ExternalProtocolNumber,
+    string? ExternalProtocolNumber,
     [property: JsonIgnore] string? ExternalProtocolAgency,
+    int SupportCount,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<PublicOccurrenceMediaItem> Media);

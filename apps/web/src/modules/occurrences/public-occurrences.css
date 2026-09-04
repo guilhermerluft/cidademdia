@@ -219,6 +219,75 @@
   object-fit: cover;
 }
 
+.public-occurrence-breadcrumb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 5px 0 4px;
+  color: #6a768a;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.public-occurrence-breadcrumb strong {
+  color: #b42318;
+}
+
+.public-occurrence-breadcrumb--details {
+  margin: 0 0 7px;
+  font-size: 0.78rem;
+}
+
+.public-occurrence-support {
+  min-width: 54px;
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  border: 1px solid #d4deea;
+  border-radius: 999px;
+  background: #f7f9fc;
+  color: #34435c;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 800;
+  transition: border-color 150ms ease, background 150ms ease, color 150ms ease, transform 150ms ease;
+}
+
+.public-occurrence-support:hover:not(:disabled),
+.public-occurrence-support:focus-visible {
+  border-color: #075ff0;
+  background: #eef4ff;
+  color: #075ff0;
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.public-occurrence-support.is-supported {
+  border-color: #7bb33d;
+  background: #f1f8e9;
+  color: #4f7d1f;
+}
+
+.public-occurrence-support:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.public-occurrence-support__icon {
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.public-occurrence-support--card {
+  align-self: center;
+}
+
 .public-occurrences__detail-loading {
   margin: 14px 0 0;
   text-align: center;
@@ -303,6 +372,12 @@
   background: rgba(255, 255, 255, 0.97);
 }
 
+.public-occurrence-details__header-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
 .public-occurrence-details__code {
   display: block;
   margin-bottom: 5px;
@@ -337,6 +412,11 @@
   color: #17223a;
   cursor: pointer;
   font-size: 1.05rem;
+}
+
+.public-occurrence-support--details {
+  min-height: 42px;
+  padding-inline: 14px;
 }
 
 .public-occurrence-details__media {
@@ -468,6 +548,11 @@
 
   .public-occurrence-details__header {
     padding: 18px;
+  }
+
+  .public-occurrence-details__header-actions {
+    flex-direction: column-reverse;
+    align-items: flex-end;
   }
 
   .public-occurrence-details__media {

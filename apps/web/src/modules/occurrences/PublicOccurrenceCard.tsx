@@ -1,5 +1,6 @@
 import type { KeyboardEvent } from 'react';
 import type { PublicOccurrenceItem } from '../home/homeService';
+import { OccurrenceSupportButton } from './OccurrenceSupportButton';
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
@@ -95,6 +96,15 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
         <span className={`public-home__category public-home__category--${tone}`}>
           {getCategorySymbol(occurrence.categorySlug)} {occurrence.categoryName || 'Ocorrência urbana'}
         </span>
+        <div className="public-occurrence-breadcrumb" aria-label="Identificação da ocorrência">
+          <span>{occurrence.publicCode}</span>
+          {occurrence.externalProtocolNumber ? (
+            <>
+              <span aria-hidden="true">/</span>
+              <strong>Protocolo {occurrence.externalProtocolNumber}</strong>
+            </>
+          ) : null}
+        </div>
         <h3>{occurrence.title}</h3>
         <p className="public-home__occurrence-location">
           <span aria-hidden="true">●</span> {occurrence.addressText}
@@ -106,6 +116,11 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
         <span className={`public-home__occurrence-status public-home__occurrence-status--${getStatusClass(occurrence.status)}`}>
           {getStatusLabel(occurrence.status)}
         </span>
+        <OccurrenceSupportButton
+          occurrenceId={occurrence.id}
+          initialCount={occurrence.supportCount}
+          className="public-occurrence-support--card"
+        />
         <span className="public-home__occurrence-time"><span aria-hidden="true">◷</span> {formatTime(occurrence.updatedAt)}</span>
       </div>
     </article>

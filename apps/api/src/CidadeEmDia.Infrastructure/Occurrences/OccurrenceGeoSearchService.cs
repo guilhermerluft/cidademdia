@@ -201,7 +201,16 @@ internal sealed class OccurrenceGeoSearchService(
                 .Select(x => new CategoryInfo(x.Id, x.Name, x.Slug))
                 .ToDictionaryAsync(x => x.Id, cancellationToken);
 
-        var covers = await LoadPublicCoverMediaAsync(rows.Select(x => x.Id).ToArray(), cancellationToken);
+        var occurrenceIds = rows.Select(x => x.Id).ToArray();
+        var covers = await LoadPublicCoverMediaAsync(occurrenceIds, cancellationToken);
+        var supportCounts = occurrenceIds.Length == 0
+            ? new Dictionary<Guid, int>()
+            : await dbContext.OccurrenceSupports
+                .AsNoTracking()
+                .Where(support => occurrenceIds.Contains(support.OccurrenceId))
+                .GroupBy(support => support.OccurrenceId)
+                .Select(group => new { OccurrenceId = group.Key, Count = group.Count() })
+                .ToDictionaryAsync(x => x.OccurrenceId, x => x.Count, cancellationToken);
 
         var items = rows
             .Select(x =>
@@ -216,6 +225,8 @@ internal sealed class OccurrenceGeoSearchService(
                     x.Description,
                     x.Status.Value,
                     x.AddressText,
+                    x.ExternalProtocolNumber,
+                    supportCounts.GetValueOrDefault(x.Id),
                     x.CreatedAt,
                     x.UpdatedAt,
                     covers.GetValueOrDefault(x.Id));
@@ -250,6 +261,9 @@ internal sealed class OccurrenceGeoSearchService(
             .FirstOrDefaultAsync(cancellationToken);
 
         var media = await LoadPublicMediaAsync(occurrence.Id, cancellationToken);
+        var supportCount = await dbContext.OccurrenceSupports
+            .AsNoTracking()
+            .CountAsync(support => support.OccurrenceId == occurrence.Id, cancellationToken);
 
         return new PublicOccurrenceDetails(
             occurrence.Id,
@@ -266,6 +280,7 @@ internal sealed class OccurrenceGeoSearchService(
             occurrence.Location.Longitude,
             occurrence.ExternalProtocolNumber,
             occurrence.ExternalProtocolAgency,
+            supportCount,
             occurrence.CreatedAt,
             occurrence.UpdatedAt,
             media);
