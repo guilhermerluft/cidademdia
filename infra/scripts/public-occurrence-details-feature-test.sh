@@ -94,7 +94,7 @@ echo "health=200"
 echo "occurrences_route=200"
 
 echo
-echo "=== 3. API + BROWSER — CAPA + DETALHES + GALERIA ==="
+echo "=== 3. API + BROWSER — CRIAÇÃO + CAPA + DETALHES + APOIO ==="
 docker run --rm -i \
   --network host \
   -v "$QA_DIR:/work" \
@@ -118,6 +118,7 @@ const png = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Y9Z1xkAAAAASUVORK5CYII=',
   'base64',
 );
+const protocolNumber = `QA-PROTOCOLO-${Date.now()}`;
 
 const browser = await chromium.launch({
   executablePath: process.env.CHROME,
@@ -177,6 +178,27 @@ async function createImage(token, fileName) {
   return confirmed;
 }
 
+function occurrencePayload(categoryId, masterUserId, title, mediaIds) {
+  return {
+    categoryId,
+    masterUserId,
+    title,
+    description: 'Detalhe público com duas fotos para validar criação, capa, galeria, protocolo e apoio.',
+    street: 'Praça da Sé',
+    number: '1',
+    neighborhood: 'Sé',
+    city: 'São Paulo',
+    latitude: -23.55052,
+    longitude: -46.633308,
+    postalCode: '01001000',
+    cityId: null,
+    stateCode: 'SP',
+    externalProtocolNumber: protocolNumber,
+    externalProtocolAgency: 'QA PRIVADO',
+    mediaIds,
+  };
+}
+
 try {
   const register = await context.request.post(`${process.env.BASE}/api/v1/auth/register`, {
     data: {
@@ -202,38 +224,62 @@ try {
   const category = (await categories.json())[0];
   if (!category?.id) throw new Error('nenhuma categoria ativa disponível');
 
+  const mastersResponse = await protectedRequest(
+    'GET',
+    `${process.env.BASE}/api/v1/occurrences/masters`,
+    token,
+  );
+  if (mastersResponse.status() !== 200) throw new Error(`Masters falharam: ${mastersResponse.status()}`);
+  const master = (await mastersResponse.json())[0];
+  if (!master?.id) throw new Error('nenhuma conta Master elegível disponível para homologação');
+  console.log(`public_occurrence_master_required=OK master=${master.displayName}`);
+
   const first = await createImage(token, 'qa-primeira-foto.png');
   await new Promise(resolve => setTimeout(resolve, 200));
   const second = await createImage(token, 'qa-segunda-foto.png');
   console.log('public_occurrence_two_images_ready=OK');
+
+  const noPhoto = await protectedRequest(
+    'POST',
+    `${process.env.BASE}/api/v1/occurrences`,
+    token,
+    { data: occurrencePayload(category.id, master.id, `QA sem foto ${Date.now()}`, []) },
+  );
+  if (noPhoto.status() !== 400) {
+    throw new Error(`criação sem foto deveria falhar com 400: ${noPhoto.status()} ${await noPhoto.text()}`);
+  }
+  const noPhotoProblem = await noPhoto.json();
+  if (noPhotoProblem.code !== 'photo_required') {
+    throw new Error(`criação sem foto não retornou photo_required: ${JSON.stringify(noPhotoProblem)}`);
+  }
+  console.log('public_occurrence_photo_required=OK');
 
   const title = `QA capa pública ${Date.now()}`;
   const create = await protectedRequest(
     'POST',
     `${process.env.BASE}/api/v1/occurrences`,
     token,
-    {
-      data: {
-        categoryId: category.id,
-        title,
-        description: 'Detalhe público com duas fotos para validar capa e galeria completa.',
-        addressText: 'Praça da Sé, São Paulo - SP',
-        latitude: -23.55052,
-        longitude: -46.633308,
-        postalCode: '01001000',
-        cityId: null,
-        stateCode: 'SP',
-        externalProtocolNumber: 'QA-NAO-EXPOR',
-        externalProtocolAgency: 'QA PRIVADO',
-        mediaIds: [first.id, second.id],
-      },
-    },
+    { data: occurrencePayload(category.id, master.id, title, [first.id, second.id]) },
   );
   if (create.status() !== 201) {
     throw new Error(`criação ocorrência falhou: ${create.status()} ${await create.text()}`);
   }
   const occurrence = await create.json();
   console.log(`public_occurrence_with_gallery_created=OK code=${occurrence.publicCode}`);
+
+  const targetsResponse = await protectedRequest(
+    'GET',
+    `${process.env.BASE}/api/v1/occurrences/${occurrence.id}/targets`,
+    token,
+  );
+  if (targetsResponse.status() !== 200) {
+    throw new Error(`targets da ocorrência falharam: ${targetsResponse.status()} ${await targetsResponse.text()}`);
+  }
+  const targets = await targetsResponse.json();
+  if (targets.length !== 1 || targets[0].masterUserId !== master.id || targets[0].status !== 'PENDING') {
+    throw new Error(`solicitação inicial para Master inválida: ${JSON.stringify(targets)}`);
+  }
+  console.log('public_occurrence_initial_master_target=OK');
 
   const publicList = await context.request.get(`${process.env.BASE}/api/v1/public/occurrences`, {
     params: {
@@ -251,9 +297,31 @@ try {
   if (listed.coverMedia?.id !== first.id) {
     throw new Error(`primeira foto não virou capa: ${JSON.stringify(listed.coverMedia)}`);
   }
+  if (listed.externalProtocolNumber !== protocolNumber) {
+    throw new Error(`protocolo não apareceu na listagem pública: ${JSON.stringify(listed)}`);
+  }
+  if (listed.supportCount !== 0) {
+    throw new Error(`contagem inicial de apoios deveria ser zero: ${JSON.stringify(listed)}`);
+  }
   const coverRead = await fetch(listed.coverMedia.readUrl);
   if (!coverRead.ok) throw new Error(`URL pública assinada da capa falhou: ${coverRead.status}`);
   console.log('public_occurrence_first_photo_is_cover=OK');
+  console.log('public_occurrence_protocol_public=OK');
+  console.log('public_occurrence_support_count_public=OK');
+
+  const supportResponse = await protectedRequest(
+    'POST',
+    `${process.env.BASE}/api/v1/occurrences/${occurrence.id}/support`,
+    token,
+  );
+  if (supportResponse.status() !== 200 && supportResponse.status() !== 201) {
+    throw new Error(`apoio da ocorrência falhou: ${supportResponse.status()} ${await supportResponse.text()}`);
+  }
+  const support = await supportResponse.json();
+  if (support.supportCount !== 1 || support.supportedByRequester !== true) {
+    throw new Error(`apoio não retornou contagem esperada: ${JSON.stringify(support)}`);
+  }
+  console.log('public_occurrence_authenticated_support=OK');
 
   const detailsResponse = await context.request.get(
     `${process.env.BASE}/api/v1/public/occurrences/${occurrence.id}`,
@@ -264,7 +332,13 @@ try {
   if (details.media[0].id !== first.id || details.media[1].id !== second.id) {
     throw new Error(`ordem da galeria não preservou upload: ${JSON.stringify(details.media)}`);
   }
-  for (const forbidden of ['postalCode', 'stateCode', 'latitude', 'longitude', 'externalProtocolNumber', 'externalProtocolAgency']) {
+  if (details.externalProtocolNumber !== protocolNumber) {
+    throw new Error(`detalhe público não expôs o protocolo esperado: ${JSON.stringify(details)}`);
+  }
+  if (details.supportCount !== 1) {
+    throw new Error(`detalhe público não expôs a contagem de apoios: ${JSON.stringify(details)}`);
+  }
+  for (const forbidden of ['postalCode', 'stateCode', 'latitude', 'longitude', 'externalProtocolAgency']) {
     if (Object.prototype.hasOwnProperty.call(details, forbidden)) {
       throw new Error(`detalhe público expôs campo privado: ${forbidden}`);
     }
@@ -289,10 +363,17 @@ try {
   }, `.public-occurrences__card[aria-label="Abrir ocorrência ${occurrence.publicCode}: ${title}"] .public-occurrences__card-cover img`);
   console.log('public_occurrence_cover_visible=OK');
 
+  await card.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
+  const supportButton = card.getByRole('button', { name: 'Entrar para apoiar ocorrência. 1 apoios', exact: true });
+  await supportButton.waitFor({ state: 'visible' });
+  console.log('public_occurrence_protocol_and_support_visible=OK');
+
   await card.click();
   const dialog = page.getByRole('dialog');
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
   await dialog.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'visible' });
+  await dialog.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
+  await dialog.getByRole('button', { name: 'Entrar para apoiar ocorrência. 1 apoios', exact: true }).waitFor({ state: 'visible' });
 
   const galleryImages = dialog.locator('.public-occurrence-details__media img');
   if (await galleryImages.count() !== 2) throw new Error(`modal não exibiu duas fotos: ${await galleryImages.count()}`);
@@ -383,9 +464,15 @@ test -z "$(git -C "$ROOT" status --porcelain)" || fail "main worktree ficou suja
 echo "qa_cleanup=OK"
 echo "============================================================"
 echo "PUBLIC OCCURRENCE COVER + DETAILS — FEATURE HOMOLOG: OK"
+echo "MASTER REQUIRED ON CREATE: OK"
+echo "PHOTO REQUIRED ON CREATE: OK"
+echo "INITIAL MASTER TARGET: OK"
 echo "FIRST PHOTO AS LIST COVER: OK"
 echo "COVER FILLS THUMBNAIL AREA: OK"
 echo "CLICKABLE OCCURRENCE CARD: OK"
+echo "PUBLIC PROTOCOL: OK"
+echo "PUBLIC SUPPORT COUNT: OK"
+echo "AUTHENTICATED SUPPORT: OK"
 echo "PUBLIC DETAIL SANITIZED: OK"
 echo "FULL PHOTO GALLERY: OK"
 echo "DESKTOP DETAIL: OK"
