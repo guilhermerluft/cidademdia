@@ -52,13 +52,15 @@ function getCategorySymbol(slug: string) {
 
 interface PublicOccurrenceCardProps {
   occurrence: PublicOccurrenceItem;
-  onOpen: (occurrence: PublicOccurrenceItem) => void;
+  onOpen?: (occurrence: PublicOccurrenceItem) => void;
 }
 
 export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCardProps) {
   const tone = getCategoryTone(occurrence.categorySlug);
+  const interactive = Boolean(onOpen);
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!onOpen) return;
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       onOpen(occurrence);
@@ -67,11 +69,11 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
 
   return (
     <article
-      className="public-home__occurrence-card public-occurrences__card public-occurrences__card--interactive"
-      role="button"
-      tabIndex={0}
-      aria-label={`Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`}
-      onClick={() => onOpen(occurrence)}
+      className={`public-home__occurrence-card public-occurrences__card${interactive ? ' public-occurrences__card--interactive' : ''}`}
+      role={interactive ? 'button' : undefined}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? `Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}` : undefined}
+      onClick={onOpen ? () => onOpen(occurrence) : undefined}
       onKeyDown={handleKeyDown}
     >
       {occurrence.coverMedia ? (
