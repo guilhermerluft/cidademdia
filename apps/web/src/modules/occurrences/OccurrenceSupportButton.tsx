@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { toast } from '../../components/toast';
+import { requestCommercialSignup } from '../../components/commercialSignup';
 import { getAccessToken } from '../../services/api';
 import { supportOccurrence } from '../home/homeService';
 
@@ -25,7 +25,7 @@ export function OccurrenceSupportButton({
   async function handleSupport() {
     const authenticated = Boolean(getAccessToken());
     if (!authenticated) {
-      toast.info('Entre ou crie sua conta para apoiar esta ocorrência.');
+      requestCommercialSignup('support');
       return;
     }
 
