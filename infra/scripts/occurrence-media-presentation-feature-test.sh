@@ -145,7 +145,14 @@ try {
     throw new Error(`registro QA falhou: ${register.status()} ${await register.text()}`);
   }
 
-  const categoriesResponse = await context.request.get(`${process.env.BASE}/api/v1/occurrences/categories`);
+  const session = await register.json();
+  if (!session?.accessToken) throw new Error('registro QA não retornou accessToken');
+  const authHeaders = { Authorization: `Bearer ${session.accessToken}` };
+  console.log('occurrence_media_qa_auth=OK');
+
+  const categoriesResponse = await context.request.get(`${process.env.BASE}/api/v1/occurrences/categories`, {
+    headers: authHeaders,
+  });
   if (categoriesResponse.status() !== 200) {
     throw new Error(`categorias falharam: ${categoriesResponse.status()} ${await categoriesResponse.text()}`);
   }
@@ -154,6 +161,7 @@ try {
   if (!category?.id) throw new Error('nenhuma categoria ativa disponível para QA');
 
   const uploadResponse = await context.request.post(`${process.env.BASE}/api/v1/occurrence-media/uploads`, {
+    headers: authHeaders,
     data: {
       fileName: 'qa-occurrence.png',
       contentType: 'image/png',
@@ -177,6 +185,7 @@ try {
 
   const confirmResponse = await context.request.post(
     `${process.env.BASE}/api/v1/occurrence-media/${upload.id}/confirm`,
+    { headers: authHeaders },
   );
   if (confirmResponse.status() !== 200) {
     throw new Error(`confirmação da mídia falhou: ${confirmResponse.status()} ${await confirmResponse.text()}`);
@@ -186,6 +195,7 @@ try {
   console.log('occurrence_media_confirm=OK');
 
   const createResponse = await context.request.post(`${process.env.BASE}/api/v1/occurrences`, {
+    headers: authHeaders,
     data: {
       categoryId: category.id,
       title: `QA mídia ${Date.now()}`,
@@ -209,6 +219,7 @@ try {
 
   const mediaListResponse = await context.request.get(
     `${process.env.BASE}/api/v1/occurrences/${occurrence.id}/media`,
+    { headers: authHeaders },
   );
   if (mediaListResponse.status() !== 200) {
     throw new Error(`listagem da mídia vinculada falhou: ${mediaListResponse.status()}`);
@@ -221,6 +232,7 @@ try {
 
   const readUrlResponse = await context.request.get(
     `${process.env.BASE}/api/v1/occurrence-media/${upload.id}/read-url`,
+    { headers: authHeaders },
   );
   if (readUrlResponse.status() !== 200) {
     throw new Error(`URL assinada falhou: ${readUrlResponse.status()} ${await readUrlResponse.text()}`);
@@ -270,6 +282,7 @@ test -z "$(git -C "$ROOT" status --porcelain)" || fail "main worktree ficou suja
 echo "qa_cleanup=OK"
 echo "============================================================"
 echo "OCCURRENCE MEDIA PRESENTATION — FEATURE HOMOLOG: OK"
+echo "QA AUTH: OK"
 echo "R2 UPLOAD + CONFIRM: OK"
 echo "MEDIA ATTACHED TO OCCURRENCE: OK"
 echo "SIGNED MEDIA READ: OK"
