@@ -47,12 +47,6 @@ public sealed record PublicOccurrenceDetails(
     string? Description,
     string Status,
     string AddressText,
-    string? PostalCode,
-    string? StateCode,
-    decimal Latitude,
-    decimal Longitude,
-    string? ExternalProtocolNumber,
-    string? ExternalProtocolAgency,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<PublicOccurrenceMediaItem> Media);
