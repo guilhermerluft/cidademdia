@@ -3,6 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { App } from './app/App';
+import { ToastViewport } from './components/ToastViewport';
+import { installNativeAlertToastBridge } from './components/toast';
 import { AuthProvider } from './modules/auth/AuthProvider';
 import { RepresentativesRoute } from './modules/institutions/RepresentativesRoute';
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
@@ -16,6 +18,7 @@ import './styles/dashboard.css';
 import './styles/subaccounts.css';
 import './styles/occurrences.css';
 import './styles/maps.css';
+import './styles/toast.css';
 import './modules/occurrences/occurrence-required-labels.css';
 import './styles/assignments.css';
 import './styles/posts.css';
@@ -36,6 +39,8 @@ import './modules/plans/plans-payment-inline.css';
 import './modules/plans/plans-gold-commercial.css';
 import './modules/profile/profile.css';
 
+installNativeAlertToastBridge();
+
 const queryClient = new QueryClient();
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -43,6 +48,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
+          <ToastViewport />
           <Routes>
             <Route path="/ocorrencias" element={<PublicOccurrencesRoute />} />
             <Route path="/representantes" element={<RepresentativesRoute />} />
