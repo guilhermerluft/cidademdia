@@ -2,11 +2,14 @@ using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
+using CidadeEmDia.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace CidadeEmDia.Infrastructure.Occurrences;
 
-internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccurrenceGeoSearchService
+internal sealed class OccurrenceGeoSearchService(
+    AppDbContext dbContext,
+    R2ObjectStorage storage) : IOccurrenceGeoSearchService
 {
     private const int MaxPageSize = 50;
     private const int DefaultPublicPageSize = 12;
@@ -166,9 +169,7 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
             ? CreateRadiusQuery(input.Latitude!.Value, input.Longitude!.Value, radiusKm)
             : dbContext.Occurrences.AsNoTracking();
 
-        query = query.Where(x =>
-            x.Status != OccurrenceStatus.Closed
-            && x.Status != OccurrenceStatus.Cancelled);
+        query = ApplyPublicVisibility(query);
 
         if (!string.IsNullOrWhiteSpace(city))
             query = query.Where(x => EF.Functions.ILike(x.AddressText, $"%{city}%"));
@@ -200,6 +201,8 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
                 .Select(x => new CategoryInfo(x.Id, x.Name, x.Slug))
                 .ToDictionaryAsync(x => x.Id, cancellationToken);
 
+        var covers = await LoadPublicCoverMediaAsync(rows.Select(x => x.Id).ToArray(), cancellationToken);
+
         var items = rows
             .Select(x =>
             {
@@ -214,7 +217,8 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
                     x.Status.Value,
                     x.AddressText,
                     x.CreatedAt,
-                    x.UpdatedAt);
+                    x.UpdatedAt,
+                    covers.GetValueOrDefault(x.Id));
             })
             .ToArray();
 
@@ -225,6 +229,112 @@ internal sealed class OccurrenceGeoSearchService(AppDbContext dbContext) : IOccu
             totalItems,
             totalPages));
     }
+
+    public async Task<PublicOccurrenceDetails?> GetPublicDetailsAsync(
+        Guid occurrenceId,
+        CancellationToken cancellationToken = default)
+    {
+        if (occurrenceId == Guid.Empty)
+            return null;
+
+        var occurrence = await ApplyPublicVisibility(dbContext.Occurrences.AsNoTracking())
+            .FirstOrDefaultAsync(x => x.Id == occurrenceId, cancellationToken);
+
+        if (occurrence is null)
+            return null;
+
+        var category = await dbContext.OccurrenceCategories
+            .AsNoTracking()
+            .Where(x => x.Id == occurrence.CategoryId)
+            .Select(x => new CategoryInfo(x.Id, x.Name, x.Slug))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var media = await LoadPublicMediaAsync(occurrence.Id, cancellationToken);
+
+        return new PublicOccurrenceDetails(
+            occurrence.Id,
+            occurrence.PublicCode.Value,
+            category?.Name ?? string.Empty,
+            category?.Slug ?? string.Empty,
+            occurrence.Title,
+            occurrence.Description,
+            occurrence.Status.Value,
+            occurrence.AddressText,
+            occurrence.PostalCode,
+            occurrence.StateCode,
+            occurrence.Location.Latitude,
+            occurrence.Location.Longitude,
+            occurrence.ExternalProtocolNumber,
+            occurrence.ExternalProtocolAgency,
+            occurrence.CreatedAt,
+            occurrence.UpdatedAt,
+            media);
+    }
+
+    private async Task<Dictionary<Guid, PublicOccurrenceMediaItem>> LoadPublicCoverMediaAsync(
+        Guid[] occurrenceIds,
+        CancellationToken cancellationToken)
+    {
+        if (!storage.IsConfigured || occurrenceIds.Length == 0)
+            return new Dictionary<Guid, PublicOccurrenceMediaItem>();
+
+        var mediaRows = await dbContext.OccurrenceMedia
+            .AsNoTracking()
+            .Where(media => media.OccurrenceId.HasValue
+                && occurrenceIds.Contains(media.OccurrenceId.Value)
+                && media.Status == OccurrenceMediaStatus.Ready
+                && media.ContentType.StartsWith("image/"))
+            .OrderBy(media => media.AttachedAt)
+            .ThenBy(media => media.Id)
+            .ToListAsync(cancellationToken);
+
+        var result = new Dictionary<Guid, PublicOccurrenceMediaItem>();
+        foreach (var media in mediaRows)
+        {
+            var occurrenceId = media.OccurrenceId!.Value;
+            if (result.ContainsKey(occurrenceId))
+                continue;
+
+            result[occurrenceId] = CreatePublicMediaItem(media);
+        }
+
+        return result;
+    }
+
+    private async Task<IReadOnlyList<PublicOccurrenceMediaItem>> LoadPublicMediaAsync(
+        Guid occurrenceId,
+        CancellationToken cancellationToken)
+    {
+        if (!storage.IsConfigured)
+            return Array.Empty<PublicOccurrenceMediaItem>();
+
+        var mediaRows = await dbContext.OccurrenceMedia
+            .AsNoTracking()
+            .Where(media => media.OccurrenceId == occurrenceId
+                && media.Status == OccurrenceMediaStatus.Ready)
+            .OrderBy(media => media.AttachedAt)
+            .ThenBy(media => media.Id)
+            .ToListAsync(cancellationToken);
+
+        return mediaRows.Select(CreatePublicMediaItem).ToArray();
+    }
+
+    private PublicOccurrenceMediaItem CreatePublicMediaItem(OccurrenceMedia media)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var readUrl = storage.CreateReadUrl(media.ObjectKey, now, out var expiresAt);
+        return new PublicOccurrenceMediaItem(
+            media.Id,
+            media.OriginalFileName,
+            media.ContentType,
+            readUrl,
+            expiresAt);
+    }
+
+    private static IQueryable<Occurrence> ApplyPublicVisibility(IQueryable<Occurrence> query) =>
+        query.Where(x =>
+            x.Status != OccurrenceStatus.Closed
+            && x.Status != OccurrenceStatus.Cancelled);
 
     private IQueryable<Occurrence> CreateRadiusQuery(
         decimal latitude,
