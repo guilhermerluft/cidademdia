@@ -1,0 +1,39 @@
+.public-home__occurrence-card .public-home__occurrence-meta {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  align-content: center;
+  justify-items: stretch;
+  gap: 8px;
+  padding: 10px 12px;
+}
+
+.public-home__occurrence-card .public-home__occurrence-status {
+  grid-column: 1;
+  grid-row: 1;
+  justify-self: start;
+  min-width: 0;
+}
+
+.public-home__occurrence-card .public-home__occurrence-time {
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+  white-space: nowrap;
+}
+
+.public-home__occurrence-card .public-occurrence-open-button {
+  grid-column: 1;
+  grid-row: 2;
+  width: 100%;
+  min-width: 0;
+  justify-self: stretch;
+}
+
+.public-home__occurrence-card .public-occurrence-support--card {
+  grid-column: 2;
+  grid-row: 2;
+  justify-self: end;
+  align-self: center;
+  position: relative;
+  z-index: 1;
+}

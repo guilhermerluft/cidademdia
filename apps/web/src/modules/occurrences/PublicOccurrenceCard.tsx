@@ -1,6 +1,7 @@
 import { Button } from '../../components/ui';
 import type { PublicOccurrenceItem } from '../home/homeService';
 import { OccurrenceSupportButton } from './OccurrenceSupportButton';
+import './public-occurrence-card.css';
 
 function formatTime(value: string) {
   return new Intl.DateTimeFormat('pt-BR', {
@@ -110,6 +111,7 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
             type="button"
             variant="ghost"
             size="sm"
+            className="public-occurrence-open-button"
             aria-label={`Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`}
             onClick={(event) => {
               event.stopPropagation();
