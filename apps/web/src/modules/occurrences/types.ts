@@ -69,6 +69,17 @@ export interface OccurrenceMediaItem {
   attachedAt: string | null;
 }
 
+export interface OccurrenceMediaReadUrl {
+  id: string;
+  readUrl: string;
+  readUrlExpiresAt: string;
+}
+
+export interface OccurrenceMediaPresentation extends OccurrenceMediaItem {
+  readUrl: string;
+  readUrlExpiresAt: string;
+}
+
 export interface CreateOccurrencePayload {
   categoryId: string;
   title: string;
