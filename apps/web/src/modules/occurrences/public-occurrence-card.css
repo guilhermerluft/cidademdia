@@ -1,3 +1,9 @@
+.public-home__occurrence-card .public-home__occurrence-main {
+  position: relative;
+  box-sizing: border-box;
+  padding: 10px 78px 10px 0;
+}
+
 .public-home__occurrence-card .public-home__occurrence-meta {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
@@ -21,19 +27,16 @@
   white-space: nowrap;
 }
 
-.public-home__occurrence-card .public-occurrence-open-button {
-  grid-column: 1;
-  grid-row: 2;
-  width: 100%;
-  min-width: 0;
-  justify-self: stretch;
+.public-home__occurrence-card .public-home__occurrence-main .public-occurrence-support--card {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  margin: 0;
 }
 
-.public-home__occurrence-card .public-occurrence-support--card {
-  grid-column: 2;
-  grid-row: 2;
-  justify-self: end;
-  align-self: center;
-  position: relative;
-  z-index: 1;
+@media (max-width: 720px) {
+  .public-home__occurrence-card .public-home__occurrence-main {
+    padding-right: 78px;
+  }
 }
