@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Button } from '../../components/ui';
 import {
+  getPublicOccurrenceDetails,
   searchPublicOccurrences,
+  type PublicOccurrenceDetails,
+  type PublicOccurrenceItem,
   type PublicOccurrencePage,
 } from '../home/homeService';
 import { PublicOccurrenceCard } from './PublicOccurrenceCard';
+import { PublicOccurrenceDetailsModal } from './PublicOccurrenceDetailsModal';
 import { PublicOccurrenceMapFilter } from './PublicOccurrenceMapFilter';
 import {
   DEFAULT_PUBLIC_OCCURRENCE_CITY,
@@ -29,6 +33,8 @@ export function PublicOccurrences() {
   const [locating, setLocating] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sourceLabel, setSourceLabel] = useState('Definindo sua localização...');
+  const [selectedOccurrence, setSelectedOccurrence] = useState<PublicOccurrenceDetails | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
 
   const loadResults = useCallback(async (
     targetPoint: PublicOccurrencePoint,
@@ -136,6 +142,20 @@ export function PublicOccurrences() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  async function openOccurrence(occurrence: PublicOccurrenceItem) {
+    if (detailLoadingId) return;
+    setDetailLoadingId(occurrence.id);
+    setError(null);
+    try {
+      const details = await getPublicOccurrenceDetails(occurrence.id);
+      setSelectedOccurrence(details);
+    } catch {
+      setError('Não foi possível abrir os detalhes dessa ocorrência. Tente novamente.');
+    } finally {
+      setDetailLoadingId(null);
+    }
+  }
+
   return (
     <main className="public-occurrences">
       <section className="public-occurrences__intro">
@@ -218,7 +238,11 @@ export function PublicOccurrences() {
           ) : pageData && pageData.items.length > 0 ? (
             <div className="public-occurrences__list">
               {pageData.items.map((occurrence) => (
-                <PublicOccurrenceCard occurrence={occurrence} key={occurrence.id} />
+                <PublicOccurrenceCard
+                  occurrence={occurrence}
+                  key={occurrence.id}
+                  onOpen={(item) => void openOccurrence(item)}
+                />
               ))}
             </div>
           ) : (
@@ -226,6 +250,10 @@ export function PublicOccurrences() {
               <strong>Nenhuma ocorrência aberta encontrada nesse raio.</strong>
               <span>Tente aumentar o raio ou escolher outro ponto.</span>
             </div>
+          )}
+
+          {detailLoadingId && (
+            <p className="public-occurrences__detail-loading" role="status">Abrindo ocorrência...</p>
           )}
 
           {pageData && pageData.totalPages > 1 && (
@@ -251,6 +279,13 @@ export function PublicOccurrences() {
           )}
         </div>
       </section>
+
+      {selectedOccurrence && (
+        <PublicOccurrenceDetailsModal
+          occurrence={selectedOccurrence}
+          onClose={() => setSelectedOccurrence(null)}
+        />
+      )}
     </main>
   );
 }
