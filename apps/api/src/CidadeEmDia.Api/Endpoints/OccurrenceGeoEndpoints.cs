@@ -43,6 +43,18 @@ public static class OccurrenceGeoEndpoints
                 });
         });
 
+        api.MapGet("/public/occurrences/{occurrenceId:guid}", async (
+            Guid occurrenceId,
+            IOccurrenceGeoSearchService geoSearchService,
+            CancellationToken cancellationToken) =>
+        {
+            var occurrence = await geoSearchService.GetPublicDetailsAsync(
+                occurrenceId,
+                cancellationToken);
+
+            return occurrence is null ? Results.NotFound() : Results.Ok(occurrence);
+        });
+
         api.MapGet("/occurrences/geo-search", async (
             IOccurrenceGeoSearchService geoSearchService,
             ClaimsPrincipal principal,
