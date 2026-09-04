@@ -18,6 +18,13 @@ public sealed record PublicOccurrenceSearchInput(
     int Page,
     int PageSize);
 
+public sealed record PublicOccurrenceMediaItem(
+    Guid Id,
+    string OriginalFileName,
+    string ContentType,
+    Uri ReadUrl,
+    DateTimeOffset ReadUrlExpiresAt);
+
 public sealed record PublicOccurrenceItem(
     Guid Id,
     string PublicCode,
@@ -28,7 +35,27 @@ public sealed record PublicOccurrenceItem(
     string Status,
     string AddressText,
     DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt);
+    DateTimeOffset UpdatedAt,
+    PublicOccurrenceMediaItem? CoverMedia);
+
+public sealed record PublicOccurrenceDetails(
+    Guid Id,
+    string PublicCode,
+    string CategoryName,
+    string CategorySlug,
+    string Title,
+    string? Description,
+    string Status,
+    string AddressText,
+    string? PostalCode,
+    string? StateCode,
+    decimal Latitude,
+    decimal Longitude,
+    string? ExternalProtocolNumber,
+    string? ExternalProtocolAgency,
+    DateTimeOffset CreatedAt,
+    DateTimeOffset UpdatedAt,
+    IReadOnlyList<PublicOccurrenceMediaItem> Media);
 
 public sealed record PublicOccurrencePage(
     IReadOnlyList<PublicOccurrenceItem> Items,
@@ -59,5 +86,9 @@ public interface IOccurrenceGeoSearchService
 
     Task<PublicOccurrenceSearchResult> SearchPublicAsync(
         PublicOccurrenceSearchInput input,
+        CancellationToken cancellationToken = default);
+
+    Task<PublicOccurrenceDetails?> GetPublicDetailsAsync(
+        Guid occurrenceId,
         CancellationToken cancellationToken = default);
 }
