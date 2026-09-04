@@ -1,4 +1,4 @@
-import type { KeyboardEvent } from 'react';
+import { Button } from '../../components/ui';
 import type { PublicOccurrenceItem } from '../home/homeService';
 import { OccurrenceSupportButton } from './OccurrenceSupportButton';
 
@@ -60,22 +60,11 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
   const tone = getCategoryTone(occurrence.categorySlug);
   const interactive = Boolean(onOpen);
 
-  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
-    if (!onOpen) return;
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      onOpen(occurrence);
-    }
-  }
-
   return (
     <article
       className={`public-home__occurrence-card public-occurrences__card${interactive ? ' public-occurrences__card--interactive' : ''}`}
-      role={interactive ? 'button' : undefined}
-      tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? `Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}` : undefined}
+      data-occurrence-id={occurrence.id}
       onClick={onOpen ? () => onOpen(occurrence) : undefined}
-      onKeyDown={handleKeyDown}
     >
       {occurrence.coverMedia ? (
         <div className="public-home__occurrence-thumb public-occurrences__card-cover">
@@ -116,6 +105,20 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
         <span className={`public-home__occurrence-status public-home__occurrence-status--${getStatusClass(occurrence.status)}`}>
           {getStatusLabel(occurrence.status)}
         </span>
+        {onOpen && (
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={`Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              onOpen(occurrence);
+            }}
+          >
+            Abrir
+          </Button>
+        )}
         <OccurrenceSupportButton
           occurrenceId={occurrence.id}
           initialCount={occurrence.supportCount}
