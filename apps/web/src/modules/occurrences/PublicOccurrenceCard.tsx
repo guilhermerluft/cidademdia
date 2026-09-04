@@ -1,3 +1,4 @@
+import type { KeyboardEvent } from 'react';
 import type { PublicOccurrenceItem } from '../home/homeService';
 
 function formatTime(value: string) {
@@ -49,14 +50,44 @@ function getCategorySymbol(slug: string) {
   return '●';
 }
 
-export function PublicOccurrenceCard({ occurrence }: { occurrence: PublicOccurrenceItem }) {
+interface PublicOccurrenceCardProps {
+  occurrence: PublicOccurrenceItem;
+  onOpen: (occurrence: PublicOccurrenceItem) => void;
+}
+
+export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCardProps) {
   const tone = getCategoryTone(occurrence.categorySlug);
 
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      onOpen(occurrence);
+    }
+  }
+
   return (
-    <article className="public-home__occurrence-card public-occurrences__card">
-      <div className={`public-home__occurrence-thumb public-home__occurrence-thumb--${tone}`} aria-hidden="true">
-        <span>{getCategorySymbol(occurrence.categorySlug)}</span>
-      </div>
+    <article
+      className="public-home__occurrence-card public-occurrences__card public-occurrences__card--interactive"
+      role="button"
+      tabIndex={0}
+      aria-label={`Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`}
+      onClick={() => onOpen(occurrence)}
+      onKeyDown={handleKeyDown}
+    >
+      {occurrence.coverMedia ? (
+        <div className="public-home__occurrence-thumb public-occurrences__card-cover">
+          <img
+            src={occurrence.coverMedia.readUrl}
+            alt=""
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
+      ) : (
+        <div className={`public-home__occurrence-thumb public-home__occurrence-thumb--${tone}`} aria-hidden="true">
+          <span>{getCategorySymbol(occurrence.categorySlug)}</span>
+        </div>
+      )}
 
       <div className="public-home__occurrence-main">
         <span className={`public-home__category public-home__category--${tone}`}>
