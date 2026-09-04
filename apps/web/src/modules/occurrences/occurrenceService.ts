@@ -1,6 +1,7 @@
 import { api } from '../../services/api';
 import type {
   CreateOccurrencePayload,
+  EligibleMaster,
   OccurrenceCategory,
   OccurrenceDetails,
   OccurrenceGeoFilters,
@@ -13,6 +14,11 @@ import type {
 
 export async function listOccurrenceCategories() {
   const { data } = await api.get<OccurrenceCategory[]>('/occurrences/categories');
+  return data;
+}
+
+export async function listEligibleMasters() {
+  const { data } = await api.get<EligibleMaster[]>('/occurrences/masters');
   return data;
 }
 

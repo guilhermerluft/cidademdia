@@ -86,3 +86,31 @@ export function readGoogleCoordinate(location: any, coordinate: 'lat' | 'lng') {
   const value = location?.[coordinate];
   return typeof value === 'function' ? value.call(location) : Number(value);
 }
+
+export async function geocodeGoogleAddress(address: string) {
+  const normalized = address.trim();
+  if (!normalized) {
+    throw new Error('Informe o endereço completo antes de localizar o ponto no mapa.');
+  }
+
+  const google = await loadGoogleMaps();
+  const geocoder = new google.maps.Geocoder();
+  const response = await geocoder.geocode({
+    address: normalized,
+    componentRestrictions: { country: 'BR' },
+  });
+  const result = response?.results?.[0];
+  const location = result?.geometry?.location ?? result?.location;
+
+  if (!result || !location) {
+    throw new Error('Não foi possível localizar o endereço informado no mapa.');
+  }
+
+  const latitude = readGoogleCoordinate(location, 'lat');
+  const longitude = readGoogleCoordinate(location, 'lng');
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    throw new Error('O endereço informado não retornou coordenadas válidas.');
+  }
+
+  return { result, latitude, longitude };
+}

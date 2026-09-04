@@ -62,6 +62,13 @@
   font-weight: 800;
 }
 
+.occurrence-form label > small {
+  color: var(--ced-color-text-muted);
+  font-size: var(--ced-font-size-xs);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
 .occurrence-form input,
 .occurrence-form select,
 .occurrence-form textarea {
@@ -100,6 +107,47 @@
 
 .occurrence-form__full {
   grid-column: 1 / -1;
+}
+
+.occurrence-required-marker {
+  color: #b42318;
+  font-weight: 900;
+}
+
+.occurrence-form__protocol-field {
+  padding: 0.8rem;
+  border: 1px solid rgba(180, 35, 24, 0.22);
+  border-radius: var(--ced-radius-lg);
+  background: rgba(180, 35, 24, 0.035);
+}
+
+.occurrence-form__protocol-field input {
+  border-color: rgba(180, 35, 24, 0.28);
+}
+
+.occurrence-validation-summary {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(180, 35, 24, 0.18);
+  border-radius: var(--ced-radius-md);
+  background: rgba(180, 35, 24, 0.07);
+  color: #8a1c13;
+  font-size: var(--ced-font-size-sm);
+}
+
+.occurrence-validation-summary strong {
+  display: block;
+  margin-bottom: 0.45rem;
+}
+
+.occurrence-validation-summary ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.occurrence-validation-summary li + li {
+  margin-top: 0.2rem;
 }
 
 .occurrence-location {
@@ -397,6 +445,7 @@
   .occurrence-form__full,
   .occurrence-location,
   .occurrence-file-list,
+  .occurrence-validation-summary,
   .occurrence-progress,
   .occurrence-success,
   .occurrence-error {
