@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace CidadeEmDia.Application.Occurrences;
 
 public sealed record OccurrenceGeoSearchInput(
@@ -47,6 +49,12 @@ public sealed record PublicOccurrenceDetails(
     string? Description,
     string Status,
     string AddressText,
+    [property: JsonIgnore] string? PostalCode,
+    [property: JsonIgnore] string? StateCode,
+    [property: JsonIgnore] decimal Latitude,
+    [property: JsonIgnore] decimal Longitude,
+    [property: JsonIgnore] string? ExternalProtocolNumber,
+    [property: JsonIgnore] string? ExternalProtocolAgency,
     DateTimeOffset CreatedAt,
     DateTimeOffset UpdatedAt,
     IReadOnlyList<PublicOccurrenceMediaItem> Media);
