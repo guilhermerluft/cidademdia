@@ -5,6 +5,8 @@ import type {
   OccurrenceDetails,
   OccurrenceGeoFilters,
   OccurrenceMediaItem,
+  OccurrenceMediaPresentation,
+  OccurrenceMediaReadUrl,
   OccurrenceMediaUpload,
   OccurrencePage,
 } from './types';
@@ -34,6 +36,32 @@ export async function searchMyOccurrences(
     },
   });
   return data;
+}
+
+export async function listOccurrenceMedia(occurrenceId: string) {
+  const { data } = await api.get<OccurrenceMediaItem[]>(`/occurrences/${occurrenceId}/media`);
+  return data;
+}
+
+export async function getOccurrenceMediaReadUrl(mediaId: string) {
+  const { data } = await api.get<OccurrenceMediaReadUrl>(`/occurrence-media/${mediaId}/read-url`);
+  return data;
+}
+
+export async function listOccurrenceMediaForPresentation(occurrenceId: string) {
+  const media = await listOccurrenceMedia(occurrenceId);
+  const readyMedia = media.filter((item) => item.status === 'READY');
+
+  const presented = await Promise.all(readyMedia.map(async (item) => {
+    const read = await getOccurrenceMediaReadUrl(item.id);
+    return {
+      ...item,
+      readUrl: read.readUrl,
+      readUrlExpiresAt: read.readUrlExpiresAt,
+    } satisfies OccurrenceMediaPresentation;
+  }));
+
+  return presented;
 }
 
 export async function requestOccurrenceMediaUpload(file: File) {
