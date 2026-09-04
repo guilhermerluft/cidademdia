@@ -14,6 +14,9 @@ GEO_ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceGeoEndpoin
 CREATE_ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceEndpoints.cs"
 CREATE_SERVICE="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceCreationService.cs"
 MAIN="$ROOT/apps/web/src/main.tsx"
+TOAST="$ROOT/apps/web/src/components/toast.ts"
+TOAST_VIEWPORT="$ROOT/apps/web/src/components/ToastViewport.tsx"
+TOAST_CSS="$ROOT/apps/web/src/styles/toast.css"
 HOME_SERVICE="$ROOT/apps/web/src/modules/home/homeService.ts"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
@@ -28,8 +31,8 @@ CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrences.css"
 
 for file in \
   "$CONTRACTS" "$SERVICE" "$GEO_ENDPOINTS" "$CREATE_ENDPOINTS" "$CREATE_SERVICE" \
-  "$MAIN" "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" \
-  "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
+  "$MAIN" "$TOAST" "$TOAST_VIEWPORT" "$TOAST_CSS" "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" \
+  "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -70,6 +73,32 @@ grep -q "getAddressComponent(components, 'locality')" "$LOCATION" || fail "PIN n
 grep -q "occurrence-required-labels.css" "$MAIN" || fail "layout dos títulos obrigatórios não está carregado"
 grep -q 'flex-wrap: wrap' "$REQUIRED_LABEL_CSS" || fail "título e asterisco obrigatórios não permanecem na mesma linha"
 grep -q 'occurrence-required-marker' "$REQUIRED_LABEL_CSS" || fail "marcador obrigatório não possui proteção de layout"
+grep -q 'occurrence-form__paired-field' "$REQUIRED_LABEL_CSS" || fail "campos pareados não possuem alinhamento compartilhado"
+
+PROTOCOL_LINE="$(grep -n 'Número do protocolo <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+CATEGORY_LINE="$(grep -n 'Categoria <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+MASTER_LINE="$(grep -n 'Conta Master <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+TITLE_LINE="$(grep -n 'Título <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+DESCRIPTION_LINE="$(grep -n '^                Descrição$' "$CENTER" | head -n1 | cut -d: -f1)"
+
+test -n "$PROTOCOL_LINE" && test -n "$CATEGORY_LINE" && test -n "$MASTER_LINE" && test -n "$TITLE_LINE" && test -n "$DESCRIPTION_LINE" \
+  || fail "não foi possível validar a ordem semântica do formulário"
+test "$PROTOCOL_LINE" -lt "$CATEGORY_LINE" || fail "protocolo não é o primeiro campo"
+test "$CATEGORY_LINE" -lt "$MASTER_LINE" || fail "categoria e conta Master não estão pareadas na ordem esperada"
+test "$MASTER_LINE" -lt "$TITLE_LINE" || fail "título deveria vir após categoria/conta Master"
+test "$TITLE_LINE" -lt "$DESCRIPTION_LINE" || fail "descrição deveria vir após o título"
+test "$(grep -c 'className="occurrence-form__paired-field"' "$CENTER")" -eq 2 || fail "categoria e conta Master devem ser os dois campos pareados"
+grep -q 'occurrence-form__protocol-field occurrence-form__full' "$CENTER" || fail "protocolo não ocupa linha isolada"
+grep -q 'occurrence-form__title-field occurrence-form__full' "$CENTER" || fail "título não ocupa linha isolada"
+
+grep -q 'ToastViewport' "$MAIN" || fail "viewport global de toast não está montado"
+grep -q 'installNativeAlertToastBridge' "$MAIN" || fail "bridge global de alert para toast não está instalado"
+grep -q "import './styles/toast.css'" "$MAIN" || fail "estilos globais de toast não estão carregados"
+grep -q 'aria-live="polite"' "$TOAST_VIEWPORT" || fail "toast não possui região aria-live"
+grep -q "toast.info('Entre ou crie sua conta para apoiar esta ocorrência.')" "$SUPPORT" || fail "apoio anônimo não usa toast"
+if grep -RInE '(window\.)?alert[[:space:]]*\(' "$ROOT/apps/web/src" --include='*.ts' --include='*.tsx' >/dev/null; then
+  fail "ainda existe chamada de alert nativo no frontend"
+fi
 
 grep -q 'getPublicOccurrenceDetails' "$HOME_SERVICE" || fail "client de detalhe público ausente"
 grep -q 'supportOccurrence' "$HOME_SERVICE" || fail "client de apoio autenticado ausente"
@@ -107,6 +136,11 @@ grep -q 'occurrence.media.map' "$MODAL" || fail "galeria completa não é render
 grep -q '<video controls' "$MODAL" || fail "vídeos não são reproduzíveis no detalhe"
 grep -q 'Fechar detalhes da ocorrência' "$MODAL" || fail "modal sem fechamento acessível"
 
+echo "global_toast_notifications=OK"
+echo "native_alerts_migrated_to_toast=OK"
+echo "anonymous_support_toast=OK"
+echo "occurrence_form_protocol_first=OK"
+echo "occurrence_form_paired_fields_aligned=OK"
 echo "occurrence_creation_master_required=OK"
 echo "occurrence_creation_address_required=OK"
 echo "occurrence_creation_protocol_required=OK"
