@@ -1,4 +1,4 @@
-import { Button } from '../../components/ui';
+import type { KeyboardEvent } from 'react';
 import type { PublicOccurrenceItem } from '../home/homeService';
 import { OccurrenceSupportButton } from './OccurrenceSupportButton';
 import './public-occurrence-card.css';
@@ -61,11 +61,22 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
   const tone = getCategoryTone(occurrence.categorySlug);
   const interactive = Boolean(onOpen);
 
+  function handleCardKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (!onOpen || event.target !== event.currentTarget) return;
+    if (event.key !== 'Enter' && event.key !== ' ') return;
+
+    event.preventDefault();
+    onOpen(occurrence);
+  }
+
   return (
     <article
       className={`public-home__occurrence-card public-occurrences__card${interactive ? ' public-occurrences__card--interactive' : ''}`}
       data-occurrence-id={occurrence.id}
+      tabIndex={interactive ? 0 : undefined}
+      aria-label={interactive ? `Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}` : undefined}
       onClick={onOpen ? () => onOpen(occurrence) : undefined}
+      onKeyDown={interactive ? handleCardKeyDown : undefined}
     >
       {occurrence.coverMedia ? (
         <div className="public-home__occurrence-thumb public-occurrences__card-cover">
@@ -83,6 +94,11 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
       )}
 
       <div className="public-home__occurrence-main">
+        <OccurrenceSupportButton
+          occurrenceId={occurrence.id}
+          initialCount={occurrence.supportCount}
+          className="public-occurrence-support--card"
+        />
         <span className={`public-home__category public-home__category--${tone}`}>
           {getCategorySymbol(occurrence.categorySlug)} {occurrence.categoryName || 'Ocorrência urbana'}
         </span>
@@ -106,26 +122,6 @@ export function PublicOccurrenceCard({ occurrence, onOpen }: PublicOccurrenceCar
         <span className={`public-home__occurrence-status public-home__occurrence-status--${getStatusClass(occurrence.status)}`}>
           {getStatusLabel(occurrence.status)}
         </span>
-        {onOpen && (
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className="public-occurrence-open-button"
-            aria-label={`Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`}
-            onClick={(event) => {
-              event.stopPropagation();
-              onOpen(occurrence);
-            }}
-          >
-            Abrir
-          </Button>
-        )}
-        <OccurrenceSupportButton
-          occurrenceId={occurrence.id}
-          initialCount={occurrence.supportCount}
-          className="public-occurrence-support--card"
-        />
         <span className="public-home__occurrence-time"><span aria-hidden="true">◷</span> {formatTime(occurrence.updatedAt)}</span>
       </div>
     </article>
