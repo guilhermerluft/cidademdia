@@ -298,11 +298,48 @@ try {
   if (await galleryImages.count() !== 2) throw new Error(`modal não exibiu duas fotos: ${await galleryImages.count()}`);
   for (let index = 0; index < 2; index += 1) {
     const image = galleryImages.nth(index);
-    await image.waitFor({ state: 'visible' });
+    await image.waitFor({ state: 'visible', timeout: 10000 });
+    await image.evaluate(async element => {
+      if (
+        element instanceof HTMLImageElement
+        && element.complete
+        && element.naturalWidth > 0
+        && element.naturalHeight > 0
+      ) {
+        return;
+      }
+
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error(`timeout aguardando imagem: ${element.currentSrc || element.src}`));
+        }, 10000);
+
+        const cleanup = () => {
+          clearTimeout(timeout);
+          element.removeEventListener('load', onLoad);
+          element.removeEventListener('error', onError);
+        };
+
+        const onLoad = () => {
+          cleanup();
+          resolve();
+        };
+
+        const onError = () => {
+          cleanup();
+          reject(new Error(`erro carregando imagem: ${element.currentSrc || element.src}`));
+        };
+
+        element.addEventListener('load', onLoad, { once: true });
+        element.addEventListener('error', onError, { once: true });
+      });
+    });
+
     const state = await image.evaluate(element => ({
       complete: element.complete,
       width: element.naturalWidth,
       height: element.naturalHeight,
+      src: element.currentSrc || element.src,
     }));
     if (!state.complete || state.width < 1 || state.height < 1) {
       throw new Error(`foto ${index + 1} não carregou no detalhe: ${JSON.stringify(state)}`);
