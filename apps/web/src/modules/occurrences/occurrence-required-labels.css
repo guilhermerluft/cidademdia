@@ -5,6 +5,7 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  align-content: flex-start;
   column-gap: 0.25rem;
   row-gap: 0.45rem;
 }
@@ -27,4 +28,25 @@
 
 .occurrence-required-marker {
   flex: 0 0 auto;
+}
+
+.occurrence-form__protocol-field,
+.occurrence-form__title-field {
+  grid-column: 1 / -1;
+}
+
+.occurrence-form__paired-field {
+  align-self: stretch;
+  min-height: 100%;
+}
+
+.occurrence-form__paired-field > select {
+  min-height: 46px;
+}
+
+@media (max-width: 640px) {
+  .occurrence-form__protocol-field,
+  .occurrence-form__title-field {
+    grid-column: 1;
+  }
 }
