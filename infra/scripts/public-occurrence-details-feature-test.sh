@@ -385,21 +385,21 @@ try {
     name: `Abrir ocorrência ${occurrence.publicCode}: ${title}`,
     exact: true,
   });
-  const supportButton = card.getByRole('button', {
-    name: 'Entrar para apoiar ocorrência. 1 apoios',
+  const authenticatedSupportButton = card.getByRole('button', {
+    name: 'Apoiar ocorrência. 1 apoios',
     exact: true,
   });
   await openButton.waitFor({ state: 'visible', timeout: 10000 });
-  await supportButton.waitFor({ state: 'visible', timeout: 10000 });
+  await authenticatedSupportButton.waitFor({ state: 'visible', timeout: 10000 });
   console.log('public_occurrence_card_actions_separated=OK');
-  console.log('public_occurrence_protocol_and_support_visible=OK');
+  console.log('public_occurrence_authenticated_support_visible=OK');
 
   await card.getByRole('heading', { name: title, exact: true }).click();
   const dialog = page.getByRole('dialog');
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
   await dialog.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'visible' });
   await dialog.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
-  await dialog.getByRole('button', { name: 'Entrar para apoiar ocorrência. 1 apoios', exact: true }).waitFor({ state: 'visible' });
+  await dialog.getByRole('button', { name: 'Apoiar ocorrência. 1 apoios', exact: true }).waitFor({ state: 'visible' });
   console.log('public_occurrence_card_click_opens_detail=OK');
 
   const galleryImages = dialog.locator('.public-occurrence-details__media img');
@@ -413,6 +413,35 @@ try {
   await page.getByRole('button', { name: 'Fechar detalhes da ocorrência', exact: true }).click();
   await dialog.waitFor({ state: 'hidden', timeout: 5000 });
   console.log('public_occurrence_details_close=OK');
+
+  const anonymousContext = await browser.newContext({
+    ignoreHTTPSErrors: true,
+    viewport: { width: 1440, height: 1000 },
+    permissions: [],
+  });
+  try {
+    const anonymousPage = await anonymousContext.newPage();
+    await anonymousPage.goto(`${process.env.BASE}/ocorrencias`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    await anonymousPage.locator('.public-occurrences').waitFor({ state: 'visible', timeout: 15000 });
+
+    const anonymousCard = anonymousPage.locator(`.public-occurrences__card[data-occurrence-id="${occurrence.id}"]`);
+    await anonymousCard.waitFor({ state: 'visible', timeout: 20000 });
+    await anonymousCard.getByRole('button', {
+      name: 'Entrar para apoiar ocorrência. 1 apoios',
+      exact: true,
+    }).waitFor({ state: 'visible', timeout: 10000 });
+
+    await anonymousCard.getByRole('heading', { name: title, exact: true }).click();
+    const anonymousDialog = anonymousPage.getByRole('dialog');
+    await anonymousDialog.waitFor({ state: 'visible', timeout: 15000 });
+    await anonymousDialog.getByRole('button', {
+      name: 'Entrar para apoiar ocorrência. 1 apoios',
+      exact: true,
+    }).waitFor({ state: 'visible', timeout: 10000 });
+    console.log('public_occurrence_anonymous_support_visible=OK');
+  } finally {
+    await anonymousContext.close();
+  }
 
   await page.setViewportSize({ width: 390, height: 844 });
   await openButton.click();
@@ -454,6 +483,8 @@ echo "SEPARATE OPEN/SUPPORT CONTROLS: OK"
 echo "PUBLIC PROTOCOL: OK"
 echo "PUBLIC SUPPORT COUNT: OK"
 echo "AUTHENTICATED SUPPORT: OK"
+echo "AUTHENTICATED SUPPORT UI: OK"
+echo "ANONYMOUS SUPPORT UI: OK"
 echo "PUBLIC DETAIL SANITIZED: OK"
 echo "FULL PHOTO GALLERY: OK"
 echo "DESKTOP DETAIL: OK"
