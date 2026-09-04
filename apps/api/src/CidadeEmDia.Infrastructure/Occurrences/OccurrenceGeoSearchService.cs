@@ -284,7 +284,7 @@ internal sealed class OccurrenceGeoSearchService(
                 && occurrenceIds.Contains(media.OccurrenceId.Value)
                 && media.Status == OccurrenceMediaStatus.Ready
                 && media.ContentType.StartsWith("image/"))
-            .OrderBy(media => media.AttachedAt)
+            .OrderBy(media => media.CreatedAt)
             .ThenBy(media => media.Id)
             .ToListAsync(cancellationToken);
 
@@ -312,7 +312,7 @@ internal sealed class OccurrenceGeoSearchService(
             .AsNoTracking()
             .Where(media => media.OccurrenceId == occurrenceId
                 && media.Status == OccurrenceMediaStatus.Ready)
-            .OrderBy(media => media.AttachedAt)
+            .OrderBy(media => media.CreatedAt)
             .ThenBy(media => media.Id)
             .ToListAsync(cancellationToken);
 
