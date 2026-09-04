@@ -21,15 +21,22 @@ function readSensitiveTokens() {
   const url = new URL(window.location.href);
   const resetToken = url.searchParams.get('token') ?? '';
   const inviteToken = url.searchParams.get('invite') ?? '';
+  const requestedAuth = url.searchParams.get('auth');
+  const authMode: AuthMode | null = requestedAuth === 'register'
+    ? 'register'
+    : requestedAuth === 'login'
+      ? 'login'
+      : null;
 
-  if (resetToken || inviteToken) {
+  if (resetToken || inviteToken || authMode) {
     url.searchParams.delete('token');
     url.searchParams.delete('invite');
+    url.searchParams.delete('auth');
     const nextUrl = `${url.pathname}${url.search}${url.hash}`;
     window.history.replaceState({}, document.title, nextUrl || '/');
   }
 
-  return { resetToken, inviteToken };
+  return { resetToken, inviteToken, authMode };
 }
 
 function invitationPermissionLabel(key: string) {
@@ -76,7 +83,11 @@ export function App() {
   const navigationAccess = useNavigationAccess(user);
   const [initialTokens] = useState(readSensitiveTokens);
   const [mode, setMode] = useState<AuthMode>(
-    initialTokens.inviteToken ? 'invite' : initialTokens.resetToken ? 'reset' : 'home',
+    initialTokens.inviteToken
+      ? 'invite'
+      : initialTokens.resetToken
+        ? 'reset'
+        : initialTokens.authMode ?? 'home',
   );
   const [resetToken] = useState(initialTokens.resetToken);
   const [inviteToken] = useState(initialTokens.inviteToken);
