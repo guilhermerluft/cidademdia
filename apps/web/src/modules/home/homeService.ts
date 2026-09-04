@@ -1,5 +1,13 @@
 import { api } from '../../services/api';
 
+export interface PublicOccurrenceMediaItem {
+  id: string;
+  originalFileName: string;
+  contentType: string;
+  readUrl: string;
+  readUrlExpiresAt: string;
+}
+
 export interface PublicOccurrenceItem {
   id: string;
   publicCode: string;
@@ -11,6 +19,27 @@ export interface PublicOccurrenceItem {
   addressText: string;
   createdAt: string;
   updatedAt: string;
+  coverMedia?: PublicOccurrenceMediaItem | null;
+}
+
+export interface PublicOccurrenceDetails {
+  id: string;
+  publicCode: string;
+  categoryName: string;
+  categorySlug: string;
+  title: string;
+  description: string | null;
+  status: string;
+  addressText: string;
+  postalCode: string | null;
+  stateCode: string | null;
+  latitude: number;
+  longitude: number;
+  externalProtocolNumber: string | null;
+  externalProtocolAgency: string | null;
+  createdAt: string;
+  updatedAt: string;
+  media: PublicOccurrenceMediaItem[];
 }
 
 export interface PublicOccurrenceQuery {
@@ -52,6 +81,11 @@ export async function searchPublicOccurrences(query: PublicOccurrenceQuery) {
     params: query,
   });
 
+  return data;
+}
+
+export async function getPublicOccurrenceDetails(occurrenceId: string) {
+  const { data } = await api.get<PublicOccurrenceDetails>(`/public/occurrences/${occurrenceId}`);
   return data;
 }
 
