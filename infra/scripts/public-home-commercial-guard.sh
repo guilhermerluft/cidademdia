@@ -61,6 +61,14 @@ grep -q 'Como funciona' "$HOME" || fail "CTA Como funciona foi alterado ou remov
 grep -q 'className="public-home__outline-cta" type="button" onClick={() => navigate('\''/planos'\'')}' "$HOME" || fail "CTA secundário não aponta para Planos"
 grep -q 'Conheça os planos' "$HOME" || fail "CTA Conheça os planos foi alterado ou removido"
 
+if grep -q 'public-home__hero-actions .ced-button:first-child::before' "$HOME_REFINEMENT"; then
+  fail "ícone de planos ainda está preso ao primeiro CTA por posição"
+fi
+grep -q 'public-home__outline-cta::before' "$HOME_REFINEMENT" || fail "CTA Conheça os planos está sem ícone dedicado"
+grep -q "content: '\\f19c';" "$HOME_REFINEMENT" || fail "ícone de planos não está configurado"
+grep -q 'public-home__cta-play::before' "$HOME_REFINEMENT" || fail "ícone de Como funciona não está configurado"
+grep -q "content: '\\f144';" "$HOME_REFINEMENT" || fail "ícone de play de Como funciona não está configurado"
+
 echo "commercial_signup_brand_header=OK"
 echo "hero_benefit_cards_removed=OK"
 echo "hero_benefit_pseudo_after_removed=OK"
@@ -70,4 +78,5 @@ echo "hero_free_occurrence_copy=OK"
 echo "hero_free_occurrence_copy_bold=OK"
 echo "hero_original_title_preserved=OK"
 echo "hero_cta_order=OK"
+echo "hero_cta_icons=OK"
 echo "PUBLIC HOME COMMERCIAL GUARD: OK"
