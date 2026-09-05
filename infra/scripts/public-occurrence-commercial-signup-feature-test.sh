@@ -77,6 +77,14 @@ const occurrence = {
   coverMedia: null,
 };
 
+async function assertNoHeroAfter(locator, label) {
+  const content = await locator.evaluate((element) => getComputedStyle(element, '::after').content);
+  const normalized = String(content).trim().toLowerCase();
+  if (!['none', 'normal', '""', "''"].includes(normalized)) {
+    throw new Error(`pseudo-elemento ::after ainda renderiza no hero ${label}: ${content}`);
+  }
+}
+
 try {
   const page = await context.newPage();
 
@@ -123,6 +131,7 @@ try {
   if (await page.locator('.public-home__hero-benefits, .public-home__hero-benefit').count() !== 0) {
     throw new Error('cards de benefícios ainda estão renderizados no hero');
   }
+  await assertNoHeroAfter(hero, 'desktop');
 
   await page.getByRole('heading', { name: /Uma cidade melhor.*é ouvido.*pode resolver\./ }).waitFor({ state: 'visible' });
   await page.getByRole('button', { name: 'Conheça os planos', exact: true }).waitFor({ state: 'visible' });
@@ -162,9 +171,11 @@ try {
 
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await hero.waitFor({ state: 'visible', timeout: 10000 });
+  await assertNoHeroAfter(hero, 'desktop após navegação');
   await hero.screenshot({ path: '/work/home-hero-copy-desktop.png' });
   console.log('home_hero_free_occurrence_copy_desktop=OK');
   console.log('home_hero_benefit_cards_removed=OK');
+  console.log('home_hero_pseudo_after_removed_desktop=OK');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
@@ -179,8 +190,10 @@ try {
   if (await page.locator('.public-home__hero-benefits, .public-home__hero-benefit').count() !== 0) {
     throw new Error('cards de benefícios renderizaram no hero mobile');
   }
+  await assertNoHeroAfter(mobileHero, 'mobile');
   await mobileHero.screenshot({ path: '/work/home-hero-copy-mobile.png' });
   console.log('home_hero_free_occurrence_copy_mobile=OK');
+  console.log('home_hero_pseudo_after_removed_mobile=OK');
 } finally {
   await context.close();
   await browser.close();
@@ -199,6 +212,7 @@ echo "ANONYMOUS DETAILS COMMERCIAL MODAL: OK"
 echo "DETAILS BLOCKED FOR ANONYMOUS: OK"
 echo "CTA TO REGISTRATION FORM: OK"
 echo "HERO BENEFIT CARDS REMOVED: OK"
+echo "HERO BENEFIT PSEUDO AFTER REMOVED: OK"
 echo "HERO FREE OCCURRENCE COPY DESKTOP: OK"
 echo "HERO FREE OCCURRENCE COPY MOBILE: OK"
 echo "MAIN WORKTREE: CLEAN"
