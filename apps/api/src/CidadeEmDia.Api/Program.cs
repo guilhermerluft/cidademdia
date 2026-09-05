@@ -118,6 +118,7 @@ api.MapGet("/status", () => Results.Ok(new
 api.MapAuthEndpoints();
 api.MapProfileEndpoints();
 api.MapAdminEndpoints();
+api.MapAdminPlanManagementEndpoints();
 api.MapSubaccountEndpoints();
 api.MapInstitutionEndpoints();
 api.MapBillingEndpoints();
