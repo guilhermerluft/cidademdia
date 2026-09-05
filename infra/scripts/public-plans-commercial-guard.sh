@@ -14,14 +14,29 @@ for file in "$PLANS" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
-grep -q "title: 'Acesso às ocorrências e conversa com o cidadão'" "$PLANS" || fail "benefício consolidado de ocorrências/chat ausente"
-grep -q "mantendo contato direto com o cidadão pelo chat." "$PLANS" || fail "descrição consolidada de ocorrências/chat ausente"
-! grep -q "title: 'Converse com o cidadão'" "$PLANS" || fail "benefício de conversa continua separado"
-grep -q "com a possibilidade de adquirir pacotes de postagens extras sempre que necessário." "$PLANS" || fail "postagens extras não estão destacadas"
+for title in \
+  "Acesso às ocorrências" \
+  "Gerencie subcontas" \
+  "Receba notificações" \
+  "Postagens mensais"; do
+  grep -q "title: '$title'" "$PLANS" || fail "benefício original ausente: $title"
+done
+
+grep -q "description: 'Visualize e acompanhe as demandas compartilhadas com sua gestão.'" "$PLANS" || fail "descrição original de ocorrências ausente"
+grep -q "description: 'Organize equipes e distribua acessos conforme a capacidade do plano.'" "$PLANS" || fail "descrição original de subcontas ausente"
+grep -q "description: 'Acompanhe movimentações importantes sem perder atualizações.'" "$PLANS" || fail "descrição original de notificações ausente"
+grep -q "description: 'Publique conteúdos institucionais de acordo com a franquia contratada.'" "$PLANS" || fail "descrição original de postagens ausente"
+! grep -q "Acesso às ocorrências e conversa com o cidadão" "$PLANS" || fail "benefício consolidado antigo ainda está presente"
+! grep -q "title: 'Converse com o cidadão'" "$PLANS" || fail "benefício adicional de conversa ainda está presente"
 
 BENEFIT_TITLES="$(awk '/^const BENEFITS = \[/,/^\] as const;/' "$PLANS" | grep -c "    title: '")"
-test "$BENEFIT_TITLES" = "4" || fail "esperados exatamente quatro benefícios consolidados; encontrado $BENEFIT_TITLES"
-! grep -q 'plans-page__benefit-icon' "$PLANS" || fail "ícones ainda estão renderizados na faixa de benefícios"
+test "$BENEFIT_TITLES" = "4" || fail "esperados exatamente quatro benefícios originais; encontrado $BENEFIT_TITLES"
+
+for icon in fa-clipboard-list fa-users-gear fa-bell fa-photo-film; do
+  grep -q "icon: '$icon'" "$PLANS" || fail "ícone original ausente: $icon"
+done
+grep -q 'plans-page__benefit-icon' "$PLANS" || fail "ícones dos benefícios não estão renderizados"
+
 grep -q 'grid-template-columns: repeat(4, minmax(0, 1fr))' "$CSS" || fail "quatro benefícios não permanecem inline no desktop"
 ! grep -q 'overflow-x: auto' "$CSS" || fail "faixa de benefícios ainda usa rolagem horizontal"
 grep -A10 '^\.plans-page__benefits article {' "$CSS" | grep -q 'align-items: center' || fail "articles dos benefícios não estão centralizados horizontalmente"
@@ -46,12 +61,11 @@ fi
 
 grep -q 'Os valores e condições de pagamento abaixo são promocionais' "$PLANS" || fail "aviso de valores promocionais ausente"
 
+echo "plans_original_four_benefits=OK"
+echo "plans_benefit_icons_restored=OK"
 echo "plans_four_benefits_inline_desktop=OK"
 echo "plans_benefits_stacked_responsive=OK"
 echo "plans_benefits_centered=OK"
-echo "plans_benefit_icons_removed=OK"
-echo "plans_occurrence_chat_consolidated=OK"
-echo "plans_extra_posts_copy=OK"
 echo "plans_master_individual_name=OK"
 echo "plans_promotion_icon_text_inline=OK"
 echo "plans_numeric_post_limits=OK"
