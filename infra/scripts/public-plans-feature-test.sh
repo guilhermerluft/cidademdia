@@ -174,11 +174,13 @@ for text in \
   "pacotes de postagens extras" \
   "Oferta promocional" \
   "Master Individual" \
-  "QTD POSTAGENS/MÊS"; do
+  "POSTAGENS/MÊS"; do
   docker exec "$WEB_ID" sh -lc "grep -R -q '$text' /usr/share/nginx/html/assets" \
     || fail "texto ausente do bundle: $text"
 done
 
+docker exec "$WEB_ID" sh -lc '! grep -R -q "QTD POSTAGENS/MÊS" /usr/share/nginx/html/assets' \
+  || fail "rótulo QTD ainda está presente no bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -qi "POSTAGEMENS" /usr/share/nginx/html/assets' \
   || fail "typo POSTAGEMENS presente no bundle"
 echo "plans_bundle=OK"
@@ -252,6 +254,17 @@ async function validatePlans(viewport, screenshot, mobile) {
   if (Math.max(...benefitTops) - Math.min(...benefitTops) > 2) {
     throw new Error(`benefícios não estão todos inline: ${benefitTops.join(',')}`);
   }
+
+  for (let index = 0; index < 5; index += 1) {
+    const benefit = benefits.nth(index);
+    const iconBox = await benefit.locator('.plans-page__benefit-icon').boundingBox();
+    const titleBox = await benefit.locator('h2').boundingBox();
+    if (!iconBox || !titleBox) throw new Error(`não foi possível medir benefício ${index + 1}`);
+    if (iconBox.y + iconBox.height > titleBox.y + 2) {
+      throw new Error(`ícone não está acima do título no benefício ${index + 1}`);
+    }
+  }
+
   if (mobile) {
     const benefitFlow = await page.locator('.plans-page__benefits').evaluate((node) => ({
       clientWidth: node.clientWidth,
@@ -294,9 +307,14 @@ async function validatePlans(viewport, screenshot, mobile) {
     if (await promo.locator('i.fa-tags').count() !== 1) {
       throw new Error(`ícone de Oferta promocional ausente no card ${index + 1}`);
     }
-    const postingText = await posting.innerText();
-    if (!postingText.includes('QTD POSTAGENS/MÊS') || postingText.includes('POSTAGEMENS')) {
-      throw new Error(`rótulo de postagens inválido no card ${index + 1}: ${postingText}`);
+    const promoDirection = await promo.evaluate((node) => getComputedStyle(node).flexDirection);
+    if (promoDirection !== 'row') {
+      throw new Error(`ícone e Oferta promocional não estão inline no card ${index + 1}: ${promoDirection}`);
+    }
+
+    const postingText = (await posting.innerText()).trim();
+    if (!/^\d+\s+POSTAGENS\/MÊS$/.test(postingText) || postingText.includes('POSTAGEMENS')) {
+      throw new Error(`limite de postagens inválido no card ${index + 1}: ${postingText}`);
     }
 
     const promoBox = await promo.boundingBox();
@@ -308,7 +326,7 @@ async function validatePlans(viewport, screenshot, mobile) {
       throw new Error(`selo e postagens não estão centralizados no card ${index + 1}`);
     }
     if (promoBox.y + promoBox.height > postingBox.y + 2) {
-      throw new Error(`Oferta promocional não está acima de QTD POSTAGENS/MÊS no card ${index + 1}`);
+      throw new Error(`Oferta promocional não está acima do limite de postagens no card ${index + 1}`);
     }
   }
 
@@ -399,11 +417,12 @@ echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
 echo "PUBLIC NAVIGATION: OK"
 echo "BILLING CATALOG: OK"
 echo "BENEFITS INLINE: 5"
+echo "BENEFIT ICONS ABOVE TITLES: OK"
 echo "CITIZEN CHAT BENEFIT: OK"
 echo "EXTRA POST PACKAGES: OK"
 echo "MASTER INDIVIDUAL: OK"
-echo "PROMOTION INSIDE PLAN CARDS: OK"
-echo "QTD POSTAGENS/MÊS: OK"
+echo "PROMOTION ICON + TEXT INLINE: OK"
+echo "NUMERIC POSTAGENS/MÊS: OK"
 echo "POSTAGEMENS TYPO: ABSENT"
 echo "PRIMARY PLAN CARDS: 3"
 echo "MEGA PROMOÇÃO: OK"
