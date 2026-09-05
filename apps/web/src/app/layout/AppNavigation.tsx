@@ -73,7 +73,7 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
   },
   {
     id: 'representatives',
-    label: 'Representantes',
+    label: 'Masters',
     icon: 'representatives',
     href: '/representantes',
     public: true,
