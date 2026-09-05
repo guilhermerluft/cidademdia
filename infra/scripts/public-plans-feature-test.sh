@@ -170,7 +170,7 @@ test -n "$WEB_ID" || fail "container web da feature não encontrado"
 for text in \
   "TIPOS DE GESTÃO" \
   "MEGA PROMOÇÃO" \
-  "Converse com o cidadão" \
+  "Acesso às ocorrências e conversa com o cidadão" \
   "pacotes de postagens extras" \
   "Oferta promocional" \
   "Master Individual" \
@@ -249,33 +249,55 @@ async function validatePlans(viewport, screenshot, mobile) {
   }
 
   const benefits = page.locator('.plans-page__benefits article');
-  if (await benefits.count() !== 5) throw new Error('esperados exatamente 5 benefícios');
+  if (await benefits.count() !== 4) throw new Error('esperados exatamente 4 benefícios consolidados');
+  if (await page.locator('.plans-page__benefits .plans-page__benefit-icon').count() !== 0) {
+    throw new Error('ícones ainda estão presentes na faixa de benefícios');
+  }
+
   const benefitTops = await benefits.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
-  if (Math.max(...benefitTops) - Math.min(...benefitTops) > 2) {
-    throw new Error(`benefícios não estão todos inline: ${benefitTops.join(',')}`);
+  if (!mobile) {
+    if (Math.max(...benefitTops) - Math.min(...benefitTops) > 2) {
+      throw new Error(`benefícios não estão todos inline no desktop: ${benefitTops.join(',')}`);
+    }
+  } else {
+    for (let index = 1; index < benefitTops.length; index += 1) {
+      if (benefitTops[index] <= benefitTops[index - 1]) {
+        throw new Error(`benefícios não estão empilhados no mobile: ${benefitTops.join(',')}`);
+      }
+    }
   }
 
-  for (let index = 0; index < 5; index += 1) {
+  for (let index = 0; index < 4; index += 1) {
     const benefit = benefits.nth(index);
-    const iconBox = await benefit.locator('.plans-page__benefit-icon').boundingBox();
-    const titleBox = await benefit.locator('h2').boundingBox();
-    if (!iconBox || !titleBox) throw new Error(`não foi possível medir benefício ${index + 1}`);
-    if (iconBox.y + iconBox.height > titleBox.y + 2) {
-      throw new Error(`ícone não está acima do título no benefício ${index + 1}`);
+    const layout = await benefit.evaluate((node) => {
+      const articleStyle = getComputedStyle(node);
+      const title = node.querySelector('h2');
+      const paragraph = node.querySelector('p');
+      return {
+        alignItems: articleStyle.alignItems,
+        justifyContent: articleStyle.justifyContent,
+        textAlign: articleStyle.textAlign,
+        titleAlign: title ? getComputedStyle(title).textAlign : null,
+        paragraphAlign: paragraph ? getComputedStyle(paragraph).textAlign : null,
+      };
+    });
+    if (layout.alignItems !== 'center' || layout.justifyContent !== 'center') {
+      throw new Error(`article do benefício ${index + 1} não está centralizado`);
+    }
+    if (layout.textAlign !== 'center' || layout.titleAlign !== 'center' || layout.paragraphAlign !== 'center') {
+      throw new Error(`texto do benefício ${index + 1} não está centralizado`);
     }
   }
 
-  if (mobile) {
-    const benefitFlow = await page.locator('.plans-page__benefits').evaluate((node) => ({
-      clientWidth: node.clientWidth,
-      scrollWidth: node.scrollWidth,
-    }));
-    if (benefitFlow.scrollWidth <= benefitFlow.clientWidth) {
-      throw new Error('faixa mobile não preserva cinco benefícios inline com rolagem interna');
-    }
+  const consolidatedBenefit = benefits.first();
+  const consolidatedText = await consolidatedBenefit.innerText();
+  if (!consolidatedText.includes('Acesso às ocorrências e conversa com o cidadão')) {
+    throw new Error('benefício consolidado de ocorrências/chat ausente');
+  }
+  if (!consolidatedText.includes('mantendo contato direto com o cidadão pelo chat')) {
+    throw new Error('descrição consolidada de ocorrências/chat ausente');
   }
 
-  await page.getByRole('heading', { name: 'Converse com o cidadão', exact: true }).waitFor({ state: 'attached' });
   const postingBenefit = benefits.filter({ hasText: 'Postagens mensais' });
   if (!(await postingBenefit.innerText()).includes('pacotes de postagens extras sempre que necessário')) {
     throw new Error('benefício de Postagens mensais sem pacotes extras');
@@ -416,9 +438,11 @@ echo "SHARED APP HEADER IMPLEMENTATION: OK"
 echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
 echo "PUBLIC NAVIGATION: OK"
 echo "BILLING CATALOG: OK"
-echo "BENEFITS INLINE: 5"
-echo "BENEFIT ICONS ABOVE TITLES: OK"
-echo "CITIZEN CHAT BENEFIT: OK"
+echo "BENEFITS INLINE DESKTOP: 4"
+echo "BENEFITS STACKED RESPONSIVE: OK"
+echo "BENEFITS CENTERED: OK"
+echo "BENEFIT ICONS REMOVED: OK"
+echo "OCCURRENCE + CHAT CONSOLIDATED: OK"
 echo "EXTRA POST PACKAGES: OK"
 echo "MASTER INDIVIDUAL: OK"
 echo "PROMOTION ICON + TEXT INLINE: OK"
