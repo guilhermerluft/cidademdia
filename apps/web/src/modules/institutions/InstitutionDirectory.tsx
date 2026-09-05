@@ -152,7 +152,7 @@ export function InstitutionDirectory() {
     >
       <SectionHeading
         title="Órgãos e agentes públicos"
-        subtitle="Consulte órgãos e agentes públicos cadastrados no CidadeEmDia, inclusive perfis que ainda não aderiram à plataforma."
+        subtitle="Consulte órgãos e agentes públicos cadastrados no CidadeEmDia."
       />
 
       <div className="institution-directory__filters">
