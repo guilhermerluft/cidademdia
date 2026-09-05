@@ -10,12 +10,14 @@ fail() {
 
 MAIN="$ROOT/apps/web/src/main.tsx"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
+HOME_ASSETS="$ROOT/apps/web/src/modules/home/home-assets.css"
 HOME_REFINEMENT="$ROOT/apps/web/src/modules/home/home-refinement.css"
 HOME_DIR="$ROOT/apps/web/src/modules/home"
+HOME_BANNER="$ROOT/apps/web/src/modules/home/assets/banner-city.jpg"
 COMMERCIAL_MODAL="$ROOT/apps/web/src/components/CommercialSignupModal.tsx"
 COMMERCIAL_CSS="$ROOT/apps/web/src/styles/commercial-signup-modal.css"
 
-for file in "$MAIN" "$HOME" "$HOME_REFINEMENT" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS"; do
+for file in "$MAIN" "$HOME" "$HOME_ASSETS" "$HOME_REFINEMENT" "$HOME_BANNER" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -40,6 +42,10 @@ if grep -RInE '\.public-home__hero::after[[:space:]]*\{' "$HOME_DIR" --include='
   fail "pseudo-elemento ::after de benefícios ainda existe no hero"
 fi
 
+grep -q "banner-city.jpg" "$HOME_ASSETS" || fail "novo banner fotográfico não está configurado no hero"
+! grep -q 'Os vídeos publicados pelo painel administrador do CIDADEMDIA aparecerão aqui.' "$HOME" || fail "placeholder antigo de mídias ainda está presente"
+! grep -q 'Novas demandas públicas aparecerão aqui quando forem registradas.' "$HOME" || fail "placeholder antigo de ocorrências ainda está presente"
+
 grep -q 'O CIDADEMDIA conecta cidadãos e gestores, permitindo <strong>publicar ocorrências gratuitamente</strong> e acompanhar cada demanda,' "$HOME" || fail "novo texto comercial do hero ausente ou sem destaque"
 grep -q 'tornando a gestão mais ágil, transparente e eficiente.' "$HOME" || fail "fechamento institucional do hero foi alterado"
 if grep -q 'facilitando a comunicação e o acompanhamento das demandas' "$HOME"; then
@@ -55,6 +61,8 @@ grep -q 'Como funciona' "$HOME" || fail "CTA Como funciona foi alterado ou remov
 echo "commercial_signup_brand_header=OK"
 echo "hero_benefit_cards_removed=OK"
 echo "hero_benefit_pseudo_after_removed=OK"
+echo "hero_attached_banner=OK"
+echo "home_placeholder_copy_removed=OK"
 echo "hero_free_occurrence_copy=OK"
 echo "hero_free_occurrence_copy_bold=OK"
 echo "hero_original_title_preserved=OK"
