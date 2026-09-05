@@ -8,12 +8,14 @@ fail() {
   exit 1
 }
 
+MAIN="$ROOT/apps/web/src/main.tsx"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 HOME_REFINEMENT="$ROOT/apps/web/src/modules/home/home-refinement.css"
+HOME_BENEFITS="$ROOT/apps/web/src/modules/home/home-benefits-refinement.css"
 COMMERCIAL_MODAL="$ROOT/apps/web/src/components/CommercialSignupModal.tsx"
 COMMERCIAL_CSS="$ROOT/apps/web/src/styles/commercial-signup-modal.css"
 
-for file in "$HOME" "$HOME_REFINEMENT" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS"; do
+for file in "$MAIN" "$HOME" "$HOME_REFINEMENT" "$HOME_BENEFITS" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -25,10 +27,19 @@ fi
 grep -q 'commercial-signup-modal__brand-header' "$COMMERCIAL_CSS" || fail "header do logotipo comercial sem estilo dedicado"
 grep -q 'commercial-signup-modal__brand' "$COMMERCIAL_CSS" || fail "logotipo comercial sem estilo dedicado"
 
-grep -q 'Apoie ocorrências da sua região' "$HOME_REFINEMENT" || fail "benefício de apoio ausente do hero"
-grep -q 'Publique ocorrências gratuitamente' "$HOME_REFINEMENT" || fail "benefício de publicação gratuita ausente do hero"
-grep -q 'Acompanhe detalhes e atualizações' "$HOME_REFINEMENT" || fail "benefício de acompanhamento ausente do hero"
-grep -q 'public-home__hero::after' "$HOME_REFINEMENT" || fail "benefícios não estão isolados em camada complementar do hero"
+grep -q "import './modules/home/home-benefits-refinement.css'" "$MAIN" || fail "refinamento visual dos benefícios do hero não está carregado"
+grep -q 'Apoie ocorrências da sua região' "$HOME_BENEFITS" || fail "benefício de apoio ausente do hero"
+grep -q 'Publique ocorrências gratuitamente' "$HOME_BENEFITS" || fail "benefício de publicação gratuita ausente do hero"
+grep -q 'Acompanhe detalhes e atualizações' "$HOME_BENEFITS" || fail "benefício de acompanhamento ausente do hero"
+grep -q 'public-home__hero::after' "$HOME_BENEFITS" || fail "benefícios não permanecem isolados na camada complementar do hero"
+test "$(grep -o 'data:image/svg+xml' "$HOME_BENEFITS" | wc -l | tr -d ' ')" -ge 3 || fail "os três benefícios não possuem ícones vetoriais próprios"
+grep -q '%23005F73' "$HOME_BENEFITS" || fail "ícone de apoio não usa teal do projeto"
+grep -q '%2317A53C' "$HOME_BENEFITS" || fail "ícone de publicação não usa verde do hero/projeto"
+grep -q '%23F09A13' "$HOME_BENEFITS" || fail "ícone de acompanhamento não usa laranja do hero/projeto"
+grep -q 'border-left: 4px solid #005f73' "$HOME_BENEFITS" || fail "painel de benefícios não possui acento visual da identidade"
+if grep -q "content: '✓" "$HOME_BENEFITS"; then
+  fail "benefícios voltaram ao marcador simples em vez de ícones dedicados"
+fi
 
 grep -q 'Uma cidade melhor<br />' "$HOME" || fail "título original do hero foi alterado ou removido"
 grep -q 'quem precisa <span className="public-home__hero-green">é ouvido</span><br />' "$HOME" || fail "destaque verde original do hero foi alterado"
@@ -40,6 +51,8 @@ grep -q 'Como funciona' "$HOME" || fail "CTA Como funciona foi alterado ou remov
 
 echo "commercial_signup_brand_header=OK"
 echo "hero_participation_benefits=OK"
+echo "hero_participation_benefit_icons=OK"
+echo "hero_participation_project_colors=OK"
 echo "hero_original_copy_preserved=OK"
 echo "hero_original_ctas_preserved=OK"
 echo "PUBLIC HOME COMMERCIAL GUARD: OK"
