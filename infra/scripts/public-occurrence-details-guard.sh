@@ -14,9 +14,13 @@ GEO_ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceGeoEndpoin
 CREATE_ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceEndpoints.cs"
 CREATE_SERVICE="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceCreationService.cs"
 MAIN="$ROOT/apps/web/src/main.tsx"
+APP="$ROOT/apps/web/src/app/App.tsx"
 TOAST="$ROOT/apps/web/src/components/toast.ts"
 TOAST_VIEWPORT="$ROOT/apps/web/src/components/ToastViewport.tsx"
 TOAST_CSS="$ROOT/apps/web/src/styles/toast.css"
+COMMERCIAL_EVENT="$ROOT/apps/web/src/components/commercialSignup.ts"
+COMMERCIAL_MODAL="$ROOT/apps/web/src/components/CommercialSignupModal.tsx"
+COMMERCIAL_CSS="$ROOT/apps/web/src/styles/commercial-signup-modal.css"
 HOME_SERVICE="$ROOT/apps/web/src/modules/home/homeService.ts"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
@@ -31,8 +35,9 @@ CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrences.css"
 
 for file in \
   "$CONTRACTS" "$SERVICE" "$GEO_ENDPOINTS" "$CREATE_ENDPOINTS" "$CREATE_SERVICE" \
-  "$MAIN" "$TOAST" "$TOAST_VIEWPORT" "$TOAST_CSS" "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" \
-  "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
+  "$MAIN" "$APP" "$TOAST" "$TOAST_VIEWPORT" "$TOAST_CSS" "$COMMERCIAL_EVENT" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS" \
+  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" \
+  "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -95,10 +100,23 @@ grep -q 'ToastViewport' "$MAIN" || fail "viewport global de toast não está mon
 grep -q 'installNativeAlertToastBridge' "$MAIN" || fail "bridge global de alert para toast não está instalado"
 grep -q "import './styles/toast.css'" "$MAIN" || fail "estilos globais de toast não estão carregados"
 grep -q 'aria-live="polite"' "$TOAST_VIEWPORT" || fail "toast não possui região aria-live"
-grep -q "toast.info('Entre ou crie sua conta para apoiar esta ocorrência.')" "$SUPPORT" || fail "apoio anônimo não usa toast"
 if grep -RInE '(window\.)?alert[[:space:]]*\(' "$ROOT/apps/web/src" --include='*.ts' --include='*.tsx' >/dev/null; then
   fail "ainda existe chamada de alert nativo no frontend"
 fi
+
+grep -q 'CommercialSignupModal' "$MAIN" || fail "modal comercial global não está montado"
+grep -q "import './styles/commercial-signup-modal.css'" "$MAIN" || fail "estilos do modal comercial não estão carregados"
+grep -q "requestCommercialSignup('support')" "$SUPPORT" || fail "apoio anônimo não abre modal comercial"
+grep -q "requestCommercialSignup('details')" "$CARD" || fail "detalhe anônimo não abre modal comercial"
+grep -q 'getAccessToken' "$CARD" || fail "card público não diferencia sessão antes de abrir detalhes"
+grep -q 'Crie sua conta gratuita para interagir' "$COMMERCIAL_MODAL" || fail "copy comercial principal ausente"
+grep -q 'Publique ocorrências gratuitamente' "$COMMERCIAL_MODAL" || fail "benefício de publicação gratuita ausente"
+grep -q '>Cadastre-se<' "$COMMERCIAL_MODAL" || fail "CTA Cadastre-se ausente"
+grep -q "navigate('/?auth=register')" "$COMMERCIAL_MODAL" || fail "CTA não redireciona para cadastro"
+grep -q "requestedAuth === 'register'" "$APP" || fail "App não reconhece entrada direta no cadastro"
+grep -q "initialTokens.authMode ?? 'home'" "$APP" || fail "modo inicial não usa entrada de cadastro"
+grep -q 'aria-modal="true"' "$COMMERCIAL_MODAL" || fail "modal comercial não está marcado como modal acessível"
+grep -q 'Fechar convite para cadastro' "$COMMERCIAL_MODAL" || fail "modal comercial não possui fechamento acessível"
 
 grep -q 'getPublicOccurrenceDetails' "$HOME_SERVICE" || fail "client de detalhe público ausente"
 grep -q 'supportOccurrence' "$HOME_SERVICE" || fail "client de apoio autenticado ausente"
@@ -119,7 +137,7 @@ grep -q 'right: 10px' "$CARD_CSS" || fail "apoio do card não respeita margem di
 grep -q 'padding: 10px 78px 10px 0' "$CARD_CSS" || fail "conteúdo principal não reserva espaço para o apoio"
 grep -q 'data-occurrence-id={occurrence.id}' "$CARD" || fail "card público não possui seletor estável para E2E"
 grep -q 'aria-label={interactive ? `Abrir ocorrência ${occurrence.publicCode}: ${occurrence.title}`' "$CARD" || fail "linha da ocorrência não possui nome acessível"
-grep -q 'onClick={onOpen ? () => onOpen(occurrence) : undefined}' "$CARD" || fail "linha inteira da ocorrência não permanece clicável"
+grep -q 'onClick={onOpen ? handleOpen : undefined}' "$CARD" || fail "linha inteira da ocorrência não permanece clicável"
 grep -q 'tabIndex={interactive ? 0 : undefined}' "$CARD" || fail "linha clicável não permanece acessível por teclado"
 if grep -q 'public-occurrence-open-button' "$CARD" || grep -q 'public-occurrence-open-button' "$CARD_CSS"; then
   fail "botão Abrir não deve existir no card público"
@@ -138,7 +156,10 @@ grep -q 'Fechar detalhes da ocorrência' "$MODAL" || fail "modal sem fechamento 
 
 echo "global_toast_notifications=OK"
 echo "native_alerts_migrated_to_toast=OK"
-echo "anonymous_support_toast=OK"
+echo "commercial_signup_modal=OK"
+echo "anonymous_support_signup_gate=OK"
+echo "anonymous_details_signup_gate=OK"
+echo "commercial_signup_cta_to_register=OK"
 echo "occurrence_form_protocol_first=OK"
 echo "occurrence_form_paired_fields_aligned=OK"
 echo "occurrence_creation_master_required=OK"
