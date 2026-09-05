@@ -71,12 +71,14 @@ async function validate(viewport, screenshot, mobile) {
   }
 
   await page.getByRole('heading', { name: 'Órgãos e agentes públicos' }).waitFor({ state: 'visible' });
+  await page.getByText('Consulte órgãos e agentes públicos cadastrados no CidadeEmDia.', { exact: true }).waitFor({ state: 'visible' });
   await page.getByText('Buscar órgão ou agente público', { exact: true }).waitFor({ state: 'visible' });
 
   const visibleText = await page.locator('body').innerText();
   for (const forbidden of [
     'Instituições e representantes',
     'Consulte órgãos e representantes',
+    'Consulte órgãos e agentes públicos cadastrados no CidadeEmDia, inclusive perfis que ainda não aderiram à plataforma.',
     'Buscar instituição ou representante',
     'Nenhum representante cadastrado ainda.',
     'Carregando representantes...',
@@ -113,6 +115,7 @@ test -f "$QA_DIR/masters-directory-mobile.png" || fail "screenshot mobile ausent
 
 echo "PUBLIC MASTERS NAVIGATION: OK"
 echo "PUBLIC INSTITUTION TERMINOLOGY: OK"
+echo "PUBLIC MASTERS SUBTITLE: OK"
 echo "DESKTOP: OK"
 echo "MOBILE: OK"
 echo "MAIN WORKTREE: CLEAN"
