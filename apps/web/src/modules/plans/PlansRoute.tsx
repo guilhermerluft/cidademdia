@@ -37,8 +37,8 @@ export function PlansRoute() {
     <>
       <AppHeader
         active="plans"
-        onLogin={() => navigate('/')}
-        onRegister={() => navigate('/')}
+        onLogin={() => navigate('/?auth=login')}
+        onRegister={() => navigate('/?auth=register')}
       />
       <PublicPlans
         onSelectOffer={() => navigate('/')}
@@ -46,8 +46,8 @@ export function PlansRoute() {
       />
       <AppBottomNavigation
         active="plans"
-        onLogin={() => navigate('/')}
-        onRegister={() => navigate('/')}
+        onLogin={() => navigate('/?auth=login')}
+        onRegister={() => navigate('/?auth=register')}
       />
     </>
   );
