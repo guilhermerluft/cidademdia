@@ -6,7 +6,9 @@ import { App } from './app/App';
 import { CommercialSignupModal } from './components/CommercialSignupModal';
 import { ToastViewport } from './components/ToastViewport';
 import { installNativeAlertToastBridge } from './components/toast';
+import { AdminRoute } from './modules/admin/AdminRoute';
 import { AuthProvider } from './modules/auth/AuthProvider';
+import { HeroBannerBootstrap } from './modules/home/HeroBannerBootstrap';
 import { RepresentativesRoute } from './modules/institutions/RepresentativesRoute';
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
 import { UserPanelRoute } from './modules/panel/UserPanelRoute';
@@ -50,9 +52,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
         <AuthProvider>
+          <HeroBannerBootstrap />
           <ToastViewport />
           <CommercialSignupModal />
           <Routes>
+            <Route path="/admin" element={<AdminRoute />} />
             <Route path="/ocorrencias" element={<PublicOccurrencesRoute />} />
             <Route path="/representantes" element={<RepresentativesRoute />} />
             <Route path="/painel" element={<UserPanelRoute />} />

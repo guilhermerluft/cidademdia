@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { CitizenOccurrenceChatButton } from '../chat/CitizenOccurrenceChatButton';
 import { listOccurrenceMediaForPresentation } from './occurrenceService';
 import type { OccurrenceMediaPresentation } from './types';
 
@@ -36,54 +37,57 @@ export function OccurrenceMediaGallery({ occurrenceId, occurrenceCode }: Occurre
     };
   }, [occurrenceId]);
 
-  if (loading) {
-    return <div className="occurrence-media-gallery__loading" aria-label={`Carregando mídias de ${occurrenceCode}`} />;
-  }
-
-  if (failed) {
-    return <small className="occurrence-media-gallery__error">Não foi possível carregar as mídias desta ocorrência.</small>;
-  }
-
-  if (media.length === 0) return null;
-
   return (
-    <div className="occurrence-media-gallery" aria-label={`Mídias da ocorrência ${occurrenceCode}`}>
-      {media.map((item) => {
-        if (item.contentType.startsWith('image/')) {
-          return (
-            <a
-              className="occurrence-media-gallery__item"
-              href={item.readUrl}
-              target="_blank"
-              rel="noreferrer"
-              key={item.id}
-              aria-label={`Abrir imagem ${item.originalFileName}`}
-            >
-              <img
-                src={item.readUrl}
-                alt={item.originalFileName || `Imagem da ocorrência ${occurrenceCode}`}
-                loading="lazy"
-              />
-            </a>
-          );
-        }
+    <>
+      {loading ? (
+        <div className="occurrence-media-gallery__loading" aria-label={`Carregando mídias de ${occurrenceCode}`} />
+      ) : failed ? (
+        <small className="occurrence-media-gallery__error">Não foi possível carregar as mídias desta ocorrência.</small>
+      ) : media.length > 0 ? (
+        <div className="occurrence-media-gallery" aria-label={`Mídias da ocorrência ${occurrenceCode}`}>
+          {media.map((item) => {
+            if (item.contentType.startsWith('image/')) {
+              return (
+                <a
+                  className="occurrence-media-gallery__item"
+                  href={item.readUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  key={item.id}
+                  aria-label={`Abrir imagem ${item.originalFileName}`}
+                >
+                  <img
+                    src={item.readUrl}
+                    alt={item.originalFileName || `Imagem da ocorrência ${occurrenceCode}`}
+                    loading="lazy"
+                  />
+                </a>
+              );
+            }
 
-        if (item.contentType.startsWith('video/')) {
-          return (
-            <div className="occurrence-media-gallery__item occurrence-media-gallery__item--video" key={item.id}>
-              <video
-                src={item.readUrl}
-                controls
-                preload="metadata"
-                playsInline
-                aria-label={item.originalFileName || `Vídeo da ocorrência ${occurrenceCode}`}
-              />
-            </div>
-          );
-        }
+            if (item.contentType.startsWith('video/')) {
+              return (
+                <div className="occurrence-media-gallery__item occurrence-media-gallery__item--video" key={item.id}>
+                  <video
+                    src={item.readUrl}
+                    controls
+                    preload="metadata"
+                    playsInline
+                    aria-label={item.originalFileName || `Vídeo da ocorrência ${occurrenceCode}`}
+                  />
+                </div>
+              );
+            }
 
-        return null;
-      })}
-    </div>
+            return null;
+          })}
+        </div>
+      ) : null}
+
+      <CitizenOccurrenceChatButton
+        occurrenceId={occurrenceId}
+        publicCode={occurrenceCode}
+      />
+    </>
   );
 }

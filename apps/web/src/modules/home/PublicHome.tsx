@@ -392,7 +392,6 @@ export function PublicHome({
           ) : posts.length === 0 ? (
             <div className="public-home__empty">
               <strong>{postsUnavailable ? 'Mídias temporariamente indisponíveis.' : 'Nenhum vídeo institucional publicado ainda.'}</strong>
-              <span>Os vídeos publicados pelo painel administrador do CIDADEMDIA aparecerão aqui.</span>
             </div>
           ) : showAllMedia ? (
             <div className="public-home__media-all">
@@ -461,7 +460,7 @@ export function PublicHome({
           ) : (
             <div className="public-home__empty">
               <strong>{occurrencesUnavailable ? 'Não foi possível carregar as ocorrências agora.' : 'Nenhuma ocorrência aberta encontrada nesta região.'}</strong>
-              <span>{occurrencesUnavailable ? 'Tente novamente em instantes.' : 'Novas demandas públicas aparecerão aqui quando forem registradas.'}</span>
+              {occurrencesUnavailable && <span>Tente novamente em instantes.</span>}
             </div>
           )}
 

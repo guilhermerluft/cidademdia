@@ -1,4 +1,8 @@
-/* Keep the versioned hero artwork available as a build-time fallback asset. */
+/* Versioned photographic banner selected for the public home hero. */
 .public-home {
-  --public-home-versioned-hero-fallback: url('./assets/hero-city.svg');
+  --public-home-versioned-hero-fallback: url('./assets/banner-city.jpg');
+}
+
+.public-home .public-home__hero {
+  background-image: var(--public-home-versioned-hero-fallback);
 }

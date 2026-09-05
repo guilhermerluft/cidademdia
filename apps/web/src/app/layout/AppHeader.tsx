@@ -20,6 +20,13 @@ interface AppHeaderProps {
   onLogout?: () => void | Promise<void>;
 }
 
+const HEADER_HIDDEN_ITEMS = new Set<AppNavigationId>(['media', 'team', 'admin']);
+
+function getHeaderNavigation(user?: AuthenticatedUser | null, permissions: readonly string[] = []) {
+  return getVisibleNavigation(user, permissions)
+    .filter((item) => !HEADER_HIDDEN_ITEMS.has(item.id));
+}
+
 export function AppHeader({
   active,
   user,
@@ -28,8 +35,9 @@ export function AppHeader({
   onRegister,
   onLogout,
 }: AppHeaderProps) {
-  const navigation = getVisibleNavigation(user, permissions);
+  const navigation = getHeaderNavigation(user, permissions);
   const panelAccess = user ? getUserPanelAccess(user, permissions) : null;
+  const isAdmin = Boolean(user?.roles.includes('ADMIN'));
   const profileAvatarUrl = useProfileAvatar(user);
   const [accountOpen, setAccountOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -160,6 +168,16 @@ export function AppHeader({
                     </span>
                   </a>
 
+                  {isAdmin && (
+                    <a className="app-header__account-menu-item" href="/admin" role="menuitem">
+                      <AppNavigationIcon name="admin" />
+                      <span>
+                        <strong>Administração</strong>
+                        <small>Planos, banner, mídias e operação</small>
+                      </span>
+                    </a>
+                  )}
+
                   {panelAccess?.canAccessPanel && (
                     <a className="app-header__account-menu-item" href="/painel" role="menuitem">
                       <AppNavigationIcon name="panel" />
@@ -212,7 +230,7 @@ export function AppBottomNavigation({
   onLogin,
   onRegister,
 }: AppBottomNavigationProps) {
-  const navigation = getVisibleNavigation(user, permissions);
+  const navigation = getHeaderNavigation(user, permissions);
   const visibleNavigation = user ? navigation.slice(0, 5) : navigation;
 
   return (
