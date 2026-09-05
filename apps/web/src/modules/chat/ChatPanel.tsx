@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import type { FormEvent } from 'react';
 import { useAuth } from '../auth/AuthProvider';
 import { getChatAudioReadUrl, normalizeAudioContentType } from './chatService';
 import type { ChatMessage } from './types';
@@ -29,6 +29,12 @@ function extensionForAudio(contentType: string) {
     case 'audio/wav': return 'wav';
     default: return 'webm';
   }
+}
+
+function formatRecordingTime(seconds: number) {
+  const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const remainingSeconds = (seconds % 60).toString().padStart(2, '0');
+  return `${minutes}:${remainingSeconds}`;
 }
 
 function ChatAudioPlayer({ message }: { message: ChatMessage }) {
@@ -64,7 +70,6 @@ function ChatAudioPlayer({ message }: { message: ChatMessage }) {
 
   return (
     <div className="chat-panel__audio-message">
-      <span>{message.audio?.originalFileName ?? 'Áudio'}</span>
       <audio controls preload="metadata" src={readUrl}>
         Seu navegador não suporta reprodução de áudio.
       </audio>
@@ -79,8 +84,8 @@ export function ChatPanel({ targetId, title = 'Conversa da ocorrência' }: ChatP
   const [sending, setSending] = useState(false);
   const [sendingAudio, setSendingAudio] = useState(false);
   const [recording, setRecording] = useState(false);
+  const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [sendError, setSendError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const recordingStreamRef = useRef<MediaStream | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -97,6 +102,19 @@ export function ChatPanel({ targetId, title = 'Conversa da ocorrência' }: ChatP
     && typeof navigator !== 'undefined'
     && Boolean(navigator.mediaDevices?.getUserMedia);
   const statusLabel = useMemo(() => connectionLabels[state], [state]);
+
+  useEffect(() => {
+    if (!recording) {
+      setRecordingSeconds(0);
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(() => {
+      setRecordingSeconds((current) => current + 1);
+    }, 1000);
+
+    return () => window.clearInterval(intervalId);
+  }, [recording]);
 
   useEffect(() => () => {
     cancelRecordingRef.current = true;
@@ -127,7 +145,7 @@ export function ChatPanel({ targetId, title = 'Conversa da ocorrência' }: ChatP
     }
   }
 
-  async function handleAudioFile(file: File) {
+  async function sendRecordedAudio(file: File) {
     if (!canSendAudio || file.size <= 0) return;
 
     setSendingAudio(true);
@@ -142,13 +160,7 @@ export function ChatPanel({ targetId, title = 'Conversa da ocorrência' }: ChatP
       );
     } finally {
       setSendingAudio(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
     }
-  }
-
-  function handleAudioSelection(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    if (file) void handleAudioFile(file);
   }
 
   async function startRecording() {
@@ -197,7 +209,7 @@ export function ChatPanel({ targetId, title = 'Conversa da ocorrência' }: ChatP
           `audio-${Date.now()}.${extensionForAudio(contentType)}`,
           { type: contentType },
         );
-        void handleAudioFile(file);
+        void sendRecordedAudio(file);
       };
 
       recorder.start(250);
@@ -262,46 +274,54 @@ export function ChatPanel({ targetId, title = 'Conversa da ocorrência' }: ChatP
         <p className="chat-panel__notice">Esta conversa foi encerrada.</p>
       ) : (
         <form className="chat-panel__composer" onSubmit={handleSubmit}>
-          <label htmlFor={`chat-message-${targetId}`}>Mensagem</label>
-          <textarea
-            id={`chat-message-${targetId}`}
-            maxLength={4000}
-            onChange={(event) => setDraft(event.target.value)}
-            placeholder="Digite uma mensagem"
-            rows={3}
-            value={draft}
-          />
-          <button disabled={!canSend} type="submit">
-            {sending ? 'Enviando...' : 'Enviar'}
-          </button>
+          <div className="chat-panel__composer-row">
+            <textarea
+              id={`chat-message-${targetId}`}
+              aria-label="Mensagem"
+              disabled={recording || sendingAudio}
+              maxLength={4000}
+              onChange={(event) => setDraft(event.target.value)}
+              placeholder="Digite uma mensagem"
+              rows={1}
+              value={draft}
+            />
 
-          <div className="chat-panel__audio-actions">
-            <label className="chat-panel__audio-file">
-              Selecionar áudio
-              <input
-                ref={fileInputRef}
-                accept="audio/webm,audio/ogg,audio/mp4,audio/mpeg,audio/wav,audio/*"
-                disabled={!canSendAudio || recording}
-                onChange={handleAudioSelection}
-                type="file"
-              />
-            </label>
-            {recording ? (
-              <button className="chat-panel__audio-button" onClick={stopRecording} type="button">
-                Parar e enviar
-              </button>
-            ) : (
+            <div className="chat-panel__composer-actions">
               <button
-                className="chat-panel__audio-button"
-                disabled={!canRecord}
-                onClick={() => void startRecording()}
+                aria-label={recording ? 'Parar e enviar áudio' : 'Gravar áudio'}
+                className={`chat-panel__voice-button${recording ? ' chat-panel__voice-button--recording' : ''}`}
+                disabled={!recording && !canRecord}
+                onClick={recording ? stopRecording : () => void startRecording()}
+                title={recording ? 'Parar e enviar áudio' : 'Gravar áudio'}
                 type="button"
               >
-                Gravar áudio
+                <i className={recording ? 'fa-solid fa-stop' : 'fa-solid fa-microphone'} aria-hidden="true" />
               </button>
-            )}
-            {sendingAudio ? <span aria-live="polite">Enviando áudio...</span> : null}
+
+              <button
+                aria-label="Enviar mensagem"
+                className="chat-panel__send-button"
+                disabled={!canSend}
+                title="Enviar mensagem"
+                type="submit"
+              >
+                <i className="fa-solid fa-paper-plane" aria-hidden="true" />
+              </button>
+            </div>
           </div>
+
+          {recording ? (
+            <div className="chat-panel__recording-status" role="status" aria-live="polite">
+              <span className="chat-panel__recording-dot" aria-hidden="true" />
+              Gravando áudio {formatRecordingTime(recordingSeconds)} — toque em parar para enviar.
+            </div>
+          ) : null}
+
+          {sendingAudio ? (
+            <div className="chat-panel__sending-audio" role="status" aria-live="polite">
+              Enviando áudio...
+            </div>
+          ) : null}
 
           {sendError ? <p role="alert">{sendError}</p> : null}
         </form>
