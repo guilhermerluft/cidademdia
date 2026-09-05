@@ -9,7 +9,10 @@ function syncRequiredControls(form: HTMLFormElement) {
   form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('[required]')
     .forEach((control) => {
       const invalid = showValidation && !control.checkValidity();
+      const field = control.closest<HTMLElement>('label');
+
       control.classList.toggle(INVALID_CONTROL_CLASS, invalid);
+      field?.classList.toggle(INVALID_FIELD_CLASS, invalid);
 
       if (invalid) {
         control.setAttribute('aria-invalid', 'true');
