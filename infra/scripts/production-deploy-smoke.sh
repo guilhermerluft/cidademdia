@@ -16,7 +16,7 @@ if [ -n "$RESOLVE_IP" ]; then
   echo "production_smoke_origin=$RESOLVE_IP"
 fi
 
-for path in / /planos /ocorrencias /representantes /health/; do
+for path in / /planos /ocorrencias /representantes /health/live; do
   code="$(curl "${CURL_ARGS[@]}" "$BASE$path")"
   test "$code" = "200" || fail "$path != 200 ($code)"
   echo "$path=$code"
