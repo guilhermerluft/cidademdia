@@ -14,19 +14,20 @@ for file in "$PLANS" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
-grep -q "title: 'Converse com o cidadão'" "$PLANS" || fail "benefício de conversa com cidadão ausente"
-grep -q "icon: 'fa-comments'" "$PLANS" || fail "benefício de conversa não usa ícone da biblioteca"
-grep -q "Mantenha contato direto pelo chat durante o acompanhamento da ocorrência." "$PLANS" || fail "descrição do chat ausente"
+grep -q "title: 'Acesso às ocorrências e conversa com o cidadão'" "$PLANS" || fail "benefício consolidado de ocorrências/chat ausente"
+grep -q "mantendo contato direto com o cidadão pelo chat." "$PLANS" || fail "descrição consolidada de ocorrências/chat ausente"
+! grep -q "title: 'Converse com o cidadão'" "$PLANS" || fail "benefício de conversa continua separado"
 grep -q "com a possibilidade de adquirir pacotes de postagens extras sempre que necessário." "$PLANS" || fail "postagens extras não estão destacadas"
 
-BENEFIT_TITLES="$(grep -c "    title: '" "$PLANS")"
-test "$BENEFIT_TITLES" -ge 5 || fail "quantidade de benefícios inferior a cinco"
-grep -q 'grid-template-columns: repeat(5' "$CSS" || fail "cinco benefícios não permanecem inline"
-! grep -q 'grid-template-columns: repeat(2' "$CSS" || fail "benefícios ainda quebram em duas colunas"
-! grep -q 'grid-template-columns: 1fr' "$CSS" || fail "benefícios ainda empilham em uma coluna"
-grep -q 'overflow-x: auto' "$CSS" || fail "faixa inline não possui fallback horizontal responsivo"
-grep -A12 '^\.plans-page__benefits article {' "$CSS" | grep -q 'flex-direction: column' || fail "benefícios não usam ícone acima do título"
-grep -q 'white-space: nowrap' "$CSS" || fail "títulos/linhas críticas não estão protegidos contra quebra"
+BENEFIT_TITLES="$(awk '/^const BENEFITS = \[/,/^\] as const;/' "$PLANS" | grep -c "    title: '")"
+test "$BENEFIT_TITLES" = "4" || fail "esperados exatamente quatro benefícios consolidados; encontrado $BENEFIT_TITLES"
+! grep -q 'plans-page__benefit-icon' "$PLANS" || fail "ícones ainda estão renderizados na faixa de benefícios"
+grep -q 'grid-template-columns: repeat(4, minmax(0, 1fr))' "$CSS" || fail "quatro benefícios não permanecem inline no desktop"
+! grep -q 'overflow-x: auto' "$CSS" || fail "faixa de benefícios ainda usa rolagem horizontal"
+grep -A10 '^\.plans-page__benefits article {' "$CSS" | grep -q 'align-items: center' || fail "articles dos benefícios não estão centralizados horizontalmente"
+grep -A10 '^\.plans-page__benefits article {' "$CSS" | grep -q 'justify-content: center' || fail "articles dos benefícios não estão centralizados verticalmente"
+grep -A10 '^\.plans-page__benefits article {' "$CSS" | grep -q 'text-align: center' || fail "texto dos benefícios não está centralizado"
+grep -A8 '^@media (max-width: 1180px)' "$CSS" | grep -q 'grid-template-columns: 1fr' || fail "benefícios não empilham em telas menores"
 
 grep -q "title: 'Master Individual'" "$PLANS" || fail "plano Individual não foi renomeado para Master Individual"
 ! grep -q "title: 'Individual'" "$PLANS" || fail "nome antigo Individual ainda está presente"
@@ -44,11 +45,12 @@ if grep -qi 'POSTAGEMENS' "$PLANS" "$CSS"; then
 fi
 
 grep -q 'Os valores e condições de pagamento abaixo são promocionais' "$PLANS" || fail "aviso de valores promocionais ausente"
-grep -q 'plans-page__benefit-icon--purple' "$CSS" || fail "estilo do card de conversa ausente"
 
-echo "plans_five_benefits_inline=OK"
-echo "plans_benefit_icons_above_titles=OK"
-echo "plans_citizen_chat_benefit=OK"
+echo "plans_four_benefits_inline_desktop=OK"
+echo "plans_benefits_stacked_responsive=OK"
+echo "plans_benefits_centered=OK"
+echo "plans_benefit_icons_removed=OK"
+echo "plans_occurrence_chat_consolidated=OK"
 echo "plans_extra_posts_copy=OK"
 echo "plans_master_individual_name=OK"
 echo "plans_promotion_icon_text_inline=OK"
