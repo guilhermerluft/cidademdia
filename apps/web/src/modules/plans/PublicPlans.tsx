@@ -40,34 +40,20 @@ const PAYMENT_DEFINITIONS: PaymentDefinition[] = [
 
 const BENEFITS = [
   {
-    icon: 'fa-clipboard-list',
-    title: 'Acesso às ocorrências',
-    description: 'Visualize e acompanhe as demandas compartilhadas com sua gestão.',
-    tone: 'blue',
+    title: 'Acesso às ocorrências e conversa com o cidadão',
+    description: 'Visualize e acompanhe as demandas compartilhadas com sua gestão, mantendo contato direto com o cidadão pelo chat.',
   },
   {
-    icon: 'fa-users-gear',
     title: 'Gerencie subcontas',
     description: 'Organize equipes e distribua acessos conforme a capacidade do plano.',
-    tone: 'green',
   },
   {
-    icon: 'fa-bell',
     title: 'Receba notificações',
     description: 'Acompanhe movimentações importantes sem perder atualizações.',
-    tone: 'orange',
   },
   {
-    icon: 'fa-comments',
-    title: 'Converse com o cidadão',
-    description: 'Mantenha contato direto pelo chat durante o acompanhamento da ocorrência.',
-    tone: 'purple',
-  },
-  {
-    icon: 'fa-photo-film',
     title: 'Postagens mensais',
     description: 'Publique conteúdos institucionais de acordo com a franquia contratada, com a possibilidade de adquirir pacotes de postagens extras sempre que necessário.',
-    tone: 'yellow',
   },
 ] as const;
 
@@ -334,9 +320,6 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
       <section className="plans-page__benefits" aria-label="Benefícios gerais dos planos">
         {BENEFITS.map((benefit) => (
           <article key={benefit.title}>
-            <span className={`plans-page__benefit-icon plans-page__benefit-icon--${benefit.tone}`} aria-hidden="true">
-              <i className={`fa-solid ${benefit.icon}`} />
-            </span>
             <div>
               <h2>{benefit.title}</h2>
               <p>{benefit.description}</p>
