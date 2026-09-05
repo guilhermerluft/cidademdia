@@ -25,6 +25,8 @@ grep -q 'grid-template-columns: repeat(5' "$CSS" || fail "cinco benefícios não
 ! grep -q 'grid-template-columns: repeat(2' "$CSS" || fail "benefícios ainda quebram em duas colunas"
 ! grep -q 'grid-template-columns: 1fr' "$CSS" || fail "benefícios ainda empilham em uma coluna"
 grep -q 'overflow-x: auto' "$CSS" || fail "faixa inline não possui fallback horizontal responsivo"
+grep -A12 '^\.plans-page__benefits article {' "$CSS" | grep -q 'flex-direction: column' || fail "benefícios não usam ícone acima do título"
+grep -q 'white-space: nowrap' "$CSS" || fail "títulos/linhas críticas não estão protegidos contra quebra"
 
 grep -q "title: 'Master Individual'" "$PLANS" || fail "plano Individual não foi renomeado para Master Individual"
 ! grep -q "title: 'Individual'" "$PLANS" || fail "nome antigo Individual ainda está presente"
@@ -33,11 +35,10 @@ grep -q 'plans-page__plan-promotion' "$PLANS" || fail "selo promocional não est
 grep -q '<span>Oferta promocional</span>' "$PLANS" || fail "selo promocional não usa texto reduzido"
 grep -q 'fa-solid fa-tags' "$PLANS" || fail "selo promocional não usa ícone Font Awesome"
 ! grep -q 'plans-page__promotion-breadcrumb' "$PLANS" || fail "breadcrumb promocional global antigo ainda existe"
-grep -q 'plans-page__plan-promotion' "$CSS" || fail "selo promocional sem estilo dedicado"
-grep -q 'flex-direction: column' "$CSS" || fail "selo promocional não centraliza ícone acima do texto"
-grep -q 'text-align: center' "$CSS" || fail "conteúdo promocional não está centralizado"
+grep -A14 '^\.plans-page__plan-promotion {' "$CSS" | grep -q 'flex-direction: row' || fail "ícone e Oferta promocional não estão inline"
 
-grep -q 'QTD POSTAGENS/MÊS' "$PLANS" || fail "rótulo correto QTD POSTAGENS/MÊS ausente"
+grep -q '<strong>{publicationLimit} POSTAGENS/MÊS</strong>' "$PLANS" || fail "limite mensal não usa número no lugar de QTD"
+! grep -q 'QTD POSTAGENS/MÊS' "$PLANS" || fail "rótulo QTD ainda está presente"
 if grep -qi 'POSTAGEMENS' "$PLANS" "$CSS"; then
   fail "typo POSTAGEMENS ainda está presente"
 fi
@@ -46,10 +47,12 @@ grep -q 'Os valores e condições de pagamento abaixo são promocionais' "$PLANS
 grep -q 'plans-page__benefit-icon--purple' "$CSS" || fail "estilo do card de conversa ausente"
 
 echo "plans_five_benefits_inline=OK"
+echo "plans_benefit_icons_above_titles=OK"
 echo "plans_citizen_chat_benefit=OK"
 echo "plans_extra_posts_copy=OK"
 echo "plans_master_individual_name=OK"
-echo "plans_promotion_inside_cards=OK"
+echo "plans_promotion_icon_text_inline=OK"
+echo "plans_numeric_post_limits=OK"
 echo "plans_post_count_spelling=OK"
 echo "plans_promotional_values_notice=OK"
 echo "PUBLIC PLANS COMMERCIAL GUARD: OK"
