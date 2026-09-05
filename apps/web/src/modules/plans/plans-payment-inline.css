@@ -1,0 +1,29 @@
+.plans-page__payment:not(.plans-page__payment--gold) {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 10px;
+}
+
+.plans-page__payment:not(.plans-page__payment--gold) .plans-page__payment-heading {
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+.plans-page__payment:not(.plans-page__payment--gold) .plans-page__payment-price {
+  min-height: 0;
+  flex-wrap: nowrap;
+  justify-content: flex-end;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.plans-page__payment:not(.plans-page__payment--gold) .plans-page__payment-price del {
+  width: auto;
+}
+
+.plans-page__payment:not(.plans-page__payment--gold) .plans-page__choose-button,
+.plans-page__payment:not(.plans-page__payment--gold) .plans-page__payment-unavailable {
+  grid-column: 1 / -1;
+}

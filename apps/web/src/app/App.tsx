@@ -7,15 +7,13 @@ import * as authService from '../modules/auth/authService';
 import { PublicHome } from '../modules/home/PublicHome';
 import {
   acceptSubaccountInvitation,
-  listSubaccountContexts,
   previewSubaccountInvitation,
 } from '../modules/subaccounts/subaccountService';
 import {
   SUBACCOUNT_PERMISSION_OPTIONS,
   type SubaccountInvitationPreview,
 } from '../modules/subaccounts/types';
-import { DashboardHome } from './dashboard/DashboardHome';
-import { DashboardShell } from './layout/DashboardShell';
+import { useNavigationAccess } from './layout/AppNavigation';
 
 type AuthMode = 'home' | 'login' | 'register' | 'forgot' | 'reset' | 'invite';
 
@@ -23,15 +21,22 @@ function readSensitiveTokens() {
   const url = new URL(window.location.href);
   const resetToken = url.searchParams.get('token') ?? '';
   const inviteToken = url.searchParams.get('invite') ?? '';
+  const requestedAuth = url.searchParams.get('auth');
+  const authMode: AuthMode | null = requestedAuth === 'register'
+    ? 'register'
+    : requestedAuth === 'login'
+      ? 'login'
+      : null;
 
-  if (resetToken || inviteToken) {
+  if (resetToken || inviteToken || authMode) {
     url.searchParams.delete('token');
     url.searchParams.delete('invite');
+    url.searchParams.delete('auth');
     const nextUrl = `${url.pathname}${url.search}${url.hash}`;
     window.history.replaceState({}, document.title, nextUrl || '/');
   }
 
-  return { resetToken, inviteToken };
+  return { resetToken, inviteToken, authMode };
 }
 
 function invitationPermissionLabel(key: string) {
@@ -75,15 +80,19 @@ function AuthBrandPanel() {
 
 export function App() {
   const { status, user, login, register, logout } = useAuth();
+  const navigationAccess = useNavigationAccess(user);
   const [initialTokens] = useState(readSensitiveTokens);
   const [mode, setMode] = useState<AuthMode>(
-    initialTokens.inviteToken ? 'invite' : initialTokens.resetToken ? 'reset' : 'home',
+    initialTokens.inviteToken
+      ? 'invite'
+      : initialTokens.resetToken
+        ? 'reset'
+        : initialTokens.authMode ?? 'home',
   );
   const [resetToken] = useState(initialTokens.resetToken);
   const [inviteToken] = useState(initialTokens.inviteToken);
   const [invitePreview, setInvitePreview] = useState<SubaccountInvitationPreview | null>(null);
   const [inviteLoading, setInviteLoading] = useState(Boolean(initialTokens.inviteToken));
-  const [subaccountAccessRevoked, setSubaccountAccessRevoked] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -118,50 +127,14 @@ export function App() {
     };
   }, [inviteToken, mode]);
 
-  useEffect(() => {
-    const shouldWatchSubaccountAccess =
-      status === 'authenticated' &&
-      user?.roles.includes('SUBACCOUNT') &&
-      !user.roles.includes('MASTER') &&
-      !user.roles.includes('ADMIN') &&
-      mode !== 'invite';
-
-    if (!shouldWatchSubaccountAccess) {
-      setSubaccountAccessRevoked(false);
-      return;
-    }
-
-    let active = true;
-
-    async function verifyAccess() {
-      try {
-        const contexts = await listSubaccountContexts();
-        if (active) setSubaccountAccessRevoked(contexts.length === 0);
-      } catch {
-        // A falha de rede não deve derrubar a sessão nem presumir revogação.
-      }
-    }
-
-    const handleFocus = () => void verifyAccess();
-    void verifyAccess();
-    const intervalId = window.setInterval(() => void verifyAccess(), 15000);
-    window.addEventListener('focus', handleFocus);
-
-    return () => {
-      active = false;
-      window.clearInterval(intervalId);
-      window.removeEventListener('focus', handleFocus);
-    };
-  }, [mode, status, user]);
-
-  const dashboardUser = useMemo(() => {
-    if (!user || !subaccountAccessRevoked) return user;
+  const effectiveUser = useMemo(() => {
+    if (!user || navigationAccess.subaccountContextActive !== false) return user;
 
     return {
       ...user,
       roles: user.roles.filter((role) => role !== 'SUBACCOUNT'),
     };
-  }, [subaccountAccessRevoked, user]);
+  }, [navigationAccess.subaccountContextActive, user]);
 
   if (status === 'loading') {
     return (
@@ -176,11 +149,15 @@ export function App() {
     );
   }
 
-  if (status === 'authenticated' && dashboardUser && mode !== 'invite') {
+  if (status === 'authenticated' && effectiveUser && mode !== 'invite') {
     return (
-      <DashboardShell user={dashboardUser} onLogout={logout}>
-        <DashboardHome user={dashboardUser} />
-      </DashboardShell>
+      <PublicHome
+        user={effectiveUser}
+        permissions={navigationAccess.permissions}
+        onLogout={logout}
+        onLogin={() => undefined}
+        onRegister={() => undefined}
+      />
     );
   }
 

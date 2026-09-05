@@ -1,0 +1,105 @@
+.plans-page__benefits {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
+}
+
+.plans-page__benefits article {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.plans-page__benefits article > div {
+  min-width: 0;
+  width: 100%;
+  text-align: center;
+}
+
+.plans-page__benefits h2 {
+  margin-inline: auto;
+  text-align: center;
+}
+
+.plans-page__benefits p {
+  max-width: 280px;
+  margin-inline: auto;
+  text-align: center;
+}
+
+.plans-page__plan-promotion {
+  min-height: 34px;
+  box-sizing: border-box;
+  align-self: center;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  padding: 7px 12px;
+  border: 1px solid rgba(208, 183, 44, .3);
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 249, 216, .94), rgba(255, 255, 255, .98));
+  color: #765f00;
+  text-align: center;
+  box-shadow: 0 8px 22px rgba(118, 95, 0, .06);
+}
+
+.plans-page__plan-promotion i {
+  color: #c19e13;
+  font-size: .86rem;
+}
+
+.plans-page__plan-promotion span {
+  font-size: .68rem;
+  font-weight: 900;
+  line-height: 1.1;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.plans-page__posting-badge {
+  width: 100%;
+  min-height: 42px;
+  box-sizing: border-box;
+  align-self: stretch;
+  justify-content: center;
+  padding: 7px 10px;
+  border-radius: 12px;
+  text-align: center;
+}
+
+.plans-page__posting-badge strong {
+  display: block;
+  color: #173d62;
+  font-size: .76rem;
+  font-weight: 950;
+  line-height: 1.15;
+  letter-spacing: .035em;
+  white-space: nowrap;
+}
+
+@media (max-width: 1180px) {
+  .plans-page__benefits {
+    grid-template-columns: 1fr;
+  }
+
+  .plans-page__benefits article {
+    min-height: 92px;
+    margin-top: 0;
+    padding: 16px 18px;
+    border-left: 0 !important;
+    border-top: 0;
+  }
+
+  .plans-page__benefits article + article,
+  .plans-page__benefits article:nth-child(n+2) {
+    border-left: 0;
+    border-top: 1px solid #e5ebf0;
+  }
+}

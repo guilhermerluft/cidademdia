@@ -1,24 +1,32 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { isAxiosError } from 'axios';
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
+import { geocodeGoogleAddress } from '../../services/googleMaps';
 import {
   createOccurrence,
+  listEligibleMasters,
   listMyOccurrences,
   listOccurrenceCategories,
   prepareOccurrenceMedia,
 } from './occurrenceService';
 import { OccurrenceGeoFilter } from './OccurrenceGeoFilter';
 import { OccurrenceLocationPicker } from './OccurrenceLocationPicker';
-import type { OccurrenceCategory, OccurrencePage } from './types';
+import { OccurrenceMediaGallery } from './OccurrenceMediaGallery';
+import type { EligibleMaster, OccurrenceCategory, OccurrencePage } from './types';
 
 const ACCEPTED_MEDIA_TYPES = 'image/jpeg,image/png,image/webp,video/mp4,video/webm';
 
 interface OccurrenceFormState {
   categoryId: string;
+  masterUserId: string;
   title: string;
   description: string;
   addressText: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
   postalCode: string;
   stateCode: string;
   latitude: string;
@@ -29,9 +37,14 @@ interface OccurrenceFormState {
 
 const INITIAL_FORM: OccurrenceFormState = {
   categoryId: '',
+  masterUserId: '',
   title: '',
   description: '',
   addressText: '',
+  street: '',
+  number: '',
+  neighborhood: '',
+  city: '',
   postalCode: '',
   stateCode: '',
   latitude: '',
@@ -103,9 +116,14 @@ function getErrorMessage(error: unknown) {
       case 'category_inactive':
       case 'category_not_found':
         return 'A categoria selecionada não está mais disponível.';
+      case 'master_not_eligible':
+        return 'A conta Master selecionada não está disponível para receber esta ocorrência.';
+      case 'photo_required':
+        return 'Adicione pelo menos uma foto antes de publicar a ocorrência.';
       case 'media_not_ready_or_owned':
       case 'media_persistence_conflict':
-        return 'Não foi possível vincular as mídias à ocorrência. Tente novamente.';
+      case 'target_persistence_conflict':
+        return data.detail ?? 'Não foi possível concluir a criação da ocorrência com as mídias e a conta Master selecionada.';
       case 'invalid_media_selection':
         return data.detail ?? 'A seleção de mídias é inválida.';
       case 'invalid_geo_filter':
@@ -127,8 +145,41 @@ function getErrorMessage(error: unknown) {
   return 'Não foi possível concluir a operação. Tente novamente.';
 }
 
+function buildAddressQuery(form: OccurrenceFormState) {
+  const cityState = [form.city.trim(), form.stateCode.trim().toUpperCase()]
+    .filter(Boolean)
+    .join(' - ');
+
+  return [
+    `${form.street.trim()}, ${form.number.trim()}`,
+    form.neighborhood.trim(),
+    cityState,
+    form.postalCode.trim(),
+    'Brasil',
+  ].filter(Boolean).join(', ');
+}
+
+function validateOccurrenceForm(form: OccurrenceFormState, files: File[]) {
+  const errors: string[] = [];
+
+  if (!form.categoryId) errors.push('Selecione a categoria.');
+  if (!form.masterUserId) errors.push('Selecione a conta Master que receberá a solicitação.');
+  if (!form.title.trim()) errors.push('Informe o título da ocorrência.');
+  if (!form.street.trim()) errors.push('Informe a rua.');
+  if (!form.number.trim()) errors.push('Informe o número.');
+  if (!form.neighborhood.trim()) errors.push('Informe o bairro.');
+  if (!form.city.trim()) errors.push('Informe a cidade.');
+  if (!form.externalProtocolNumber.trim()) errors.push('Informe o número do protocolo.');
+  if (!files.some((file) => file.type.startsWith('image/'))) {
+    errors.push('Adicione pelo menos uma foto da ocorrência.');
+  }
+
+  return errors;
+}
+
 export function OccurrenceCenter() {
   const [categories, setCategories] = useState<OccurrenceCategory[]>([]);
+  const [masters, setMasters] = useState<EligibleMaster[]>([]);
   const [occurrences, setOccurrences] = useState<OccurrencePage | null>(null);
   const [form, setForm] = useState<OccurrenceFormState>(INITIAL_FORM);
   const [files, setFiles] = useState<File[]>([]);
@@ -138,23 +189,24 @@ export function OccurrenceCenter() {
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-
-  const selectedCategory = useMemo(
-    () => categories.find((category) => category.id === form.categoryId) ?? null,
-    [categories, form.categoryId],
-  );
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
   async function loadOccurrenceData() {
-    const [nextCategories, nextOccurrences] = await Promise.all([
+    const [nextCategories, nextMasters, nextOccurrences] = await Promise.all([
       listOccurrenceCategories(),
+      listEligibleMasters(),
       listMyOccurrences(1, 10),
     ]);
 
     setCategories(nextCategories);
+    setMasters(nextMasters);
     setOccurrences(nextOccurrences);
     setForm((current) => ({
       ...current,
       categoryId: current.categoryId || nextCategories[0]?.id || '',
+      masterUserId: nextMasters.some((master) => master.id === current.masterUserId)
+        ? current.masterUserId
+        : '',
     }));
   }
 
@@ -182,25 +234,39 @@ export function OccurrenceCenter() {
 
   function updateField<K extends keyof OccurrenceFormState>(field: K, value: OccurrenceFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
+    setValidationErrors([]);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitting(true);
     setError(null);
     setMessage(null);
     setProgress(null);
 
+    const requiredErrors = validateOccurrenceForm(form, files);
+    if (requiredErrors.length > 0) {
+      setValidationErrors(requiredErrors);
+      return;
+    }
+
+    setValidationErrors([]);
+    setSubmitting(true);
+
     try {
-      const latitude = Number(form.latitude.replace(',', '.'));
-      const longitude = Number(form.longitude.replace(',', '.'));
+      let latitude = Number(form.latitude.replace(',', '.'));
+      let longitude = Number(form.longitude.replace(',', '.'));
 
-      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-        throw new Error('Informe uma latitude válida entre -90 e 90.');
-      }
-
-      if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-        throw new Error('Informe uma longitude válida entre -180 e 180.');
+      if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90
+        || !Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
+        setProgress('Localizando o endereço no mapa...');
+        const geocoded = await geocodeGoogleAddress(buildAddressQuery(form));
+        latitude = geocoded.latitude;
+        longitude = geocoded.longitude;
+        setForm((current) => ({
+          ...current,
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6),
+        }));
       }
 
       const mediaIds: string[] = [];
@@ -211,23 +277,27 @@ export function OccurrenceCenter() {
         mediaIds.push(media.id);
       }
 
-      setProgress('Registrando ocorrência...');
+      setProgress('Registrando ocorrência e encaminhando para a conta Master...');
       const occurrence = await createOccurrence({
         categoryId: form.categoryId,
+        masterUserId: form.masterUserId,
         title: form.title.trim(),
         description: form.description.trim() || null,
-        addressText: form.addressText.trim(),
+        street: form.street.trim(),
+        number: form.number.trim(),
+        neighborhood: form.neighborhood.trim(),
+        city: form.city.trim(),
         latitude,
         longitude,
         postalCode: form.postalCode.trim() || null,
         cityId: null,
         stateCode: form.stateCode.trim().toUpperCase() || null,
-        externalProtocolNumber: form.externalProtocolNumber.trim() || null,
+        externalProtocolNumber: form.externalProtocolNumber.trim(),
         externalProtocolAgency: form.externalProtocolAgency.trim() || null,
         mediaIds,
       });
 
-      setMessage(`Ocorrência ${occurrence.publicCode} registrada com sucesso.`);
+      setMessage(`Ocorrência ${occurrence.publicCode} registrada e encaminhada para aceite da conta Master.`);
       setForm({
         ...INITIAL_FORM,
         categoryId: categories[0]?.id || '',
@@ -247,7 +317,7 @@ export function OccurrenceCenter() {
     <section className="dashboard-section occurrence-center" id="dashboard-occurrences" aria-labelledby="occurrence-center-title">
       <SectionHeading
         title="Minhas ocorrências"
-        subtitle="Registre uma nova demanda e acompanhe as ocorrências publicadas pela sua conta."
+        subtitle="Registre uma nova demanda, encaminhe para uma conta Master e acompanhe o andamento."
       />
 
       <div className="occurrence-center__grid">
@@ -257,14 +327,24 @@ export function OccurrenceCenter() {
               <div>
                 <span className="occurrence-eyebrow">Nova ocorrência</span>
                 <h3 id="occurrence-center-title">Conte o que está acontecendo</h3>
-                <p>O conteúdo publicado fica preservado. Novas informações serão adicionadas depois como complementos.</p>
+                <p>Escolha a conta Master responsável pelo aceite. Endereço completo, protocolo e ao menos uma foto são obrigatórios.</p>
               </div>
-              {selectedCategory ? <Badge variant="primary">{selectedCategory.name}</Badge> : null}
             </div>
 
-            <form className="occurrence-form" onSubmit={handleSubmit}>
-              <label>
-                Categoria
+            <form className="occurrence-form" onSubmit={handleSubmit} noValidate>
+              <label className="occurrence-form__protocol-field occurrence-form__full">
+                Número do protocolo <span className="occurrence-required-marker" aria-hidden="true">*</span>
+                <input
+                  required
+                  value={form.externalProtocolNumber}
+                  onChange={(event) => updateField('externalProtocolNumber', event.target.value)}
+                  placeholder="Ex.: 2026-000123"
+                />
+                <small>Esse protocolo identifica a solicitação junto ao órgão ou serviço relacionado.</small>
+              </label>
+
+              <label className="occurrence-form__paired-field">
+                Categoria <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
                   required
                   value={form.categoryId}
@@ -278,8 +358,24 @@ export function OccurrenceCenter() {
                 </select>
               </label>
 
-              <label>
-                Título
+              <label className="occurrence-form__paired-field">
+                Conta Master <span className="occurrence-required-marker" aria-hidden="true">*</span>
+                <select
+                  required
+                  value={form.masterUserId}
+                  onChange={(event) => updateField('masterUserId', event.target.value)}
+                  disabled={loading || masters.length === 0}
+                >
+                  <option value="">Selecione quem receberá a ocorrência</option>
+                  {masters.map((master) => (
+                    <option key={master.id} value={master.id}>{master.displayName}</option>
+                  ))}
+                </select>
+                <small>A ocorrência ficará aguardando o aceite da conta Master selecionada.</small>
+              </label>
+
+              <label className="occurrence-form__title-field occurrence-form__full">
+                Título <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
                   required
                   value={form.title}
@@ -301,6 +397,10 @@ export function OccurrenceCenter() {
               <OccurrenceLocationPicker
                 value={{
                   addressText: form.addressText,
+                  street: form.street,
+                  number: form.number,
+                  neighborhood: form.neighborhood,
+                  city: form.city,
                   postalCode: form.postalCode,
                   stateCode: form.stateCode,
                   latitude: form.latitude,
@@ -311,35 +411,29 @@ export function OccurrenceCenter() {
                 onError={setError}
               />
 
-              <label>
-                Protocolo externo
-                <input
-                  value={form.externalProtocolNumber}
-                  onChange={(event) => updateField('externalProtocolNumber', event.target.value)}
-                  placeholder="Opcional"
-                />
-              </label>
-
-              <label>
+              <label className="occurrence-form__full">
                 Órgão do protocolo
                 <input
                   value={form.externalProtocolAgency}
                   onChange={(event) => updateField('externalProtocolAgency', event.target.value)}
-                  placeholder="Opcional"
+                  placeholder="Opcional — ex.: Prefeitura / Secretaria de Obras"
                 />
               </label>
 
               <label className="occurrence-media-field occurrence-form__full">
-                Fotos ou vídeos
+                Fotos ou vídeos <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
                   key={fileInputKey}
                   type="file"
                   multiple
                   accept={ACCEPTED_MEDIA_TYPES}
-                  onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+                  onChange={(event) => {
+                    setFiles(Array.from(event.target.files ?? []));
+                    setValidationErrors([]);
+                  }}
                   disabled={submitting}
                 />
-                <small>Formatos aceitos: JPEG, PNG, WebP, MP4 e WebM. Os arquivos são enviados diretamente ao armazenamento privado.</small>
+                <small>Ao menos uma foto é obrigatória. Também podem ser enviados vídeos em MP4 ou WebM.</small>
               </label>
 
               {files.length > 0 ? (
@@ -353,13 +447,25 @@ export function OccurrenceCenter() {
                 </ul>
               ) : null}
 
+              {validationErrors.length > 0 ? (
+                <div className="occurrence-validation-summary" role="alert">
+                  <strong>Preencha os campos obrigatórios antes de publicar:</strong>
+                  <ul>
+                    {validationErrors.map((validationError) => <li key={validationError}>{validationError}</li>)}
+                  </ul>
+                </div>
+              ) : null}
+
+              {masters.length === 0 && !loading ? (
+                <p className="occurrence-error" role="alert">Nenhuma conta Master está disponível para receber ocorrências neste momento.</p>
+              ) : null}
               {progress ? <p className="occurrence-progress" role="status">{progress}</p> : null}
               {message ? <p className="occurrence-success" role="status">{message}</p> : null}
               {error ? <p className="occurrence-error" role="alert">{error}</p> : null}
 
               <div className="occurrence-form__actions occurrence-form__full">
-                <Button type="submit" size="lg" disabled={submitting || loading || !form.categoryId}>
-                  {submitting ? 'Publicando...' : 'Publicar ocorrência'}
+                <Button type="submit" size="lg" disabled={submitting || loading || !form.categoryId || masters.length === 0}>
+                  {submitting ? 'Publicando...' : 'Publicar e encaminhar'}
                 </Button>
               </div>
             </form>
@@ -416,6 +522,10 @@ export function OccurrenceCenter() {
                     <h4>{occurrence.title}</h4>
                     <p>{occurrence.categoryName}</p>
                     <small>{occurrence.addressText}</small>
+                    <OccurrenceMediaGallery
+                      occurrenceId={occurrence.id}
+                      occurrenceCode={occurrence.publicCode}
+                    />
                     <time dateTime={occurrence.createdAt}>Publicada em {formatDate(occurrence.createdAt)}</time>
                   </article>
                 ))}

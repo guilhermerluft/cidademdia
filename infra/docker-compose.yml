@@ -72,6 +72,7 @@ services:
       - "127.0.0.1:8080:80"
     volumes:
       - ./nginx/cidademdia.conf:/etc/nginx/conf.d/default.conf:ro
+      - ${CIDADEMDIA_RUNTIME_MEDIA_DIR:-/opt/cidademdia-runtime-media}:/srv/cidademdia-media:ro
     networks: [edge]
 
 networks:

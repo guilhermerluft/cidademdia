@@ -15,6 +15,8 @@ public static class OccurrenceGeoEndpoints
             decimal? longitude,
             decimal? radiusKm,
             int? limit,
+            int? page,
+            int? pageSize,
             CancellationToken cancellationToken) =>
         {
             var result = await geoSearchService.SearchPublicAsync(
@@ -23,11 +25,12 @@ public static class OccurrenceGeoEndpoints
                     latitude,
                     longitude,
                     radiusKm,
-                    limit ?? 6),
+                    page ?? 1,
+                    pageSize ?? limit ?? 6),
                 cancellationToken);
 
-            if (result.Succeeded)
-                return Results.Ok(new { items = result.Items });
+            if (result.Succeeded && result.Page is not null)
+                return Results.Ok(result.Page);
 
             return Results.Problem(
                 statusCode: StatusCodes.Status400BadRequest,
@@ -38,6 +41,18 @@ public static class OccurrenceGeoEndpoints
                     ["code"] = result.ErrorCode ?? "invalid_public_occurrence_query",
                     ["traceId"] = httpContext.TraceIdentifier
                 });
+        });
+
+        api.MapGet("/public/occurrences/{occurrenceId:guid}", async (
+            Guid occurrenceId,
+            IOccurrenceGeoSearchService geoSearchService,
+            CancellationToken cancellationToken) =>
+        {
+            var occurrence = await geoSearchService.GetPublicDetailsAsync(
+                occurrenceId,
+                cancellationToken);
+
+            return occurrence is null ? Results.NotFound() : Results.Ok(occurrence);
         });
 
         api.MapGet("/occurrences/geo-search", async (

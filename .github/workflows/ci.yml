@@ -62,6 +62,21 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
+      - name: Architecture guard
+        run: bash ../../infra/scripts/frontend-architecture-test.sh
+
+      - name: Occurrence media presentation guard
+        run: bash ../../infra/scripts/occurrence-media-presentation-guard.sh
+
+      - name: Public occurrence details guard
+        run: bash ../../infra/scripts/public-occurrence-details-guard.sh
+
+      - name: Public home commercial guard
+        run: bash ../../infra/scripts/public-home-commercial-guard.sh
+
+      - name: Public plans commercial guard
+        run: bash ../../infra/scripts/public-plans-commercial-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 

@@ -1,8 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button } from '../../components/ui';
+import { geocodeGoogleAddress, loadGoogleMaps, readGoogleCoordinate } from '../../services/googleMaps';
 
 interface LocationValue {
   addressText: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
   postalCode: string;
   stateCode: string;
   latitude: string;
@@ -16,91 +21,7 @@ interface OccurrenceLocationPickerProps {
   onError: (message: string) => void;
 }
 
-type GoogleApi = any;
-
-declare global {
-  interface Window {
-    google?: GoogleApi;
-    __cidademdiaGoogleMapsPromise?: Promise<GoogleApi>;
-  }
-}
-
 const DEFAULT_CENTER = { lat: -30.0346, lng: -51.2177 };
-
-function installGoogleMapsBootstrap(apiKey: string) {
-  const win = window as any;
-  const google = win.google ?? (win.google = {});
-  const maps = google.maps ?? (google.maps = {});
-
-  if (typeof maps.importLibrary === 'function') return;
-
-  let loadPromise: Promise<void> | undefined;
-  const requestedLibraries = new Set<string>();
-  const callbackName = '__cidademdiaGoogleMapsInit';
-
-  const load = () => {
-    if (loadPromise) return loadPromise;
-
-    loadPromise = new Promise<void>((resolve, reject) => {
-      const params = new URLSearchParams();
-      params.set('libraries', [...requestedLibraries].join(','));
-      params.set('key', apiKey);
-      params.set('v', 'weekly');
-      params.set('loading', 'async');
-      params.set('language', 'pt-BR');
-      params.set('region', 'BR');
-      params.set('callback', `google.maps.${callbackName}`);
-
-      maps[callbackName] = resolve;
-
-      const script = document.createElement('script');
-      script.dataset.cidademdiaGoogleMaps = 'true';
-      script.async = true;
-      script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
-      script.onerror = () => {
-        loadPromise = undefined;
-        reject(new Error('Falha ao carregar Google Maps.'));
-      };
-      script.nonce = document.querySelector<HTMLScriptElement>('script[nonce]')?.nonce ?? '';
-      document.head.appendChild(script);
-    });
-
-    return loadPromise;
-  };
-
-  maps.importLibrary = (libraryName: string, ...args: any[]) => {
-    requestedLibraries.add(libraryName);
-    return load().then(() => maps.importLibrary(libraryName, ...args));
-  };
-}
-
-function loadGoogleMaps() {
-  if (window.google?.maps?.importLibrary && window.google?.maps?.Map) {
-    return Promise.resolve(window.google);
-  }
-  if (window.__cidademdiaGoogleMapsPromise) return window.__cidademdiaGoogleMapsPromise;
-
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY?.trim();
-  if (!apiKey) {
-    return Promise.reject(new Error('Google Maps não está configurado para o navegador.'));
-  }
-
-  installGoogleMapsBootstrap(apiKey);
-
-  window.__cidademdiaGoogleMapsPromise = Promise.all([
-    window.google!.maps.importLibrary('maps'),
-    window.google!.maps.importLibrary('places'),
-    window.google!.maps.importLibrary('geocoding'),
-  ]).then(() => {
-    if (!window.google?.maps?.Map || !window.google?.maps?.Geocoder) {
-      throw new Error('Google Maps não inicializou corretamente.');
-    }
-
-    return window.google;
-  });
-
-  return window.__cidademdiaGoogleMapsPromise;
-}
 
 function getAddressComponent(components: any[] | undefined, type: string, shortName = false) {
   const component = components?.find((item) => item.types?.includes(type));
@@ -113,9 +34,18 @@ function getAddressComponent(components: any[] | undefined, type: string, shortN
   return component.longText ?? component.long_name ?? '';
 }
 
-function readCoordinate(location: any, coordinate: 'lat' | 'lng') {
-  const value = location?.[coordinate];
-  return typeof value === 'function' ? value.call(location) : Number(value);
+function buildAddressQuery(value: LocationValue) {
+  const cityState = [value.city.trim(), value.stateCode.trim().toUpperCase()]
+    .filter(Boolean)
+    .join(' - ');
+
+  return [
+    [value.street.trim(), value.number.trim()].filter(Boolean).join(', '),
+    value.neighborhood.trim(),
+    cityState,
+    value.postalCode.trim(),
+    'Brasil',
+  ].filter(Boolean).join(', ');
 }
 
 export function OccurrenceLocationPicker({
@@ -133,25 +63,37 @@ export function OccurrenceLocationPicker({
   const [mapsReady, setMapsReady] = useState(false);
   const [mapsError, setMapsError] = useState<string | null>(null);
   const [locating, setLocating] = useState(false);
+  const [searchingAddress, setSearchingAddress] = useState(false);
 
-  function applyLocationResult(result: any) {
+  function applyLocationResult(result: any, preserveMissingParts = false) {
     const location = result?.location ?? result?.geometry?.location;
     if (!location) return;
 
-    const latitude = readCoordinate(location, 'lat');
-    const longitude = readCoordinate(location, 'lng');
+    const latitude = readGoogleCoordinate(location, 'lat');
+    const longitude = readGoogleCoordinate(location, 'lng');
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
 
     const components = result.addressComponents ?? result.address_components;
-    const formattedAddress = result.formattedAddress ?? result.formatted_address ?? value.addressText;
+    const street = getAddressComponent(components, 'route');
+    const number = getAddressComponent(components, 'street_number');
+    const neighborhood = getAddressComponent(components, 'sublocality_level_1')
+      || getAddressComponent(components, 'neighborhood')
+      || getAddressComponent(components, 'sublocality');
+    const city = getAddressComponent(components, 'locality')
+      || getAddressComponent(components, 'administrative_area_level_2');
     const postalCode = getAddressComponent(components, 'postal_code');
     const stateCode = getAddressComponent(components, 'administrative_area_level_1', true);
+    const formattedAddress = result.formattedAddress ?? result.formatted_address ?? value.addressText;
 
+    if (!preserveMissingParts || street) onChange('street', street);
+    if (!preserveMissingParts || number) onChange('number', number);
+    if (!preserveMissingParts || neighborhood) onChange('neighborhood', neighborhood);
+    if (!preserveMissingParts || city) onChange('city', city);
+    if (!preserveMissingParts || postalCode) onChange('postalCode', postalCode);
+    if (!preserveMissingParts || stateCode) onChange('stateCode', stateCode.toUpperCase());
     onChange('addressText', formattedAddress);
     onChange('latitude', latitude.toFixed(6));
     onChange('longitude', longitude.toFixed(6));
-    if (postalCode) onChange('postalCode', postalCode);
-    if (stateCode) onChange('stateCode', stateCode.toUpperCase());
 
     if (autocompleteRef.current && typeof formattedAddress === 'string') {
       autocompleteRef.current.value = formattedAddress;
@@ -172,11 +114,18 @@ export function OccurrenceLocationPicker({
       });
 
       const result = response?.results?.[0];
-      if (result) applyLocationResult(result);
+      if (result) {
+        applyLocationResult(result);
+        return;
+      }
+
+      onChange('latitude', latitude.toFixed(6));
+      onChange('longitude', longitude.toFixed(6));
+      onError('O ponto foi atualizado, mas o endereço não pôde ser preenchido automaticamente. Complete os campos obrigatórios.');
     } catch {
       onChange('latitude', latitude.toFixed(6));
       onChange('longitude', longitude.toFixed(6));
-      onError('O ponto foi atualizado, mas o Google não conseguiu resolver o endereço. Você pode preencher o endereço manualmente.');
+      onError('O ponto foi atualizado, mas o Google não conseguiu resolver o endereço. Complete os campos obrigatórios.');
     }
   }
 
@@ -219,9 +168,9 @@ export function OccurrenceLocationPicker({
 
         const marker = new google.maps.Marker({
           map,
-          position: center,
           draggable: true,
         });
+        if (hasPoint) marker.setPosition(center);
 
         const geocoder = new google.maps.Geocoder();
         autocomplete = new PlaceAutocompleteElement({
@@ -246,7 +195,7 @@ export function OccurrenceLocationPicker({
               const placePrediction = (event as any).placePrediction;
               const place = placePrediction?.toPlace?.();
               if (!place) {
-                setMapsError('Não foi possível identificar o endereço selecionado. Use os campos manuais abaixo.');
+                setMapsError('Não foi possível identificar o endereço selecionado. Use os campos abaixo.');
                 return;
               }
 
@@ -262,13 +211,13 @@ export function OccurrenceLocationPicker({
               setMapsError(null);
               applyLocationResult(place);
             } catch {
-              setMapsError('O Google Places não conseguiu carregar os detalhes do endereço. Use os campos manuais abaixo.');
+              setMapsError('O Google Places não conseguiu carregar os detalhes do endereço. Use os campos abaixo.');
             }
           })();
         };
 
         autocompleteErrorListener = () => {
-          setMapsError('O Google Places não conseguiu buscar endereços. Confira a Places API (New) ou use os campos manuais abaixo.');
+          setMapsError('O Google Places não conseguiu buscar endereços. Você ainda pode preencher os campos e usar “Buscar no mapa”.');
         };
 
         autocomplete.addEventListener('input', autocompleteInputListener);
@@ -279,7 +228,6 @@ export function OccurrenceLocationPicker({
         mapRef.current = map;
         markerRef.current = marker;
         geocoderRef.current = geocoder;
-        autocompleteRef.current = autocomplete;
 
         mapClickListener = map.addListener('click', (event: any) => {
           if (!event.latLng) return;
@@ -299,7 +247,7 @@ export function OccurrenceLocationPicker({
       .catch((error: unknown) => {
         if (!active) return;
         const message = error instanceof Error ? error.message : 'Google Maps está indisponível.';
-        setMapsError(`${message} Use os campos manuais abaixo.`);
+        setMapsError(`${message} Preencha os campos obrigatórios abaixo.`);
       });
 
     return () => {
@@ -346,7 +294,7 @@ export function OccurrenceLocationPicker({
 
   function useCurrentLocation() {
     if (!navigator.geolocation) {
-      onError('Este navegador não disponibiliza geolocalização. Informe o ponto manualmente.');
+      onError('Este navegador não disponibiliza geolocalização. Informe o endereço manualmente.');
       return;
     }
 
@@ -367,7 +315,7 @@ export function OccurrenceLocationPicker({
       },
       () => {
         setLocating(false);
-        onError('Não foi possível obter sua localização. Autorize o navegador ou informe o ponto manualmente.');
+        onError('Não foi possível obter sua localização. Autorize o navegador ou informe o endereço manualmente.');
       },
       {
         enableHighAccuracy: true,
@@ -377,12 +325,34 @@ export function OccurrenceLocationPicker({
     );
   }
 
+  async function searchManualAddress() {
+    setSearchingAddress(true);
+    setMapsError(null);
+    try {
+      const { result } = await geocodeGoogleAddress(buildAddressQuery(value));
+      applyLocationResult(result, true);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Não foi possível localizar o endereço informado.';
+      setMapsError(message);
+      onError(message);
+    } finally {
+      setSearchingAddress(false);
+    }
+  }
+
+  const canSearchAddress = Boolean(
+    value.street.trim()
+    && value.number.trim()
+    && value.neighborhood.trim()
+    && value.city.trim(),
+  );
+
   return (
     <div className="occurrence-map-picker occurrence-form__full">
       <div className="occurrence-map-picker__header">
         <div>
           <span>Localização</span>
-          <small>Busque o endereço, clique no mapa ou arraste o marcador para confirmar o ponto exato.</small>
+          <small>Busque um endereço, clique no mapa ou arraste o marcador. Rua, número, bairro e cidade são obrigatórios.</small>
         </div>
         <Button type="button" variant="soft" size="sm" onClick={useCurrentLocation} disabled={disabled || locating}>
           {locating ? 'Obtendo...' : 'Usar minha localização'}
@@ -390,37 +360,60 @@ export function OccurrenceLocationPicker({
       </div>
 
       <label className="occurrence-form__full">
-        Endereço
+        Buscar endereço
         <div
           ref={autocompleteHostRef}
           className="occurrence-map-picker__autocomplete"
           aria-busy={!mapsReady}
-          hidden={Boolean(mapsError)}
+          hidden={Boolean(mapsError && !mapsReady)}
         />
         {!mapsReady && !mapsError ? <span>Carregando busca de endereços...</span> : null}
-        {mapsError ? (
-          <input
-            required
-            value={value.addressText}
-            onChange={(event) => onChange('addressText', event.target.value)}
-            placeholder="Rua, número, bairro e cidade"
-            autoComplete="street-address"
-            disabled={disabled}
-          />
-        ) : null}
       </label>
 
-      <div
-        ref={mapElementRef}
-        className={`occurrence-map-picker__map${mapsReady ? ' is-ready' : ''}`}
-        role="application"
-        aria-label="Mapa para selecionar a localização da ocorrência"
-      />
-      {!mapsReady && !mapsError ? <span>Carregando Google Maps...</span> : null}
+      <div className="occurrence-map-picker__structured-address">
+        <label>
+          Rua <span className="occurrence-required-marker" aria-hidden="true">*</span>
+          <input
+            required
+            value={value.street}
+            onChange={(event) => onChange('street', event.target.value)}
+            autoComplete="address-line1"
+            disabled={disabled}
+          />
+        </label>
 
-      {mapsError ? <p className="occurrence-map-picker__warning">{mapsError}</p> : null}
+        <label>
+          Número <span className="occurrence-required-marker" aria-hidden="true">*</span>
+          <input
+            required
+            value={value.number}
+            onChange={(event) => onChange('number', event.target.value)}
+            autoComplete="address-line2"
+            disabled={disabled}
+          />
+        </label>
 
-      <div className="occurrence-map-picker__address-fields">
+        <label>
+          Bairro <span className="occurrence-required-marker" aria-hidden="true">*</span>
+          <input
+            required
+            value={value.neighborhood}
+            onChange={(event) => onChange('neighborhood', event.target.value)}
+            disabled={disabled}
+          />
+        </label>
+
+        <label>
+          Cidade <span className="occurrence-required-marker" aria-hidden="true">*</span>
+          <input
+            required
+            value={value.city}
+            onChange={(event) => onChange('city', event.target.value)}
+            autoComplete="address-level2"
+            disabled={disabled}
+          />
+        </label>
+
         <label>
           CEP
           <input
@@ -428,6 +421,7 @@ export function OccurrenceLocationPicker({
             onChange={(event) => onChange('postalCode', event.target.value)}
             inputMode="numeric"
             placeholder="00000-000"
+            autoComplete="postal-code"
             disabled={disabled}
           />
         </label>
@@ -439,10 +433,34 @@ export function OccurrenceLocationPicker({
             onChange={(event) => onChange('stateCode', event.target.value.slice(0, 2).toUpperCase())}
             maxLength={2}
             placeholder="RS"
+            autoComplete="address-level1"
             disabled={disabled}
           />
         </label>
       </div>
+
+      <div className="occurrence-map-picker__address-action">
+        <Button
+          type="button"
+          variant="soft"
+          size="sm"
+          onClick={() => void searchManualAddress()}
+          disabled={disabled || searchingAddress || !canSearchAddress}
+        >
+          {searchingAddress ? 'Buscando endereço...' : 'Buscar no mapa'}
+        </Button>
+        <small>Ao buscar, o marcador é reposicionado. Ao mover o marcador, os campos são preenchidos novamente pelo Google.</small>
+      </div>
+
+      <div
+        ref={mapElementRef}
+        className={`occurrence-map-picker__map${mapsReady ? ' is-ready' : ''}`}
+        role="application"
+        aria-label="Mapa para selecionar a localização da ocorrência"
+      />
+      {!mapsReady && !mapsError ? <span>Carregando Google Maps...</span> : null}
+
+      {mapsError ? <p className="occurrence-map-picker__warning">{mapsError}</p> : null}
 
       <details className="occurrence-map-picker__manual">
         <summary>Coordenadas do ponto</summary>
@@ -450,7 +468,6 @@ export function OccurrenceLocationPicker({
           <label>
             Latitude
             <input
-              required
               inputMode="decimal"
               value={value.latitude}
               onChange={(event) => onChange('latitude', event.target.value)}
@@ -461,7 +478,6 @@ export function OccurrenceLocationPicker({
           <label>
             Longitude
             <input
-              required
               inputMode="decimal"
               value={value.longitude}
               onChange={(event) => onChange('longitude', event.target.value)}

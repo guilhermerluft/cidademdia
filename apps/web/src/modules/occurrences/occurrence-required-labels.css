@@ -1,0 +1,52 @@
+.occurrence-form > label,
+.occurrence-location__fields label,
+.occurrence-media-field,
+.occurrence-map-picker__structured-address label {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  align-content: flex-start;
+  column-gap: 0.25rem;
+  row-gap: 0.45rem;
+}
+
+.occurrence-form > label > input,
+.occurrence-form > label > select,
+.occurrence-form > label > textarea,
+.occurrence-form > label > small,
+.occurrence-location__fields label > input,
+.occurrence-location__fields label > select,
+.occurrence-location__fields label > textarea,
+.occurrence-location__fields label > small,
+.occurrence-media-field > input,
+.occurrence-media-field > small,
+.occurrence-map-picker__structured-address label > input,
+.occurrence-map-picker__structured-address label > small {
+  flex: 0 0 100%;
+  min-width: 0;
+}
+
+.occurrence-required-marker {
+  flex: 0 0 auto;
+}
+
+.occurrence-form__protocol-field,
+.occurrence-form__title-field {
+  grid-column: 1 / -1;
+}
+
+.occurrence-form__paired-field {
+  align-self: stretch;
+  min-height: 100%;
+}
+
+.occurrence-form__paired-field > select {
+  min-height: 46px;
+}
+
+@media (max-width: 640px) {
+  .occurrence-form__protocol-field,
+  .occurrence-form__title-field {
+    grid-column: 1;
+  }
+}

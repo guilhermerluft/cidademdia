@@ -5,6 +5,11 @@ export interface OccurrenceCategory {
   displayOrder: number;
 }
 
+export interface EligibleMaster {
+  id: string;
+  displayName: string;
+}
+
 export interface OccurrenceListItem {
   id: string;
   publicCode: string;
@@ -69,17 +74,32 @@ export interface OccurrenceMediaItem {
   attachedAt: string | null;
 }
 
+export interface OccurrenceMediaReadUrl {
+  id: string;
+  readUrl: string;
+  readUrlExpiresAt: string;
+}
+
+export interface OccurrenceMediaPresentation extends OccurrenceMediaItem {
+  readUrl: string;
+  readUrlExpiresAt: string;
+}
+
 export interface CreateOccurrencePayload {
   categoryId: string;
+  masterUserId: string;
   title: string;
   description: string | null;
-  addressText: string;
+  street: string;
+  number: string;
+  neighborhood: string;
+  city: string;
   latitude: number;
   longitude: number;
   postalCode: string | null;
   cityId: null;
   stateCode: string | null;
-  externalProtocolNumber: string | null;
+  externalProtocolNumber: string;
   externalProtocolAgency: string | null;
   mediaIds: string[];
 }

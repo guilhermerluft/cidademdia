@@ -62,6 +62,13 @@
   font-weight: 800;
 }
 
+.occurrence-form label > small {
+  color: var(--ced-color-text-muted);
+  font-size: var(--ced-font-size-xs);
+  font-weight: 500;
+  line-height: 1.45;
+}
+
 .occurrence-form input,
 .occurrence-form select,
 .occurrence-form textarea {
@@ -100,6 +107,47 @@
 
 .occurrence-form__full {
   grid-column: 1 / -1;
+}
+
+.occurrence-required-marker {
+  color: #b42318;
+  font-weight: 900;
+}
+
+.occurrence-form__protocol-field {
+  padding: 0.8rem;
+  border: 1px solid rgba(180, 35, 24, 0.22);
+  border-radius: var(--ced-radius-lg);
+  background: rgba(180, 35, 24, 0.035);
+}
+
+.occurrence-form__protocol-field input {
+  border-color: rgba(180, 35, 24, 0.28);
+}
+
+.occurrence-validation-summary {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 0.9rem 1rem;
+  border: 1px solid rgba(180, 35, 24, 0.18);
+  border-radius: var(--ced-radius-md);
+  background: rgba(180, 35, 24, 0.07);
+  color: #8a1c13;
+  font-size: var(--ced-font-size-sm);
+}
+
+.occurrence-validation-summary strong {
+  display: block;
+  margin-bottom: 0.45rem;
+}
+
+.occurrence-validation-summary ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.occurrence-validation-summary li + li {
+  margin-top: 0.2rem;
 }
 
 .occurrence-location {
@@ -218,6 +266,96 @@
   top: 104px;
 }
 
+.occurrence-geo-filter {
+  display: grid;
+  gap: var(--ced-space-3);
+  margin-bottom: var(--ced-space-4);
+  padding: var(--ced-space-4);
+  border: 1px solid var(--ced-color-border);
+  border-radius: var(--ced-radius-lg);
+  background: var(--ced-color-canvas);
+}
+
+.occurrence-geo-filter__fields {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--ced-space-3);
+}
+
+.occurrence-geo-filter label {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  color: var(--ced-color-navy-900);
+  font-size: var(--ced-font-size-sm);
+  font-weight: 800;
+}
+
+.occurrence-geo-filter input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--ced-color-border);
+  border-radius: var(--ced-radius-md);
+  padding: 0 0.8rem;
+  color: var(--ced-color-text);
+  background: #fff;
+  font: inherit;
+  font-weight: 500;
+  outline: none;
+  transition: border-color var(--ced-transition-fast), box-shadow var(--ced-transition-fast);
+}
+
+.occurrence-geo-filter input:focus {
+  border-color: var(--ced-color-primary-300);
+  box-shadow: 0 0 0 3px rgba(25, 98, 169, 0.1);
+}
+
+.occurrence-geo-filter input:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  background: #f3f5f8;
+}
+
+.occurrence-geo-filter__toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--ced-space-2);
+  min-width: 0;
+}
+
+.occurrence-geo-filter__location {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.occurrence-geo-filter__location small {
+  color: var(--ced-color-text-muted);
+  font-size: var(--ced-font-size-xs);
+  line-height: 1.4;
+}
+
+.occurrence-geo-filter__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px;
+  align-items: stretch;
+  gap: var(--ced-space-2);
+  min-width: 0;
+}
+
+.occurrence-geo-filter__actions .ced-button {
+  min-width: 0;
+}
+
+.occurrence-geo-filter__clear {
+  width: 42px;
+  min-width: 42px;
+  padding-inline: 0;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.95rem;
+}
+
 .occurrence-list {
   display: grid;
   gap: var(--ced-space-3);
@@ -298,7 +436,8 @@
 
 @media (max-width: 640px) {
   .occurrence-form,
-  .occurrence-location__fields {
+  .occurrence-location__fields,
+  .occurrence-geo-filter__fields {
     grid-template-columns: 1fr;
   }
 
@@ -306,6 +445,7 @@
   .occurrence-form__full,
   .occurrence-location,
   .occurrence-file-list,
+  .occurrence-validation-summary,
   .occurrence-progress,
   .occurrence-success,
   .occurrence-error {
@@ -315,7 +455,12 @@
   .occurrence-form-card__header,
   .occurrence-list-card__header,
   .occurrence-location__header {
+    align-items: stretch;
     flex-direction: column;
+  }
+
+  .occurrence-geo-filter__actions {
+    grid-template-columns: minmax(0, 1fr) 42px;
   }
 
   .occurrence-form__actions {

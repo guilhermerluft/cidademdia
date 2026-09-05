@@ -1,27 +1,34 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { Brand, Button } from '../../components/ui';
+import type { AuthenticatedUser } from '../auth/types';
+import { PublicOccurrenceCard } from '../occurrences/PublicOccurrenceCard';
+import { PublicOccurrenceDetailsModal } from '../occurrences/PublicOccurrenceDetailsModal';
+import {
+  DEFAULT_PUBLIC_OCCURRENCE_CITY,
+  DEFAULT_PUBLIC_OCCURRENCE_RADIUS_KM,
+  requestBrowserCoordinates,
+} from '../occurrences/publicOccurrenceLocation';
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
+import { HomeAccountModules } from './HomeAccountModules';
+import { HowItWorksModal } from './HowItWorksModal';
 import {
+  getPublicOccurrenceDetails,
   listPublicOccurrences,
   listPublicPlans,
+  type PublicOccurrenceDetails,
   type PublicOccurrenceItem,
   type PublicPlanOffer,
 } from './homeService';
 
 interface PublicHomeProps {
-  onLogin: () => void;
-  onRegister: () => void;
-}
-
-const DEFAULT_CITY = 'São Paulo';
-const DEFAULT_RADIUS_KM = 25;
-
-function formatTime(value: string) {
-  return new Intl.DateTimeFormat('pt-BR', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(new Date(value));
+  user?: AuthenticatedUser | null;
+  permissions?: readonly string[];
+  onLogin?: () => void;
+  onRegister?: () => void;
+  onLogout?: () => void | Promise<void>;
 }
 
 function formatMoney(valueInCents: number) {
@@ -29,48 +36,6 @@ function formatMoney(valueInCents: number) {
     style: 'currency',
     currency: 'BRL',
   }).format(valueInCents / 100);
-}
-
-function getStatusLabel(status: string) {
-  switch (status) {
-    case 'NOVA': return 'Nova';
-    case 'RECEBIDA': return 'Recebida';
-    case 'EM_ANALISE': return 'Em análise';
-    case 'EM_ANDAMENTO': return 'Em andamento';
-    case 'AGUARDANDO_INFORMACAO': return 'Aguardando informação';
-    case 'RESOLVIDA': return 'Resolvida';
-    default: return status.replaceAll('_', ' ').toLowerCase();
-  }
-}
-
-function getStatusClass(status: string) {
-  switch (status) {
-    case 'RESOLVIDA': return 'resolved';
-    case 'EM_ANDAMENTO': return 'progress';
-    case 'EM_ANALISE': return 'analysis';
-    case 'AGUARDANDO_INFORMACAO': return 'waiting';
-    case 'RECEBIDA': return 'received';
-    default: return 'new';
-  }
-}
-
-function getCategoryTone(slug: string) {
-  const normalized = slug.toLowerCase();
-  if (normalized.includes('ilumin')) return 'blue';
-  if (normalized.includes('limpeza') || normalized.includes('lixo')) return 'green';
-  if (normalized.includes('transito') || normalized.includes('trânsito')) return 'orange';
-  if (normalized.includes('segur')) return 'purple';
-  return 'red';
-}
-
-function getCategorySymbol(slug: string) {
-  const normalized = slug.toLowerCase();
-  if (normalized.includes('ilumin')) return '☀';
-  if (normalized.includes('limpeza') || normalized.includes('lixo')) return '♻';
-  if (normalized.includes('transito') || normalized.includes('trânsito')) return '↔';
-  if (normalized.includes('segur')) return '◆';
-  if (normalized.includes('buraco') || normalized.includes('infra')) return '△';
-  return '●';
 }
 
 function useSlidesPerView() {
@@ -144,37 +109,7 @@ function VideoCard({ post }: { post: PostItem }) {
   );
 }
 
-function OccurrenceCard({ occurrence }: { occurrence: PublicOccurrenceItem }) {
-  const tone = getCategoryTone(occurrence.categorySlug);
-
-  return (
-    <article className="public-home__occurrence-card">
-      <div className={`public-home__occurrence-thumb public-home__occurrence-thumb--${tone}`} aria-hidden="true">
-        <span>{getCategorySymbol(occurrence.categorySlug)}</span>
-      </div>
-
-      <div className="public-home__occurrence-main">
-        <span className={`public-home__category public-home__category--${tone}`}>
-          {getCategorySymbol(occurrence.categorySlug)} {occurrence.categoryName || 'Ocorrência urbana'}
-        </span>
-        <h3>{occurrence.title}</h3>
-        <p className="public-home__occurrence-location">
-          <span aria-hidden="true">●</span> {occurrence.addressText}
-        </p>
-        {occurrence.description && <p className="public-home__occurrence-description">{occurrence.description}</p>}
-      </div>
-
-      <div className="public-home__occurrence-meta">
-        <span className={`public-home__occurrence-status public-home__occurrence-status--${getStatusClass(occurrence.status)}`}>
-          {getStatusLabel(occurrence.status)}
-        </span>
-        <span className="public-home__occurrence-time"><span aria-hidden="true">◷</span> {formatTime(occurrence.updatedAt)}</span>
-      </div>
-    </article>
-  );
-}
-
-function PlanCard({ offer, onRegister }: { offer: PublicPlanOffer; onRegister: () => void }) {
+function PlanCard({ offer, onStart }: { offer: PublicPlanOffer; onStart: () => void }) {
   const intervalLabel = offer.billingIntervalMonths === 1
     ? 'mensal'
     : offer.billingIntervalMonths === 3
@@ -195,12 +130,19 @@ function PlanCard({ offer, onRegister }: { offer: PublicPlanOffer; onRegister: (
         <li>{offer.subaccountLimit} subconta{offer.subaccountLimit === 1 ? '' : 's'}</li>
         <li>{offer.monthlyPublicationLimit} publicaç{offer.monthlyPublicationLimit === 1 ? 'ão' : 'ões'} por mês</li>
       </ul>
-      <Button variant="soft" onClick={onRegister}>Começar</Button>
+      <Button variant="soft" onClick={onStart}>Começar</Button>
     </article>
   );
 }
 
-export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
+export function PublicHome({
+  user,
+  permissions = [],
+  onLogin,
+  onRegister,
+  onLogout,
+}: PublicHomeProps) {
+  const navigate = useNavigate();
   const [posts, setPosts] = useState<PostItem[]>([]);
   const [postsLoading, setPostsLoading] = useState(true);
   const [postsUnavailable, setPostsUnavailable] = useState(false);
@@ -209,9 +151,13 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
   const [occurrences, setOccurrences] = useState<PublicOccurrenceItem[]>([]);
   const [occurrencesLoading, setOccurrencesLoading] = useState(true);
   const [occurrencesUnavailable, setOccurrencesUnavailable] = useState(false);
-  const [occurrenceLocationLabel, setOccurrenceLocationLabel] = useState(DEFAULT_CITY);
+  const [occurrenceLocationLabel, setOccurrenceLocationLabel] = useState(DEFAULT_PUBLIC_OCCURRENCE_CITY);
   const [showAllOccurrences, setShowAllOccurrences] = useState(false);
+  const [selectedOccurrence, setSelectedOccurrence] = useState<PublicOccurrenceDetails | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
+  const [occurrenceDetailError, setOccurrenceDetailError] = useState<string | null>(null);
   const [plans, setPlans] = useState<PublicPlanOffer[]>([]);
+  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const slidesPerView = useSlidesPerView();
 
   useEffect(() => {
@@ -260,15 +206,15 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
 
     async function useFallbackCity() {
       try {
-        const items = await listPublicOccurrences({ city: DEFAULT_CITY, limit: 6 });
+        const items = await listPublicOccurrences({ city: DEFAULT_PUBLIC_OCCURRENCE_CITY, limit: 6 });
         if (!active) return;
         setOccurrences(items);
-        setOccurrenceLocationLabel(DEFAULT_CITY);
+        setOccurrenceLocationLabel(DEFAULT_PUBLIC_OCCURRENCE_CITY);
         setOccurrencesUnavailable(false);
       } catch {
         if (!active) return;
         setOccurrences([]);
-        setOccurrenceLocationLabel(DEFAULT_CITY);
+        setOccurrenceLocationLabel(DEFAULT_PUBLIC_OCCURRENCE_CITY);
         setOccurrencesUnavailable(true);
       } finally {
         if (active) setOccurrencesLoading(false);
@@ -280,7 +226,7 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
         const items = await listPublicOccurrences({
           latitude,
           longitude,
-          radiusKm: DEFAULT_RADIUS_KM,
+          radiusKm: DEFAULT_PUBLIC_OCCURRENCE_RADIUS_KM,
           limit: 6,
         });
         if (!active) return;
@@ -297,15 +243,14 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
     setOccurrencesLoading(true);
     setOccurrencesUnavailable(false);
 
-    if (!('geolocation' in navigator)) {
-      void useFallbackCity();
-    } else {
-      navigator.geolocation.getCurrentPosition(
-        (position) => void useCoordinates(position.coords.latitude, position.coords.longitude),
-        () => void useFallbackCity(),
-        { enableHighAccuracy: false, timeout: 5500, maximumAge: 10 * 60 * 1000 },
-      );
-    }
+    void requestBrowserCoordinates().then((coordinates) => {
+      if (!active) return;
+      if (coordinates) {
+        void useCoordinates(coordinates.latitude, coordinates.longitude);
+      } else {
+        void useFallbackCity();
+      }
+    });
 
     return () => { active = false; };
   }, []);
@@ -332,36 +277,39 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
 
   const visibleOccurrences = showAllOccurrences ? occurrences : occurrences.slice(0, 3);
   const visiblePlans = plans.slice(0, 4);
+  const handlePlanStart = user
+    ? () => navigate('/planos')
+    : (onRegister ?? (() => navigate('/planos')));
 
   function goToMediaPage(direction: number) {
     if (mediaPages.length <= 1) return;
     setMediaPage((current) => (current + direction + mediaPages.length) % mediaPages.length);
   }
 
-  function scrollTo(id: string) {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  async function openOccurrence(occurrence: PublicOccurrenceItem) {
+    if (detailLoadingId) return;
+    setDetailLoadingId(occurrence.id);
+    setOccurrenceDetailError(null);
+    try {
+      const details = await getPublicOccurrenceDetails(occurrence.id);
+      setSelectedOccurrence(details);
+    } catch {
+      setOccurrenceDetailError('Não foi possível abrir os detalhes dessa ocorrência. Tente novamente.');
+    } finally {
+      setDetailLoadingId(null);
+    }
   }
 
   return (
     <div className="public-home">
-      <header className="public-home__header">
-        <div className="public-home__header-inner">
-          <Brand className="public-home__brand" />
-
-          <nav className="public-home__desktop-nav" aria-label="Navegação principal">
-            <a className="public-home__nav-active" href="#inicio">Início</a>
-            <a href="#midias">Mídias</a>
-            <a href="#ocorrencias">Ocorrências</a>
-            <a href="#planos">Planos</a>
-            <a href="#como-funciona">Como funciona</a>
-          </nav>
-
-          <div className="public-home__header-actions">
-            <Button variant="ghost" onClick={onLogin}>Entrar</Button>
-            <Button onClick={onRegister}>Criar conta</Button>
-          </div>
-        </div>
-      </header>
+      <AppHeader
+        active="home"
+        user={user}
+        permissions={permissions}
+        onLogin={onLogin}
+        onRegister={onRegister}
+        onLogout={onLogout}
+      />
 
       <main>
         <section className="public-home__hero" id="inicio" aria-labelledby="public-home-title">
@@ -375,13 +323,13 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
               </h1>
               <span className="public-home__hero-line" aria-hidden="true" />
               <p>
-                O CIDADEMDIA conecta cidadãos e gestores, facilitando a comunicação e o acompanhamento das demandas,
+                O CIDADEMDIA conecta cidadãos e gestores, permitindo <strong>publicar ocorrências gratuitamente</strong> e acompanhar cada demanda,
                 tornando a gestão mais ágil, transparente e eficiente.
               </p>
 
               <div className="public-home__hero-actions">
-                <Button size="lg" onClick={() => scrollTo('planos')}>Conheça os planos</Button>
-                <button className="public-home__outline-cta" type="button" onClick={() => scrollTo('como-funciona')}>
+                <Button size="lg" onClick={() => navigate('/planos')}>Conheça os planos</Button>
+                <button className="public-home__outline-cta" type="button" onClick={() => setHowItWorksOpen(true)}>
                   <span className="public-home__cta-play" aria-hidden="true">▶</span>
                   Como funciona
                 </button>
@@ -490,8 +438,8 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
               </div>
             </div>
             {occurrences.length > 3 && (
-              <button className="public-home__see-all" type="button" onClick={() => setShowAllOccurrences((value) => !value)}>
-                {showAllOccurrences ? 'Ver menos' : 'Ver todas'} <span aria-hidden="true">›</span>
+              <button className="public-home__see-all" type="button" onClick={() => navigate('/ocorrencias')}>
+                Ver todas <span aria-hidden="true">›</span>
               </button>
             )}
           </div>
@@ -501,8 +449,14 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
               {[0, 1, 2].map((item) => <div className="public-home__occurrence-skeleton" key={item} />)}
             </div>
           ) : visibleOccurrences.length > 0 ? (
-            <div className="public-home__occurrence-list">
-              {visibleOccurrences.map((occurrence) => <OccurrenceCard occurrence={occurrence} key={occurrence.id} />)}
+            <div className="public-home__occurrence-list" aria-busy={detailLoadingId ? 'true' : undefined}>
+              {visibleOccurrences.map((occurrence) => (
+                <PublicOccurrenceCard
+                  occurrence={occurrence}
+                  onOpen={openOccurrence}
+                  key={occurrence.id}
+                />
+              ))}
             </div>
           ) : (
             <div className="public-home__empty">
@@ -511,9 +465,15 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
             </div>
           )}
 
-          <p className="public-home__visitor-note">
-            Você está vendo informações públicas. Para registrar, acompanhar ou interagir com uma ocorrência, entre ou crie sua conta.
-          </p>
+          {occurrenceDetailError && (
+            <p className="public-home__visitor-note" role="alert">{occurrenceDetailError}</p>
+          )}
+
+          {!user && (
+            <p className="public-home__visitor-note">
+              Você está vendo informações públicas. Para registrar, acompanhar ou interagir com uma ocorrência, entre ou crie sua conta.
+            </p>
+          )}
         </section>
 
         <section className="public-home__section public-home__plans" id="planos">
@@ -529,12 +489,12 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
 
           {visiblePlans.length > 0 ? (
             <div className="public-home__plan-grid">
-              {visiblePlans.map((offer) => <PlanCard offer={offer} onRegister={onRegister} key={offer.offerId} />)}
+              {visiblePlans.map((offer) => <PlanCard offer={offer} onStart={handlePlanStart} key={offer.offerId} />)}
             </div>
           ) : (
             <div className="public-home__empty public-home__empty--compact">
-              <strong>Consulte os planos disponíveis criando sua conta.</strong>
-              <Button variant="soft" onClick={onRegister}>Criar conta</Button>
+              <strong>Consulte os planos disponíveis na página dedicada.</strong>
+              <Button variant="soft" onClick={() => navigate('/planos')}>Ver planos</Button>
             </div>
           )}
         </section>
@@ -552,26 +512,38 @@ export function PublicHome({ onLogin, onRegister }: PublicHomeProps) {
             <article><span>03</span><h3>Acompanhe</h3><p>Veja status, respostas e histórico em um único lugar.</p></article>
           </div>
         </section>
+
+        {user && <HomeAccountModules user={user} permissions={permissions} />}
       </main>
 
       <footer className="public-home__footer">
         <div className="public-home__footer-inner">
           <Brand compact />
           <p>CIDADEMDIA — conectando cidadãos e quem pode resolver.</p>
-          <div className="public-home__footer-actions">
-            <button type="button" onClick={onLogin}>Entrar</button>
-            <button type="button" onClick={onRegister}>Criar conta</button>
-          </div>
+          {!user && (onLogin || onRegister) && (
+            <div className="public-home__footer-actions">
+              {onLogin && <button type="button" onClick={onLogin}>Entrar</button>}
+              {onRegister && <button type="button" onClick={onRegister}>Criar conta</button>}
+            </div>
+          )}
         </div>
       </footer>
 
-      <nav className="public-home__bottom-nav" aria-label="Navegação mobile">
-        <a href="#inicio"><span aria-hidden="true">⌂</span>Início</a>
-        <a href="#ocorrencias"><span aria-hidden="true">☷</span>Ocorrências</a>
-        <a href="#midias"><span aria-hidden="true">▶</span>Mídias</a>
-        <a href="#planos"><span aria-hidden="true">◇</span>Planos</a>
-        <button type="button" onClick={onLogin}><span aria-hidden="true">○</span>Entrar</button>
-      </nav>
+      <HowItWorksModal open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
+      {selectedOccurrence && (
+        <PublicOccurrenceDetailsModal
+          occurrence={selectedOccurrence}
+          onClose={() => setSelectedOccurrence(null)}
+        />
+      )}
+
+      <AppBottomNavigation
+        active="home"
+        user={user}
+        permissions={permissions}
+        onLogin={onLogin}
+        onRegister={onRegister}
+      />
     </div>
   );
 }

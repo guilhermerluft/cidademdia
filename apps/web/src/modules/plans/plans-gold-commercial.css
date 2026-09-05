@@ -1,0 +1,249 @@
+.plans-page__payment--gold {
+  position: relative;
+  overflow: hidden;
+  padding: 14px;
+  border: 2px solid #d7b52b;
+  background:
+    radial-gradient(circle at 92% 4%, rgba(227, 222, 86, .28), transparent 34%),
+    linear-gradient(145deg, #071b34 0%, #0d3152 58%, #123d60 100%);
+  box-shadow:
+    0 10px 24px rgba(12, 43, 74, .18),
+    inset 0 0 0 1px rgba(255, 239, 132, .09);
+}
+
+.plans-page__payment--gold::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 14px;
+  left: 14px;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #f4dd59 24%, #fff2a0 50%, #d3a51d 76%, transparent);
+  opacity: .95;
+}
+
+.plans-page__payment--gold .plans-page__payment-heading {
+  margin-bottom: 10px;
+  color: #fff8cf;
+  font-size: .86rem;
+  letter-spacing: .01em;
+}
+
+.plans-page__payment--gold .plans-page__payment-heading small {
+  padding: 4px 8px;
+  color: #2b2500;
+  background: linear-gradient(100deg, #e3de56, #fff08a 48%, #d1ad27);
+  box-shadow: 0 5px 14px rgba(227, 222, 86, .2);
+  font-size: .61rem;
+}
+
+.plans-page__payment--gold .plans-page__payment-price {
+  min-height: 58px;
+  gap: 5px 8px;
+}
+
+.plans-page__payment--gold .plans-page__payment-price del {
+  color: #d4d7da;
+  font-size: .73rem;
+}
+
+.plans-page__payment--gold .plans-page__payment-price strong {
+  color: #f8df4f;
+  font-size: 1.48rem;
+  line-height: 1;
+  text-shadow: 0 2px 12px rgba(248, 223, 79, .12);
+}
+
+.plans-page__payment--gold .plans-page__payment-price span {
+  color: #e1e8ee;
+  font-size: .68rem;
+  font-weight: 700;
+}
+
+.plans-page__payment--gold .plans-page__installment {
+  margin-bottom: 11px;
+  color: #e0e7ed;
+  font-size: .68rem;
+  font-weight: 650;
+}
+
+.plans-page__payment--gold .plans-page__choose-button {
+  min-height: 38px;
+  border: 1px solid #f2d449;
+  color: #2d2700;
+  background: linear-gradient(100deg, #e3de56 0%, #f8e66b 52%, #d9b932 100%);
+  box-shadow: 0 9px 20px rgba(227, 222, 86, .22);
+  font-size: .75rem;
+  letter-spacing: .01em;
+}
+
+.plans-page__payment--gold .plans-page__choose-button:not(:disabled):hover,
+.plans-page__payment--gold .plans-page__choose-button:not(:disabled):focus-visible {
+  background: linear-gradient(100deg, #eee96c 0%, #fff08b 52%, #e1c13d 100%);
+  box-shadow: 0 11px 24px rgba(227, 222, 86, .3);
+}
+
+.plans-page__mega-card {
+  border: 2px solid #e2c33f;
+  background:
+    radial-gradient(circle at 50% 11%, rgba(255, 231, 94, .17), transparent 24%),
+    radial-gradient(circle at 14% 12%, rgba(255,255,255,.82) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 84% 19%, rgba(227,222,86,.95) 0 1.25px, transparent 1.9px),
+    radial-gradient(circle at 70% 54%, rgba(255,255,255,.58) 0 1px, transparent 1.8px),
+    radial-gradient(circle at 27% 70%, rgba(227,222,86,.78) 0 1.2px, transparent 1.9px),
+    linear-gradient(155deg, #061426 0%, #0b2a48 51%, #071a31 100%);
+  background-size: auto, 74px 74px, 93px 93px, 111px 111px, 127px 127px, auto;
+  box-shadow:
+    0 25px 58px rgba(5, 19, 37, .3),
+    0 0 0 1px rgba(255, 231, 94, .07),
+    inset 0 0 42px rgba(227, 222, 86, .08);
+}
+
+.plans-page__mega-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 18%;
+  left: 18%;
+  height: 3px;
+  border-radius: 0 0 999px 999px;
+  background: linear-gradient(90deg, transparent, #e3de56 18%, #fff3a1 50%, #d4a91f 82%, transparent);
+  box-shadow: 0 0 18px rgba(227, 222, 86, .45);
+}
+
+.plans-page__mega-badge {
+  min-height: 32px;
+  padding: 0 15px;
+  color: #282000;
+  background: linear-gradient(100deg, #d7b72b 0%, #f6e467 42%, #fff1a0 58%, #c89d18 100%);
+  box-shadow: 0 9px 24px rgba(227, 222, 86, .28);
+  font-size: .72rem;
+  letter-spacing: .09em;
+}
+
+.plans-page__mega-star {
+  position: relative;
+  width: 84px;
+  height: 84px;
+  flex: 0 0 84px;
+  display: block;
+  margin: 22px 0 13px;
+  background: linear-gradient(145deg, #fff5a9 0%, #f2d34a 36%, #c99516 70%, #ffe66b 100%);
+  clip-path: polygon(50% 0%, 61% 34%, 96% 35%, 68% 56%, 78% 91%, 50% 70%, 22% 91%, 32% 56%, 4% 35%, 39% 34%);
+  filter:
+    drop-shadow(0 9px 12px rgba(0, 0, 0, .28))
+    drop-shadow(0 0 18px rgba(244, 216, 75, .5));
+  transform: rotate(-3deg);
+}
+
+.plans-page__mega-star::before {
+  content: '' !important;
+  position: absolute;
+  inset: 14px;
+  display: block;
+  background: linear-gradient(145deg, rgba(255,255,255,.72), rgba(255,234,102,.2) 46%, rgba(148,96,0,.18));
+  clip-path: polygon(50% 0%, 61% 34%, 96% 35%, 68% 56%, 78% 91%, 50% 70%, 22% 91%, 32% 56%, 4% 35%, 39% 34%);
+}
+
+.plans-page__mega-star::after {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 28px;
+  width: 18px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .72);
+  filter: blur(4px);
+  transform: rotate(-24deg);
+}
+
+.plans-page__mega-eyebrow {
+  color: #d1dce5;
+  font-size: .7rem;
+  letter-spacing: .12em;
+}
+
+.plans-page__mega-card h2 {
+  margin: 6px 0 10px;
+  color: #fff1a0;
+  font-size: 1.72rem;
+  line-height: 1.02;
+  text-shadow: 0 3px 18px rgba(227, 222, 86, .12);
+}
+
+.plans-page__mega-card > p {
+  margin-bottom: 18px;
+  color: #d2dce5;
+  font-size: .82rem;
+  line-height: 1.55;
+}
+
+.plans-page__mega-condition {
+  padding: 14px 11px;
+  border-color: rgba(255,255,255,.17);
+  background: rgba(255,255,255,.075);
+}
+
+.plans-page__mega-condition span {
+  color: #b3c4d3;
+  font-size: .64rem;
+}
+
+.plans-page__mega-condition strong {
+  font-size: 1.18rem;
+  letter-spacing: -.015em;
+}
+
+.plans-page__mega-condition small {
+  color: #d0d9e1;
+  font-size: .67rem;
+}
+
+.plans-page__mega-condition--yellow {
+  border-color: rgba(227, 222, 86, .56);
+  background: linear-gradient(135deg, rgba(227,222,86,.14), rgba(227,222,86,.07));
+  box-shadow: inset 0 0 20px rgba(227, 222, 86, .05);
+}
+
+.plans-page__mega-condition--yellow strong {
+  color: #f7df4d;
+  font-size: 1.24rem;
+}
+
+.plans-page__mega-prices > span {
+  color: #b3c4d2;
+  font-size: .64rem;
+}
+
+.plans-page__mega-prices small {
+  font-size: .69rem;
+}
+
+.plans-page__mega-prices strong {
+  color: #f7df4d;
+  font-size: .82rem;
+}
+
+.plans-page__mega-benefits div {
+  color: #d9e2e9;
+  font-size: .61rem;
+}
+
+.plans-page__mega-benefits i {
+  color: #f2d84c;
+  font-size: 1rem;
+}
+
+@media (max-width: 720px) {
+  .plans-page__mega-star {
+    width: 74px;
+    height: 74px;
+    flex-basis: 74px;
+  }
+
+  .plans-page__mega-card h2 {
+    font-size: 1.6rem;
+  }
+}
