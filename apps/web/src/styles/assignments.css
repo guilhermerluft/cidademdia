@@ -42,7 +42,7 @@
   padding: var(--ced-space-4);
   border: 1px solid var(--ced-color-border);
   border-radius: var(--ced-radius-sm);
-  background: var(--ced-color-surface-subtle);
+  background: var(--ced-color-surface-soft);
 }
 
 .assignment-card__decision > p {
