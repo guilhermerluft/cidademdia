@@ -68,6 +68,9 @@ jobs:
       - name: Admin management console guard
         run: bash ../../infra/scripts/admin-management-console-guard.sh
 
+      - name: Master occurrence decision guard
+        run: bash ../../infra/scripts/master-occurrence-decision-guard.sh
+
       - name: Occurrence media presentation guard
         run: bash ../../infra/scripts/occurrence-media-presentation-guard.sh
 
