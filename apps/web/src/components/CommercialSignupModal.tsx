@@ -80,9 +80,7 @@ export function CommercialSignupModal() {
           <li><span aria-hidden="true">✓</span> Acompanhe detalhes e atualizações</li>
         </ul>
 
-        <Button type="button" size="lg" fullWidth onClick={goToRegistration}>
-          Cadastre-se
-        </Button>
+        <Button type="button" size="lg" fullWidth onClick={goToRegistration}>Cadastre-se</Button>
       </section>
     </div>
   );
