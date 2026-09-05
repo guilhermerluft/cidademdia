@@ -83,6 +83,9 @@ jobs:
       - name: Public plans commercial guard
         run: bash ../../infra/scripts/public-plans-commercial-guard.sh
 
+      - name: Public master directory guard
+        run: bash ../../infra/scripts/public-master-directory-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 
