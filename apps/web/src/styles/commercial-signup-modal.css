@@ -47,17 +47,16 @@
   outline: none;
 }
 
-.commercial-signup-modal__icon {
-  width: 54px;
-  height: 54px;
-  display: grid;
-  place-items: center;
-  margin-bottom: 18px;
-  border-radius: 16px;
-  background: #e6f4f6;
-  color: #005f73;
-  font-size: 1.6rem;
-  font-weight: 900;
+.commercial-signup-modal__brand-header {
+  display: flex;
+  align-items: center;
+  min-height: 42px;
+  margin: 0 48px 18px 0;
+}
+
+.commercial-signup-modal__brand {
+  display: inline-flex;
+  pointer-events: none;
 }
 
 .commercial-signup-modal__eyebrow {
@@ -123,5 +122,9 @@
     max-height: calc(100vh - 32px);
     padding: 28px 22px 22px;
     border-radius: 18px;
+  }
+
+  .commercial-signup-modal__brand-header {
+    margin-right: 42px;
   }
 }
