@@ -5,6 +5,7 @@ import { OccurrenceAssignmentPanel } from '../occurrenceAssignments/OccurrenceAs
 import { OccurrenceCenter } from '../occurrences/OccurrenceCenter';
 import { PostManagementPanel } from '../posts/PostManagementPanel';
 
+// ChatInbox no longer renders as a fixed panel section; conversations are scoped to each occurrence.
 interface UserPanelProps {
   user: AuthenticatedUser;
   access: UserPanelAccess;
