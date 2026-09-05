@@ -87,8 +87,10 @@ grep -q "id: 'plans'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "Planos ausente da fonte central de navegação"
 grep -q "href: '/ocorrencias'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "Ocorrências não aponta para /ocorrencias na navegação central"
-grep -q "permissions.includes('occurrence.read.targeted')" "$WT/apps/web/src/modules/home/HomeAccountModules.tsx" \
-  || fail "permissão privada de ocorrência da subconta não está preservada nos módulos da conta"
+grep -q "const canViewOccurrences = isCitizen" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
+  || fail "controle central de acesso a ocorrências não foi encontrado"
+grep -q "isSubaccount && permissions.includes('occurrence.read.targeted')" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
+  || fail "permissão privada de ocorrência da subconta não está preservada no controle central de acesso"
 
 APP_HEADER_IMPL_COUNT="$(grep -R --include='*.tsx' -F 'export function AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
 test "$APP_HEADER_IMPL_COUNT" = "1" \
