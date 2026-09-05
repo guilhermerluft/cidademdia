@@ -25,6 +25,7 @@ HOME_SERVICE="$ROOT/apps/web/src/modules/home/homeService.ts"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 LOCATION="$ROOT/apps/web/src/modules/occurrences/OccurrenceLocationPicker.tsx"
+VALIDATION_UI="$ROOT/apps/web/src/modules/occurrences/occurrenceFormValidationUi.ts"
 CARD="$ROOT/apps/web/src/modules/occurrences/PublicOccurrenceCard.tsx"
 CARD_CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrence-card.css"
 REQUIRED_LABEL_CSS="$ROOT/apps/web/src/modules/occurrences/occurrence-required-labels.css"
@@ -36,7 +37,7 @@ CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrences.css"
 for file in \
   "$CONTRACTS" "$SERVICE" "$GEO_ENDPOINTS" "$CREATE_ENDPOINTS" "$CREATE_SERVICE" \
   "$MAIN" "$APP" "$TOAST" "$TOAST_VIEWPORT" "$TOAST_CSS" "$COMMERCIAL_EVENT" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS" \
-  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" \
+  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$VALIDATION_UI" "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" \
   "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
@@ -82,10 +83,14 @@ grep -q 'Buscar no mapa' "$LOCATION" || fail "endereço digitado não pode ser r
 grep -q 'street_number' "$LOCATION" || fail "PIN não preenche número do endereço"
 grep -q "getAddressComponent(components, 'route')" "$LOCATION" || fail "PIN não preenche rua"
 grep -q "getAddressComponent(components, 'locality')" "$LOCATION" || fail "PIN não preenche cidade"
+grep -q 'const firstInvalidControl = form.querySelector' "$VALIDATION_UI" || fail "formulário não identifica o primeiro campo obrigatório inválido"
+grep -q 'scrollIntoView' "$VALIDATION_UI" || fail "formulário não conduz o usuário ao primeiro campo obrigatório inválido"
+grep -q 'preventScroll: true' "$VALIDATION_UI" || fail "foco do primeiro campo inválido não preserva o scroll controlado"
 grep -q "occurrence-required-labels.css" "$MAIN" || fail "layout dos títulos obrigatórios não está carregado"
 grep -q 'flex-wrap: wrap' "$REQUIRED_LABEL_CSS" || fail "título e asterisco obrigatórios não permanecem na mesma linha"
+grep -q 'white-space: nowrap' "$REQUIRED_LABEL_CSS" || fail "mensagem obrigatória pode quebrar abaixo do nome do campo"
 grep -q 'occurrence-required-marker' "$REQUIRED_LABEL_CSS" || fail "marcador obrigatório não possui proteção de layout"
-grep -q "content: ' Esse campo é obrigatório'" "$REQUIRED_LABEL_CSS" || fail "mensagem contextual obrigatória não está alinhada ao requisito"
+grep -q "content: ' Campo obrigatório'" "$REQUIRED_LABEL_CSS" || fail "mensagem contextual obrigatória não está alinhada ao requisito"
 grep -q 'occurrence-required-invalid > .occurrence-required-marker' "$REQUIRED_LABEL_CSS" || fail "marcador obrigatório não depende do estado inválido do campo"
 grep -q 'occurrence-form__paired-field' "$REQUIRED_LABEL_CSS" || fail "campos pareados não possuem alinhamento compartilhado"
 if grep -q 'box-shadow:.*180, 35, 24' "$REQUIRED_LABEL_CSS"; then
@@ -182,6 +187,7 @@ echo "occurrence_creation_field_errors_scoped=OK"
 echo "occurrence_creation_atomic_target=OK"
 echo "occurrence_address_map_sync=OK"
 echo "occurrence_required_markers_inline=OK"
+echo "occurrence_required_first_invalid_focus=OK"
 echo "public_occurrence_cover_contract=OK"
 echo "public_occurrence_ready_media_only=OK"
 echo "public_occurrence_signed_media=OK"

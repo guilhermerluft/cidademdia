@@ -39,6 +39,16 @@ function syncRequiredControls(form: HTMLFormElement) {
   }
 }
 
+function focusFirstInvalidControl(form: HTMLFormElement) {
+  const firstInvalidControl = form.querySelector<HTMLElement>(`.${INVALID_CONTROL_CLASS}`);
+  if (!firstInvalidControl) return;
+
+  requestAnimationFrame(() => {
+    firstInvalidControl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    firstInvalidControl.focus({ preventScroll: true });
+  });
+}
+
 function clearValidationState(form: HTMLFormElement) {
   form.classList.remove(VALIDATION_VISIBLE_CLASS);
 
@@ -59,6 +69,7 @@ export function installOccurrenceFormValidationUi() {
 
     form.classList.add(VALIDATION_VISIBLE_CLASS);
     syncRequiredControls(form);
+    focusFirstInvalidControl(form);
   }, true);
 
   const syncFromControlEvent = (event: Event) => {

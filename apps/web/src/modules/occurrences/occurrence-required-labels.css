@@ -34,10 +34,11 @@
   font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.2;
+  white-space: nowrap;
 }
 
 .occurrence-required-marker::after {
-  content: ' Esse campo é obrigatório';
+  content: ' Campo obrigatório';
   margin-left: 0.15rem;
   font-weight: 650;
 }
