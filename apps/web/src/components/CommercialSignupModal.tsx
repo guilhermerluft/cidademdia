@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from './ui';
+import { Brand, Button } from './ui';
 import {
   subscribeCommercialSignup,
   type CommercialSignupIntent,
@@ -67,7 +67,9 @@ export function CommercialSignupModal() {
           ×
         </button>
 
-        <div className="commercial-signup-modal__icon" aria-hidden="true">◎</div>
+        <div className="commercial-signup-modal__brand-header">
+          <Brand className="commercial-signup-modal__brand" />
+        </div>
         <span className="commercial-signup-modal__eyebrow">Participe da sua cidade</span>
         <h2 id="commercial-signup-title">Crie sua conta gratuita para interagir</h2>
         <p id="commercial-signup-description">
