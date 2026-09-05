@@ -22,7 +22,7 @@ grep -q '<AppHeader' "$WEB/modules/plans/PlansRoute.tsx" \
 grep -q '<AppHeader' "$WEB/modules/occurrences/PublicOccurrencesRoute.tsx" \
   || fail "Ocorrências não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/modules/institutions/RepresentativesRoute.tsx" \
-  || fail "Representantes não usa AppHeader compartilhado"
+  || fail "diretório público não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/modules/panel/UserPanelRoute.tsx" \
   || fail "Painel não usa AppHeader compartilhado"
 grep -q '<AppHeader' "$WEB/modules/profile/ProfileRoute.tsx" \
@@ -69,9 +69,11 @@ grep -q "href: '/ocorrencias'" "$WEB/app/layout/AppNavigation.tsx" \
 grep -A6 "id: 'occurrences'" "$WEB/app/layout/AppNavigation.tsx" | grep -q 'public: true' \
   || fail "listagem pública de ocorrências não está visível para visitantes"
 grep -q "href: '/representantes'" "$WEB/app/layout/AppNavigation.tsx" \
-  || fail "Representantes não aponta para /representantes"
+  || fail "Masters não aponta para /representantes"
+grep -A6 "id: 'representatives'" "$WEB/app/layout/AppNavigation.tsx" | grep -q "label: 'Masters'" \
+  || fail "navegação pública não usa o rótulo Masters"
 grep -A6 "id: 'representatives'" "$WEB/app/layout/AppNavigation.tsx" | grep -q 'public: true' \
-  || fail "Representantes não está visível na navegação pública"
+  || fail "Masters não está visível na navegação pública"
 ! grep -A6 "id: 'profile'" "$WEB/app/layout/AppNavigation.tsx" | grep -q "href: '/#perfil'" \
   || fail "Perfil voltou para a navegação principal/âncora da Home"
 
@@ -87,6 +89,16 @@ grep -q 'OccurrenceAssignmentPanel' "$WEB/modules/panel/UserPanel.tsx" \
   || fail "ocorrências Master/subconta não foram movidas para /painel"
 grep -q 'ChatInbox' "$WEB/modules/panel/UserPanel.tsx" \
   || fail "Conversas não foi movido para /painel"
+grep -q 'id="painel-publicacoes"' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "Publicações da conta Master não estão em /painel"
+grep -q '<PostManagementPanel />' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "gestão de publicações da conta Master não está em /painel"
+grep -q 'id="painel-equipe"' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "Equipe e permissões da conta Master não estão em /painel"
+grep -q '<MasterTeamPanel />' "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "gestão de equipe da conta Master não está em /painel"
+grep -q "access.mode === 'master'" "$WEB/modules/panel/UserPanel.tsx" \
+  || fail "módulos operacionais de Master não estão condicionados ao modo master"
 
 grep -q 'path="/perfil"' "$WEB/main.tsx" \
   || fail "rota /perfil não registrada"
@@ -119,6 +131,26 @@ grep -q 'path="/representantes"' "$WEB/main.tsx" \
   || fail "rota /representantes não registrada"
 grep -q 'InstitutionDirectory' "$WEB/modules/institutions/RepresentativesRoute.tsx" \
   || fail "rota /representantes não reutiliza o diretório institucional"
+grep -q 'title="Órgãos e agentes públicos"' "$WEB/modules/institutions/InstitutionDirectory.tsx" \
+  || fail "diretório público não usa o título Órgãos e agentes públicos"
+grep -q '>Agentes públicos<' "$WEB/modules/institutions/InstitutionDirectory.tsx" \
+  || fail "cards do diretório não usam o rótulo Agentes públicos"
+grep -q 'Buscar órgão ou agente público' "$WEB/modules/institutions/InstitutionDirectory.tsx" \
+  || fail "busca do diretório ainda não usa terminologia de órgão/agente público"
+grep -q 'Carregando órgãos e agentes públicos' "$WEB/modules/institutions/RepresentativesRoute.tsx" \
+  || fail "loading da rota pública ainda não usa terminologia de órgão/agente público"
+for old_copy in \
+  'Instituições e representantes' \
+  'Consulte órgãos e representantes' \
+  'Buscar instituição ou representante' \
+  'nome do representante' \
+  'Nenhum representante cadastrado' \
+  '>Representantes<' \
+  'Carregando representantes'; do
+  if grep -Fq "$old_copy" "$WEB/modules/institutions/InstitutionDirectory.tsx" "$WEB/modules/institutions/RepresentativesRoute.tsx"; then
+    fail "termo público antigo ainda presente em /representantes: $old_copy"
+  fi
+done
 
 ! grep -q 'OccurrenceCenter' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "Minhas ocorrências voltou a ser renderizado na Home"
@@ -127,11 +159,15 @@ grep -q 'InstitutionDirectory' "$WEB/modules/institutions/RepresentativesRoute.t
 ! grep -q 'ChatInbox' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "Conversas voltou a ser renderizado na Home"
 ! grep -q 'InstitutionDirectory' "$WEB/modules/home/HomeAccountModules.tsx" \
-  || fail "Instituições e representantes voltaram a ser renderizados na Home"
+  || fail "diretório institucional voltou a ser renderizado na Home"
 ! grep -q 'dashboard-profile-section' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "informações do perfil voltaram a ser renderizadas na Home"
 ! grep -q 'id="perfil"' "$WEB/modules/home/HomeAccountModules.tsx" \
   || fail "âncora de perfil voltou a ser renderizada na Home"
+grep -q 'if (isMaster) return null;' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "conta Master ainda recebe módulos operacionais na Home"
+! grep -q 'MasterTeamPanel' "$WEB/modules/home/HomeAccountModules.tsx" \
+  || fail "Equipe e permissões ainda está acoplada à Home"
 
 grep -q 'getUserPanelAccess(user, permissions)' "$WEB/app/layout/AppHeader.tsx" \
   || fail "dropdown do perfil não usa a mesma regra de acesso do painel"
@@ -176,15 +212,17 @@ echo "single_home=OK"
 echo "authenticated_home_reuses_public_home=OK"
 echo "centralized_navigation_access=OK"
 echo "public_occurrences_navigation=OK"
-echo "public_representatives_navigation=OK"
+echo "public_masters_navigation=OK"
 echo "profile_route_separated_from_home=OK"
 echo "editable_profile=OK"
 echo "profile_avatar_flow=OK"
 echo "profile_input_masks=OK"
-echo "representatives_route_separated_from_home=OK"
+echo "public_institution_terminology=OK"
 echo "shared_public_occurrence_location=OK"
 echo "shared_google_maps_loader=OK"
 echo "user_panel_permissions=OK"
+echo "master_operations_in_panel=OK"
+echo "master_home_public_only=OK"
 echo "home_private_operations_removed=OK"
 echo "account_dropdown_profile_and_logout=OK"
 echo "how_it_works_video_modal=OK"
