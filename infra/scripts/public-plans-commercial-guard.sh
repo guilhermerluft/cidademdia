@@ -59,7 +59,7 @@ if grep -qi 'POSTAGEMENS' "$PLANS" "$CSS"; then
   fail "typo POSTAGEMENS ainda está presente"
 fi
 
-grep -q 'Os valores e condições de pagamento abaixo são promocionais' "$PLANS" || fail "aviso de valores promocionais ausente"
+! grep -q 'Os valores e condições de pagamento abaixo são promocionais e carregados diretamente do catálogo público vigente do CIDADEMDIA.' "$PLANS" || fail "aviso promocional removido voltou à página de planos"
 
 echo "plans_original_four_benefits=OK"
 echo "plans_occurrence_chat_copy=OK"
@@ -71,5 +71,5 @@ echo "plans_master_individual_name=OK"
 echo "plans_promotion_icon_text_inline=OK"
 echo "plans_numeric_post_limits=OK"
 echo "plans_post_count_spelling=OK"
-echo "plans_promotional_values_notice=OK"
+echo "plans_promotional_values_notice_removed=OK"
 echo "PUBLIC PLANS COMMERCIAL GUARD: OK"
