@@ -1,12 +1,33 @@
 .plans-page__benefits {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(220px, 1fr));
   overflow-x: auto;
   overscroll-behavior-inline: contain;
   scroll-snap-type: inline proximity;
 }
 
 .plans-page__benefits article {
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 9px;
+  text-align: center;
   scroll-snap-align: start;
+}
+
+.plans-page__benefits article > div {
+  min-width: 0;
+  width: 100%;
+}
+
+.plans-page__benefits h2 {
+  white-space: nowrap;
+}
+
+.plans-page__benefits p {
+  max-width: 230px;
+  margin-inline: auto;
 }
 
 .plans-page__benefit-icon--purple {
@@ -15,19 +36,19 @@
 }
 
 .plans-page__plan-promotion {
-  width: 100%;
-  min-height: 58px;
+  min-height: 34px;
   box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
+  align-self: center;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 7px;
   margin-bottom: 8px;
-  padding: 8px 10px;
+  padding: 7px 12px;
   border: 1px solid rgba(208, 183, 44, .3);
-  border-radius: 14px;
-  background: linear-gradient(180deg, rgba(255, 249, 216, .92), rgba(255, 255, 255, .98));
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 249, 216, .94), rgba(255, 255, 255, .98));
   color: #765f00;
   text-align: center;
   box-shadow: 0 8px 22px rgba(118, 95, 0, .06);
@@ -35,7 +56,7 @@
 
 .plans-page__plan-promotion i {
   color: #c19e13;
-  font-size: .94rem;
+  font-size: .86rem;
 }
 
 .plans-page__plan-promotion span {
@@ -44,43 +65,33 @@
   line-height: 1.1;
   letter-spacing: .05em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .plans-page__posting-badge {
   width: 100%;
-  min-height: 50px;
+  min-height: 42px;
   box-sizing: border-box;
   align-self: stretch;
-  flex-direction: column;
   justify-content: center;
-  gap: 2px;
   padding: 7px 10px;
   border-radius: 12px;
   text-align: center;
 }
 
-.plans-page__posting-badge span {
-  display: block;
-  color: #6c7c8d;
-  font-size: .61rem;
-  font-weight: 900;
-  line-height: 1.15;
-  letter-spacing: .045em;
-}
-
 .plans-page__posting-badge strong {
   display: block;
   color: #173d62;
-  font-size: .82rem;
+  font-size: .76rem;
   font-weight: 950;
   line-height: 1.15;
-  text-transform: none;
-  letter-spacing: 0;
+  letter-spacing: .035em;
+  white-space: nowrap;
 }
 
 @media (max-width: 1180px) {
   .plans-page__benefits {
-    grid-template-columns: repeat(5, minmax(220px, 1fr));
+    grid-template-columns: repeat(5, minmax(230px, 230px));
     padding-bottom: 18px;
   }
 
@@ -98,6 +109,6 @@
 
 @media (max-width: 720px) {
   .plans-page__benefits {
-    grid-template-columns: repeat(5, minmax(230px, 1fr));
+    grid-template-columns: repeat(5, minmax(230px, 230px));
   }
 }
