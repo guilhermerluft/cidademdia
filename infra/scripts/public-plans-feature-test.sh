@@ -82,7 +82,9 @@ grep -q "<AppHeader" "$WT/apps/web/src/modules/occurrences/PublicOccurrencesRout
 grep -q "id: 'plans'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "Planos ausente da fonte central de navegação"
 grep -q "id: 'representatives'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
-  || fail "Representantes ausente da navegação central"
+  || fail "Masters ausente da navegação central"
+grep -A6 "id: 'representatives'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" | grep -q "label: 'Masters'" \
+  || fail "rótulo Masters ausente da navegação central"
 grep -q "const canViewOccurrences = isCitizen" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "controle central de acesso a ocorrências não foi encontrado"
 grep -q "isSubaccount && permissions.includes('occurrence.read.targeted')" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
@@ -181,8 +183,8 @@ for text in \
     || fail "texto ausente do bundle: $text"
 done
 
-docker exec "$WEB_ID" sh -lc "grep -R -q 'Visualize e acompanhe as demandas da sua gestão, com interação direta e contínua com o cidadão via chat integrado na própria ocorrência.' /usr/share/nginx/html/assets" \
-  || fail "descrição refinada de ocorrências/chat ausente do bundle"
+docker exec "$WEB_ID" sh -lc "grep -R -q 'Acompanhe demandas e interaja via chat com o cidadão no chamado.' /usr/share/nginx/html/assets" \
+  || fail "descrição curta de ocorrências/chat ausente do bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -q "Acesso às ocorrências e conversa com o cidadão" /usr/share/nginx/html/assets' \
   || fail "benefício consolidado antigo ainda está presente no bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -q "QTD POSTAGENS/MÊS" /usr/share/nginx/html/assets' \
@@ -216,7 +218,7 @@ const browser = await chromium.launch({
 });
 
 const expectedBenefits = [
-  ['Acesso às ocorrências', 'Visualize e acompanhe as demandas da sua gestão, com interação direta e contínua com o cidadão via chat integrado na própria ocorrência.'],
+  ['Acesso às ocorrências', 'Acompanhe demandas e interaja via chat com o cidadão no chamado.'],
   ['Gerencie subcontas', 'Organize equipes e distribua acessos conforme a capacidade do plano.'],
   ['Receba notificações', 'Acompanhe movimentações importantes sem perder atualizações.'],
   ['Postagens mensais', 'Publique conteúdos institucionais de acordo com a franquia contratada.'],
@@ -239,7 +241,7 @@ async function validateHomeDesktop() {
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
   const labels = await publicHeaderLabels(page);
-  if (labels.join('|') !== 'Início|Planos|Ocorrências|Representantes') {
+  if (labels.join('|') !== 'Início|Planos|Ocorrências|Masters') {
     throw new Error(`header público da Home inesperado: ${labels.join('|')}`);
   }
   const heroCta = page.locator('.public-home__hero-actions button.ced-button').filter({ hasText: 'Conheça os planos' }).first();
@@ -257,7 +259,7 @@ async function validatePlans(viewport, screenshot, mobile) {
   await page.locator('.plans-page__plans-grid').waitFor({ state: 'visible', timeout: 15000 });
 
   const labels = await publicHeaderLabels(page);
-  if (labels.join('|') !== 'Início|Planos|Ocorrências|Representantes') {
+  if (labels.join('|') !== 'Início|Planos|Ocorrências|Masters') {
     throw new Error(`header público de Planos inesperado: ${labels.join('|')}`);
   }
 
@@ -385,7 +387,7 @@ async function validatePlans(viewport, screenshot, mobile) {
 
   if (mobile) {
     const bottomLabels = await page.locator('.app-bottom-nav__item').allInnerTexts();
-    for (const expected of ['Início', 'Planos', 'Ocorrências', 'Representantes', 'Entrar', 'Criar conta']) {
+    for (const expected of ['Início', 'Planos', 'Ocorrências', 'Masters', 'Entrar', 'Criar conta']) {
       if (!bottomLabels.some(label => label.includes(expected))) throw new Error(`bottom nav público sem ${expected}`);
     }
   }
