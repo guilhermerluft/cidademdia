@@ -11,6 +11,7 @@ fail() {
 MAIN="$ROOT/apps/web/src/main.tsx"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 HOME_REFINEMENT="$ROOT/apps/web/src/modules/home/home-refinement.css"
+HOME_DIR="$ROOT/apps/web/src/modules/home"
 COMMERCIAL_MODAL="$ROOT/apps/web/src/components/CommercialSignupModal.tsx"
 COMMERCIAL_CSS="$ROOT/apps/web/src/styles/commercial-signup-modal.css"
 
@@ -35,6 +36,9 @@ fi
 if grep -q 'public-home__hero-benefit' "$HOME"; then
   fail "cards antigos de benefício ainda estão renderizados"
 fi
+if grep -RInE '\.public-home__hero::after[[:space:]]*\{' "$HOME_DIR" --include='*.css' >/dev/null; then
+  fail "pseudo-elemento ::after de benefícios ainda existe no hero"
+fi
 
 grep -q 'O CIDADEMDIA conecta cidadãos e gestores, permitindo <strong>publicar ocorrências gratuitamente</strong> e acompanhar cada demanda,' "$HOME" || fail "novo texto comercial do hero ausente ou sem destaque"
 grep -q 'tornando a gestão mais ágil, transparente e eficiente.' "$HOME" || fail "fechamento institucional do hero foi alterado"
@@ -50,6 +54,7 @@ grep -q 'Como funciona' "$HOME" || fail "CTA Como funciona foi alterado ou remov
 
 echo "commercial_signup_brand_header=OK"
 echo "hero_benefit_cards_removed=OK"
+echo "hero_benefit_pseudo_after_removed=OK"
 echo "hero_free_occurrence_copy=OK"
 echo "hero_free_occurrence_copy_bold=OK"
 echo "hero_original_title_preserved=OK"
