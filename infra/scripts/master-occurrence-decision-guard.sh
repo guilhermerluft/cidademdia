@@ -38,7 +38,7 @@ grep -q "status === 'ACCEPTED'" "$CITIZEN_CHAT" || fail "chat do cidadão não e
 grep -q '/occurrences/${occurrenceId}/targets' "$CITIZEN_CHAT" || fail "chat do cidadão não resolve targets da própria ocorrência"
 grep -q 'ChatPanel' "$CHAT_MODAL" || fail "modal contextual não reutiliza ChatPanel"
 
-! grep -q 'ChatInbox' "$USER_PANEL" || fail "ChatInbox ainda está fixo no painel"
+! grep -q '<ChatInbox' "$USER_PANEL" || fail "ChatInbox ainda está renderizado de forma fixa no painel"
 ! grep -q 'painel-conversas' "$USER_PANEL" || fail "atalho fixo de Conversas ainda está no painel"
 
 grep -q "\['media', 'team', 'admin'\]" "$HEADER" || fail "header voltou a exibir Mídias, Equipe ou Admin"
