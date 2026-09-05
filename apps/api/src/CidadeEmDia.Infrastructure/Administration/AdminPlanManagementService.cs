@@ -70,7 +70,7 @@ internal sealed class AdminPlanManagementService(AppDbContext dbContext)
         {
             await transaction.RollbackAsync(cancellationToken);
             return AdminResult<AdminPlanVersionChange>.Success(
-                new AdminPlanVersionChange(ToItem(current), false));
+                new AdminPlanVersionChange(ToItem(current, current.PlanOffer), false));
         }
 
         var nextVersionNumber = await dbContext.PlanVersions
@@ -118,10 +118,8 @@ internal sealed class AdminPlanManagementService(AppDbContext dbContext)
                 exception.InnerException?.Message);
         }
 
-        next.PlanOffer = current.PlanOffer;
-
         return AdminResult<AdminPlanVersionChange>.Success(
-            new AdminPlanVersionChange(ToItem(next), true));
+            new AdminPlanVersionChange(ToItem(next, current.PlanOffer), true));
     }
 
     private Task<bool> IsActiveAdminAsync(Guid requesterUserId, CancellationToken cancellationToken) =>
@@ -136,14 +134,14 @@ internal sealed class AdminPlanManagementService(AppDbContext dbContext)
     private static string Describe(PlanVersion version) =>
         $"v{version.Version};price={version.PriceCents};signup={version.SignupFeeCents};sub={version.SubaccountLimit};pub={version.MonthlyPublicationLimit}";
 
-    private static AdminPlanItem ToItem(PlanVersion version) => new(
+    private static AdminPlanItem ToItem(PlanVersion version, PlanOffer offer) => new(
         version.Id,
-        version.PlanOffer.Plan.Key,
-        version.PlanOffer.Plan.Name,
-        version.PlanOffer.Key,
-        version.PlanOffer.Category.Key,
-        version.PlanOffer.Category.Name,
-        version.PlanOffer.Category.BillingIntervalMonths,
+        offer.Plan.Key,
+        offer.Plan.Name,
+        offer.Key,
+        offer.Category.Key,
+        offer.Category.Name,
+        offer.Category.BillingIntervalMonths,
         version.Version,
         version.PriceCents,
         version.SignupFeeCents,
