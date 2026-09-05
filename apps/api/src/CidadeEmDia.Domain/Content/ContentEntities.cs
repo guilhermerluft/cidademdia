@@ -32,9 +32,10 @@ public static class PostPlacementKeys
     public const string Feed = "feed";
     public const string Horizontal = "horizontal";
     public const string Vertical = "vertical";
+    public const string Hero = "hero";
 
     public static bool IsSupported(string? value) =>
-        value is Feed or Horizontal or Vertical;
+        value is Feed or Horizontal or Vertical or Hero;
 }
 
 public sealed class Post : BaseEntity
