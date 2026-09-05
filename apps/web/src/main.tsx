@@ -1,7 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { App } from './app/App';
 import { CommercialSignupModal } from './components/CommercialSignupModal';
 import { ToastViewport } from './components/ToastViewport';
@@ -51,6 +51,11 @@ installOccurrenceFormValidationUi();
 
 const queryClient = new QueryClient();
 
+function AppRoute() {
+  const location = useLocation();
+  return <App key={`${location.key}:${location.search}`} />;
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
@@ -67,7 +72,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/painel" element={<UserPanelRoute />} />
             <Route path="/perfil" element={<ProfileRoute />} />
             <Route path="/planos" element={<PlansRoute />} />
-            <Route path="*" element={<App />} />
+            <Route path="*" element={<AppRoute />} />
           </Routes>
         </AuthProvider>
       </BrowserRouter>
