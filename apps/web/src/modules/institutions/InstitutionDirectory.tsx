@@ -20,6 +20,12 @@ const scopeLabels: Record<string, string> = {
   OTHER: 'Outro',
 };
 
+function publicInstitutionCopy(value: string) {
+  return value
+    .replace(/\brepresentantes\b/gi, 'agentes públicos')
+    .replace(/\brepresentante\b/gi, 'agente público');
+}
+
 function representativeStatusLabel(representative: InstitutionRepresentativeItem) {
   switch (representative.profileStatus) {
     case 'ACTIVE':
@@ -50,7 +56,7 @@ function InstitutionCard({ institution }: { institution: InstitutionItem }) {
             <Badge variant="primary">
               {institutionTypeLabels[institution.type] ?? institution.type}
             </Badge>
-            <h3>{institution.name}</h3>
+            <h3>{publicInstitutionCopy(institution.name)}</h3>
           </div>
           <span className="institution-directory__scope">
             {scopeLabels[institution.scopeLevel] ?? institution.scopeLevel}
@@ -59,7 +65,7 @@ function InstitutionCard({ institution }: { institution: InstitutionItem }) {
         </div>
 
         {institution.description ? (
-          <p className="institution-directory__description">{institution.description}</p>
+          <p className="institution-directory__description">{publicInstitutionCopy(institution.description)}</p>
         ) : null}
 
         {institution.representatives.length === 0 ? (
@@ -71,7 +77,7 @@ function InstitutionCard({ institution }: { institution: InstitutionItem }) {
               <div className="institution-directory__representative" key={representative.id}>
                 <div>
                   <strong>{representative.name}</strong>
-                  <span>{representative.publicRole}</span>
+                  <span>{publicInstitutionCopy(representative.publicRole)}</span>
                 </div>
                 <Badge variant={representativeStatusVariant(representative)}>
                   {representativeStatusLabel(representative)}
