@@ -71,6 +71,9 @@ jobs:
       - name: Public occurrence details guard
         run: bash ../../infra/scripts/public-occurrence-details-guard.sh
 
+      - name: Public home commercial guard
+        run: bash ../../infra/scripts/public-home-commercial-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 
