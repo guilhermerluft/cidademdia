@@ -50,7 +50,7 @@ function MasterCard({ master }: { master: MasterDirectoryItem }) {
           </p>
         ) : (
           <div className="institution-directory__representatives">
-            <span className="institution-directory__label">Órgãos e vínculos</span>
+            <span className="institution-directory__label">Agentes públicos</span>
             {master.institutions.map((institution) => (
               <div className="institution-directory__representative" key={institution.institutionId}>
                 <div>
@@ -99,7 +99,7 @@ export function InstitutionDirectory() {
         setTotalItems(result.totalItems);
       })
       .catch(() => {
-        if (active) setError('Não foi possível carregar as contas Master agora.');
+        if (active) setError('Não foi possível carregar o diretório institucional agora.');
       })
       .finally(() => {
         if (active) setLoading(false);
@@ -133,17 +133,17 @@ export function InstitutionDirectory() {
       aria-labelledby="institution-directory-title"
     >
       <SectionHeading
-        title="Masters"
-        subtitle="Consulte todas as contas Master ativas no CidadeEmDia e seus vínculos institucionais."
+        title="Órgãos e agentes públicos"
+        subtitle="Consulte órgãos e agentes públicos cadastrados no CidadeEmDia."
       />
 
       <div className="institution-directory__filters">
         <label>
-          <span>Buscar Master ou órgão</span>
+          <span>Buscar órgão ou agente público</span>
           <input
             type="search"
             value={search}
-            placeholder="Ex.: Prefeitura, Câmara, nome da conta Master"
+            placeholder="Ex.: Prefeitura, Câmara, nome do agente público"
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
@@ -162,7 +162,7 @@ export function InstitutionDirectory() {
       </div>
 
       {loading ? (
-        <Card><CardBody><p>Carregando Masters...</p></CardBody></Card>
+        <Card><CardBody><p>Carregando diretório...</p></CardBody></Card>
       ) : error ? (
         <Card><CardBody><p className="institution-directory__error" role="alert">{error}</p></CardBody></Card>
       ) : masters.length === 0 ? (
