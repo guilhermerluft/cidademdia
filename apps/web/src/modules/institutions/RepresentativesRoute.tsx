@@ -16,7 +16,7 @@ export function RepresentativesRoute() {
         <AppHeader active="representatives" />
         <main className="representatives-page representatives-page--loading" aria-busy="true">
           <Brand />
-          <span>Carregando representantes...</span>
+          <span>Carregando órgãos e agentes públicos...</span>
         </main>
         <AppBottomNavigation active="representatives" />
       </>
