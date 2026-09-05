@@ -2,11 +2,14 @@ using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Identity;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
+using CidadeEmDia.Infrastructure.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace CidadeEmDia.Infrastructure.Occurrences;
 
-internal sealed class OccurrenceAssignmentService(AppDbContext dbContext)
+internal sealed class OccurrenceAssignmentService(
+    AppDbContext dbContext,
+    R2ObjectStorage storage)
     : IOccurrenceAssignmentService
 {
     private const int MaxItems = 100;
@@ -28,6 +31,8 @@ internal sealed class OccurrenceAssignmentService(AppDbContext dbContext)
             .ToListAsync(cancellationToken);
 
         var targetIds = targets.Select(x => x.Id).ToArray();
+        var occurrenceIds = targets.Select(x => x.OccurrenceId).Distinct().ToArray();
+        var covers = await LoadCoverMediaAsync(occurrenceIds, cancellationToken);
         var assignments = targetIds.Length == 0
             ? []
             : await dbContext.OccurrenceTargetAssignments
@@ -50,6 +55,7 @@ internal sealed class OccurrenceAssignmentService(AppDbContext dbContext)
                 target.Occurrence.Status.Value,
                 target.Status.Value,
                 target.UpdatedAt,
+                covers.GetValueOrDefault(target.OccurrenceId),
                 assignmentByTarget.TryGetValue(target.Id, out var assignment)
                     ? ToItem(assignment, target, assignment.MasterSubaccount)
                     : null))
@@ -217,6 +223,43 @@ internal sealed class OccurrenceAssignmentService(AppDbContext dbContext)
         }
 
         return OccurrenceAssignmentResult.Success(null);
+    }
+
+    private async Task<Dictionary<Guid, PublicOccurrenceMediaItem>> LoadCoverMediaAsync(
+        Guid[] occurrenceIds,
+        CancellationToken cancellationToken)
+    {
+        if (!storage.IsConfigured || occurrenceIds.Length == 0)
+            return new Dictionary<Guid, PublicOccurrenceMediaItem>();
+
+        var mediaRows = await dbContext.OccurrenceMedia
+            .AsNoTracking()
+            .Where(media => media.OccurrenceId.HasValue
+                && occurrenceIds.Contains(media.OccurrenceId.Value)
+                && media.Status == OccurrenceMediaStatus.Ready
+                && media.ContentType.StartsWith("image/"))
+            .OrderBy(media => media.CreatedAt)
+            .ThenBy(media => media.Id)
+            .ToListAsync(cancellationToken);
+
+        var result = new Dictionary<Guid, PublicOccurrenceMediaItem>();
+        foreach (var media in mediaRows)
+        {
+            var occurrenceId = media.OccurrenceId!.Value;
+            if (result.ContainsKey(occurrenceId))
+                continue;
+
+            var now = DateTimeOffset.UtcNow;
+            var readUrl = storage.CreateReadUrl(media.ObjectKey, now, out var expiresAt);
+            result[occurrenceId] = new PublicOccurrenceMediaItem(
+                media.Id,
+                media.OriginalFileName,
+                media.ContentType,
+                readUrl,
+                expiresAt);
+        }
+
+        return result;
     }
 
     private Task<bool> IsActiveMasterAsync(Guid masterUserId, CancellationToken cancellationToken) =>
