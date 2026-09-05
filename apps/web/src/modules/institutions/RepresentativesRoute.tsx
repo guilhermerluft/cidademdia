@@ -32,8 +32,8 @@ export function RepresentativesRoute() {
         user={authenticatedUser}
         permissions={access.permissions}
         onLogout={authenticatedUser ? logout : undefined}
-        onLogin={authenticatedUser ? undefined : () => navigate('/')}
-        onRegister={authenticatedUser ? undefined : () => navigate('/')}
+        onLogin={authenticatedUser ? undefined : () => navigate('/?auth=login')}
+        onRegister={authenticatedUser ? undefined : () => navigate('/?auth=register')}
       />
       <main className="representatives-page" aria-labelledby="institution-directory-title">
         <div className="representatives-page__container">
@@ -44,8 +44,8 @@ export function RepresentativesRoute() {
         active="representatives"
         user={authenticatedUser}
         permissions={access.permissions}
-        onLogin={authenticatedUser ? undefined : () => navigate('/')}
-        onRegister={authenticatedUser ? undefined : () => navigate('/')}
+        onLogin={authenticatedUser ? undefined : () => navigate('/?auth=login')}
+        onRegister={authenticatedUser ? undefined : () => navigate('/?auth=register')}
       />
     </div>
   );

@@ -86,6 +86,9 @@ jobs:
       - name: Public master directory guard
         run: bash ../../infra/scripts/public-master-directory-guard.sh
 
+      - name: Direct auth navigation guard
+        run: bash ../../infra/scripts/direct-auth-navigation-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 
