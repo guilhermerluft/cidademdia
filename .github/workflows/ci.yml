@@ -65,6 +65,9 @@ jobs:
       - name: Architecture guard
         run: bash ../../infra/scripts/frontend-architecture-test.sh
 
+      - name: Admin management console guard
+        run: bash ../../infra/scripts/admin-management-console-guard.sh
+
       - name: Occurrence media presentation guard
         run: bash ../../infra/scripts/occurrence-media-presentation-guard.sh
 
