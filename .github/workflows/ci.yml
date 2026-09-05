@@ -74,6 +74,9 @@ jobs:
       - name: Public home commercial guard
         run: bash ../../infra/scripts/public-home-commercial-guard.sh
 
+      - name: Public plans commercial guard
+        run: bash ../../infra/scripts/public-plans-commercial-guard.sh
+
       - name: Typecheck
         run: npm run typecheck
 
