@@ -16,6 +16,7 @@ import { OccurrenceMediaGallery } from './OccurrenceMediaGallery';
 import type { EligibleMaster, OccurrenceCategory, OccurrencePage } from './types';
 
 const ACCEPTED_MEDIA_TYPES = 'image/jpeg,image/png,image/webp,video/mp4,video/webm';
+const REQUIRED_FIELD_MESSAGE = 'Esse campo é obrigatório';
 
 interface OccurrenceFormState {
   categoryId: string;
@@ -34,6 +35,20 @@ interface OccurrenceFormState {
   externalProtocolNumber: string;
   externalProtocolAgency: string;
 }
+
+type OccurrenceRequiredField =
+  | 'categoryId'
+  | 'masterUserId'
+  | 'title'
+  | 'street'
+  | 'number'
+  | 'neighborhood'
+  | 'city'
+  | 'externalProtocolNumber'
+  | 'photo';
+
+type OccurrenceFormRequiredField = Exclude<OccurrenceRequiredField, 'photo'>;
+type OccurrenceFieldErrors = Partial<Record<OccurrenceRequiredField, string>>;
 
 const INITIAL_FORM: OccurrenceFormState = {
   categoryId: '',
@@ -63,6 +78,17 @@ const STATUS_LABELS: Record<string, string> = {
   ENCERRADA: 'Encerrada',
   CANCELADA: 'Cancelada',
 };
+
+function isOccurrenceRequiredField(field: keyof OccurrenceFormState): field is OccurrenceFormRequiredField {
+  return field === 'categoryId'
+    || field === 'masterUserId'
+    || field === 'title'
+    || field === 'street'
+    || field === 'number'
+    || field === 'neighborhood'
+    || field === 'city'
+    || field === 'externalProtocolNumber';
+}
 
 function statusVariant(status: string) {
   switch (status) {
@@ -159,19 +185,19 @@ function buildAddressQuery(form: OccurrenceFormState) {
   ].filter(Boolean).join(', ');
 }
 
-function validateOccurrenceForm(form: OccurrenceFormState, files: File[]) {
-  const errors: string[] = [];
+function validateOccurrenceForm(form: OccurrenceFormState, files: File[]): OccurrenceFieldErrors {
+  const errors: OccurrenceFieldErrors = {};
 
-  if (!form.categoryId) errors.push('Selecione a categoria.');
-  if (!form.masterUserId) errors.push('Selecione a conta Master que receberá a solicitação.');
-  if (!form.title.trim()) errors.push('Informe o título da ocorrência.');
-  if (!form.street.trim()) errors.push('Informe a rua.');
-  if (!form.number.trim()) errors.push('Informe o número.');
-  if (!form.neighborhood.trim()) errors.push('Informe o bairro.');
-  if (!form.city.trim()) errors.push('Informe a cidade.');
-  if (!form.externalProtocolNumber.trim()) errors.push('Informe o número do protocolo.');
+  if (!form.categoryId) errors.categoryId = REQUIRED_FIELD_MESSAGE;
+  if (!form.masterUserId) errors.masterUserId = REQUIRED_FIELD_MESSAGE;
+  if (!form.title.trim()) errors.title = REQUIRED_FIELD_MESSAGE;
+  if (!form.street.trim()) errors.street = REQUIRED_FIELD_MESSAGE;
+  if (!form.number.trim()) errors.number = REQUIRED_FIELD_MESSAGE;
+  if (!form.neighborhood.trim()) errors.neighborhood = REQUIRED_FIELD_MESSAGE;
+  if (!form.city.trim()) errors.city = REQUIRED_FIELD_MESSAGE;
+  if (!form.externalProtocolNumber.trim()) errors.externalProtocolNumber = REQUIRED_FIELD_MESSAGE;
   if (!files.some((file) => file.type.startsWith('image/'))) {
-    errors.push('Adicione pelo menos uma foto da ocorrência.');
+    errors.photo = REQUIRED_FIELD_MESSAGE;
   }
 
   return errors;
@@ -189,7 +215,7 @@ export function OccurrenceCenter() {
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
-  const [validationErrors, setValidationErrors] = useState<string[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<OccurrenceFieldErrors>({});
 
   async function loadOccurrenceData() {
     const [nextCategories, nextMasters, nextOccurrences] = await Promise.all([
@@ -232,9 +258,22 @@ export function OccurrenceCenter() {
     };
   }, []);
 
+  function clearFieldError(field: OccurrenceRequiredField) {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  }
+
   function updateField<K extends keyof OccurrenceFormState>(field: K, value: OccurrenceFormState[K]) {
     setForm((current) => ({ ...current, [field]: value }));
-    setValidationErrors([]);
+
+    if (isOccurrenceRequiredField(field) && value.trim()) {
+      clearFieldError(field);
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -244,12 +283,12 @@ export function OccurrenceCenter() {
     setProgress(null);
 
     const requiredErrors = validateOccurrenceForm(form, files);
-    if (requiredErrors.length > 0) {
-      setValidationErrors(requiredErrors);
+    setFieldErrors(requiredErrors);
+
+    if (Object.keys(requiredErrors).length > 0) {
       return;
     }
 
-    setValidationErrors([]);
     setSubmitting(true);
 
     try {
@@ -302,6 +341,7 @@ export function OccurrenceCenter() {
         ...INITIAL_FORM,
         categoryId: categories[0]?.id || '',
       });
+      setFieldErrors({});
       setFiles([]);
       setFileInputKey((value) => value + 1);
       await loadOccurrenceData();
@@ -332,10 +372,12 @@ export function OccurrenceCenter() {
             </div>
 
             <form className="occurrence-form" onSubmit={handleSubmit} noValidate>
-              <label className="occurrence-form__protocol-field occurrence-form__full">
+              <label className={`occurrence-form__protocol-field occurrence-form__full${fieldErrors.externalProtocolNumber ? ' occurrence-required-invalid' : ''}`}>
                 Número do protocolo <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
                   required
+                  className={fieldErrors.externalProtocolNumber ? 'occurrence-required-input-invalid' : undefined}
+                  aria-invalid={fieldErrors.externalProtocolNumber ? 'true' : undefined}
                   value={form.externalProtocolNumber}
                   onChange={(event) => updateField('externalProtocolNumber', event.target.value)}
                   placeholder="Ex.: 2026-000123"
@@ -343,10 +385,12 @@ export function OccurrenceCenter() {
                 <small>Esse protocolo identifica a solicitação junto ao órgão ou serviço relacionado.</small>
               </label>
 
-              <label className="occurrence-form__paired-field">
+              <label className={`occurrence-form__paired-field${fieldErrors.categoryId ? ' occurrence-required-invalid' : ''}`}>
                 Categoria <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
                   required
+                  className={fieldErrors.categoryId ? 'occurrence-required-input-invalid' : undefined}
+                  aria-invalid={fieldErrors.categoryId ? 'true' : undefined}
                   value={form.categoryId}
                   onChange={(event) => updateField('categoryId', event.target.value)}
                   disabled={loading || categories.length === 0}
@@ -358,10 +402,12 @@ export function OccurrenceCenter() {
                 </select>
               </label>
 
-              <label className="occurrence-form__paired-field">
+              <label className={`occurrence-form__paired-field${fieldErrors.masterUserId ? ' occurrence-required-invalid' : ''}`}>
                 Conta Master <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
                   required
+                  className={fieldErrors.masterUserId ? 'occurrence-required-input-invalid' : undefined}
+                  aria-invalid={fieldErrors.masterUserId ? 'true' : undefined}
                   value={form.masterUserId}
                   onChange={(event) => updateField('masterUserId', event.target.value)}
                   disabled={loading || masters.length === 0}
@@ -374,10 +420,12 @@ export function OccurrenceCenter() {
                 <small>A ocorrência ficará aguardando o aceite da conta Master selecionada.</small>
               </label>
 
-              <label className="occurrence-form__title-field occurrence-form__full">
+              <label className={`occurrence-form__title-field occurrence-form__full${fieldErrors.title ? ' occurrence-required-invalid' : ''}`}>
                 Título <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
                   required
+                  className={fieldErrors.title ? 'occurrence-required-input-invalid' : undefined}
+                  aria-invalid={fieldErrors.title ? 'true' : undefined}
                   value={form.title}
                   onChange={(event) => updateField('title', event.target.value)}
                   placeholder="Ex.: Buraco grande na via"
@@ -420,16 +468,22 @@ export function OccurrenceCenter() {
                 />
               </label>
 
-              <label className="occurrence-media-field occurrence-form__full">
+              <label className={`occurrence-media-field occurrence-form__full${fieldErrors.photo ? ' occurrence-required-invalid' : ''}`}>
                 Fotos ou vídeos <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
                   key={fileInputKey}
                   type="file"
                   multiple
                   accept={ACCEPTED_MEDIA_TYPES}
+                  className={fieldErrors.photo ? 'occurrence-required-input-invalid' : undefined}
+                  aria-invalid={fieldErrors.photo ? 'true' : undefined}
                   onChange={(event) => {
-                    setFiles(Array.from(event.target.files ?? []));
-                    setValidationErrors([]);
+                    const nextFiles = Array.from(event.target.files ?? []);
+                    setFiles(nextFiles);
+
+                    if (nextFiles.some((file) => file.type.startsWith('image/'))) {
+                      clearFieldError('photo');
+                    }
                   }}
                   disabled={submitting}
                 />
@@ -445,15 +499,6 @@ export function OccurrenceCenter() {
                     </li>
                   ))}
                 </ul>
-              ) : null}
-
-              {validationErrors.length > 0 ? (
-                <div className="occurrence-validation-summary" role="alert">
-                  <strong>Preencha os campos obrigatórios antes de publicar:</strong>
-                  <ul>
-                    {validationErrors.map((validationError) => <li key={validationError}>{validationError}</li>)}
-                  </ul>
-                </div>
               ) : null}
 
               {masters.length === 0 && !loading ? (

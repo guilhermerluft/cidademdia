@@ -25,6 +25,7 @@ HOME_SERVICE="$ROOT/apps/web/src/modules/home/homeService.ts"
 HOME="$ROOT/apps/web/src/modules/home/PublicHome.tsx"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 LOCATION="$ROOT/apps/web/src/modules/occurrences/OccurrenceLocationPicker.tsx"
+VALIDATION_UI="$ROOT/apps/web/src/modules/occurrences/occurrenceFormValidationUi.ts"
 CARD="$ROOT/apps/web/src/modules/occurrences/PublicOccurrenceCard.tsx"
 CARD_CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrence-card.css"
 REQUIRED_LABEL_CSS="$ROOT/apps/web/src/modules/occurrences/occurrence-required-labels.css"
@@ -36,7 +37,7 @@ CSS="$ROOT/apps/web/src/modules/occurrences/public-occurrences.css"
 for file in \
   "$CONTRACTS" "$SERVICE" "$GEO_ENDPOINTS" "$CREATE_ENDPOINTS" "$CREATE_SERVICE" \
   "$MAIN" "$APP" "$TOAST" "$TOAST_VIEWPORT" "$TOAST_CSS" "$COMMERCIAL_EVENT" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS" \
-  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" \
+  "$HOME_SERVICE" "$HOME" "$CENTER" "$LOCATION" "$VALIDATION_UI" "$CARD" "$CARD_CSS" "$REQUIRED_LABEL_CSS" \
   "$LIST" "$MODAL" "$SUPPORT" "$CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
@@ -65,20 +66,36 @@ grep -q 'BeginTransactionAsync' "$CREATE_SERVICE" || fail "criação de ocorrên
 
 grep -q 'listEligibleMasters' "$CENTER" || fail "formulário não lista contas Master"
 grep -q 'masterUserId' "$CENTER" || fail "formulário não envia Master selecionada"
+grep -q 'type OccurrenceFieldErrors = Partial<Record<OccurrenceRequiredField, string>>' "$CENTER" || fail "formulário não mantém erros obrigatórios por campo"
 grep -q "files.some((file) => file.type.startsWith('image/'))" "$CENTER" || fail "formulário não exige pelo menos uma foto"
-grep -q 'Informe o número do protocolo' "$CENTER" || fail "formulário não exige protocolo"
-grep -q 'Informe a rua' "$CENTER" || fail "formulário não valida rua"
-grep -q 'Informe o número' "$CENTER" || fail "formulário não valida número"
-grep -q 'Informe o bairro' "$CENTER" || fail "formulário não valida bairro"
-grep -q 'Informe a cidade' "$CENTER" || fail "formulário não valida cidade"
+grep -q 'errors.externalProtocolNumber = REQUIRED_FIELD_MESSAGE' "$CENTER" || fail "formulário não exige protocolo"
+grep -q 'errors.street = REQUIRED_FIELD_MESSAGE' "$CENTER" || fail "formulário não valida rua"
+grep -q 'errors.number = REQUIRED_FIELD_MESSAGE' "$CENTER" || fail "formulário não valida número"
+grep -q 'errors.neighborhood = REQUIRED_FIELD_MESSAGE' "$CENTER" || fail "formulário não valida bairro"
+grep -q 'errors.city = REQUIRED_FIELD_MESSAGE' "$CENTER" || fail "formulário não valida cidade"
+grep -q "errors.photo = REQUIRED_FIELD_MESSAGE" "$CENTER" || fail "formulário não registra erro contextual de foto"
+grep -q 'delete next\[field\]' "$CENTER" || fail "correção de campo não remove apenas o erro correspondente"
+grep -q "clearFieldError('photo')" "$CENTER" || fail "foto válida não limpa apenas o erro de foto"
+if grep -q 'occurrence-validation-summary' "$CENTER"; then
+  fail "resumo geral de obrigatoriedade não deve permanecer no formulário"
+fi
 grep -q 'Buscar no mapa' "$LOCATION" || fail "endereço digitado não pode ser refletido no mapa"
 grep -q 'street_number' "$LOCATION" || fail "PIN não preenche número do endereço"
 grep -q "getAddressComponent(components, 'route')" "$LOCATION" || fail "PIN não preenche rua"
 grep -q "getAddressComponent(components, 'locality')" "$LOCATION" || fail "PIN não preenche cidade"
+grep -q 'const firstInvalidControl = form.querySelector' "$VALIDATION_UI" || fail "formulário não identifica o primeiro campo obrigatório inválido"
+grep -q 'scrollIntoView' "$VALIDATION_UI" || fail "formulário não conduz o usuário ao primeiro campo obrigatório inválido"
+grep -q 'preventScroll: true' "$VALIDATION_UI" || fail "foco do primeiro campo inválido não preserva o scroll controlado"
 grep -q "occurrence-required-labels.css" "$MAIN" || fail "layout dos títulos obrigatórios não está carregado"
 grep -q 'flex-wrap: wrap' "$REQUIRED_LABEL_CSS" || fail "título e asterisco obrigatórios não permanecem na mesma linha"
+grep -q 'white-space: nowrap' "$REQUIRED_LABEL_CSS" || fail "mensagem obrigatória pode quebrar abaixo do nome do campo"
 grep -q 'occurrence-required-marker' "$REQUIRED_LABEL_CSS" || fail "marcador obrigatório não possui proteção de layout"
+grep -q "content: ' Campo obrigatório'" "$REQUIRED_LABEL_CSS" || fail "mensagem contextual obrigatória não está alinhada ao requisito"
+grep -q 'occurrence-required-invalid > .occurrence-required-marker' "$REQUIRED_LABEL_CSS" || fail "marcador obrigatório não depende do estado inválido do campo"
 grep -q 'occurrence-form__paired-field' "$REQUIRED_LABEL_CSS" || fail "campos pareados não possuem alinhamento compartilhado"
+if grep -q 'box-shadow:.*180, 35, 24' "$REQUIRED_LABEL_CSS"; then
+  fail "erro obrigatório não deve usar box-shadow vermelho"
+fi
 
 PROTOCOL_LINE="$(grep -n 'Número do protocolo <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
 CATEGORY_LINE="$(grep -n 'Categoria <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
@@ -92,7 +109,7 @@ test "$PROTOCOL_LINE" -lt "$CATEGORY_LINE" || fail "protocolo não é o primeiro
 test "$CATEGORY_LINE" -lt "$MASTER_LINE" || fail "categoria e conta Master não estão pareadas na ordem esperada"
 test "$MASTER_LINE" -lt "$TITLE_LINE" || fail "título deveria vir após categoria/conta Master"
 test "$TITLE_LINE" -lt "$DESCRIPTION_LINE" || fail "descrição deveria vir após o título"
-test "$(grep -c 'className="occurrence-form__paired-field"' "$CENTER")" -eq 2 || fail "categoria e conta Master devem ser os dois campos pareados"
+test "$(grep -c 'occurrence-form__paired-field' "$CENTER")" -eq 2 || fail "categoria e conta Master devem ser os dois campos pareados"
 grep -q 'occurrence-form__protocol-field occurrence-form__full' "$CENTER" || fail "protocolo não ocupa linha isolada"
 grep -q 'occurrence-form__title-field occurrence-form__full' "$CENTER" || fail "título não ocupa linha isolada"
 
@@ -166,9 +183,11 @@ echo "occurrence_creation_master_required=OK"
 echo "occurrence_creation_address_required=OK"
 echo "occurrence_creation_protocol_required=OK"
 echo "occurrence_creation_photo_required=OK"
+echo "occurrence_creation_field_errors_scoped=OK"
 echo "occurrence_creation_atomic_target=OK"
 echo "occurrence_address_map_sync=OK"
 echo "occurrence_required_markers_inline=OK"
+echo "occurrence_required_first_invalid_focus=OK"
 echo "public_occurrence_cover_contract=OK"
 echo "public_occurrence_ready_media_only=OK"
 echo "public_occurrence_signed_media=OK"
