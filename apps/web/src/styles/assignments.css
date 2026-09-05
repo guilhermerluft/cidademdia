@@ -37,6 +37,57 @@
   justify-content: flex-end;
 }
 
+.assignment-card__decision {
+  margin-top: var(--ced-space-4);
+  padding: var(--ced-space-4);
+  border: 1px solid var(--ced-color-border);
+  border-radius: var(--ced-radius-sm);
+  background: var(--ced-color-surface-subtle);
+}
+
+.assignment-card__decision > p {
+  margin: 0;
+  color: var(--ced-color-text-muted);
+}
+
+.assignment-card__decision-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ced-space-2);
+  margin-top: var(--ced-space-3);
+}
+
+.assignment-card__decision-actions button {
+  margin-top: 0;
+}
+
+.assignment-card__reject-form {
+  display: grid;
+  gap: var(--ced-space-2);
+}
+
+.assignment-card__reject-form label {
+  font-weight: 600;
+}
+
+.assignment-card__reject-form textarea {
+  width: 100%;
+  min-height: 6rem;
+  resize: vertical;
+  border: 1px solid var(--ced-color-border);
+  border-radius: var(--ced-radius-sm);
+  padding: var(--ced-space-3);
+  background: var(--ced-color-surface);
+  color: var(--ced-color-text);
+  font: inherit;
+}
+
+.assignment-card__reject-form textarea:focus-visible {
+  outline: none;
+  border-color: var(--ced-color-primary-600);
+  box-shadow: var(--ced-focus-ring);
+}
+
 .assignment-card__select {
   display: grid;
   gap: var(--ced-space-2);
@@ -93,5 +144,9 @@
 
   .assignment-card__badges {
     justify-content: flex-start;
+  }
+
+  .assignment-card__decision-actions .ced-button {
+    width: 100%;
   }
 }
