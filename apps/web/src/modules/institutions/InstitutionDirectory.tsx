@@ -37,18 +37,14 @@ function MasterCard({ master }: { master: MasterDirectoryItem }) {
             <Badge variant="success">Master ativo</Badge>
             <h3>{master.displayName}</h3>
           </div>
-          <span className="institution-directory__scope">
-            {master.institutions.length === 0
-              ? 'Sem órgão vinculado'
-              : `${master.institutions.length} ${master.institutions.length === 1 ? 'vínculo' : 'vínculos'}`}
-          </span>
+          {master.institutions.length > 0 ? (
+            <span className="institution-directory__scope">
+              {master.institutions.map((institution) => institution.name).join(' · ')}
+            </span>
+          ) : null}
         </div>
 
-        {master.institutions.length === 0 ? (
-          <p className="institution-directory__empty">
-            Conta Master ativa sem órgão público vinculado.
-          </p>
-        ) : (
+        {master.institutions.length > 0 ? (
           <div className="institution-directory__representatives">
             <span className="institution-directory__label">Agentes públicos</span>
             {master.institutions.map((institution) => (
@@ -67,7 +63,7 @@ function MasterCard({ master }: { master: MasterDirectoryItem }) {
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </CardBody>
     </Card>
   );
