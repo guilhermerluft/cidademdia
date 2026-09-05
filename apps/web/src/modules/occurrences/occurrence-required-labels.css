@@ -30,7 +30,7 @@
   display: none;
   flex: 0 0 auto;
   align-items: center;
-  color: #a44840;
+  color: #9f4c45;
   font-size: 0.76rem;
   font-weight: 800;
   line-height: 1.2;
@@ -47,13 +47,13 @@
 }
 
 .occurrence-form .occurrence-required-input-invalid {
-  border-color: rgba(180, 35, 24, 0.48) !important;
-  box-shadow: 0 0 0 1px rgba(180, 35, 24, 0.035);
+  border-color: rgba(180, 35, 24, 0.38) !important;
+  box-shadow: 0 0 0 1px rgba(180, 35, 24, 0.025);
 }
 
 .occurrence-form .occurrence-required-input-invalid:focus {
-  border-color: rgba(180, 35, 24, 0.62) !important;
-  box-shadow: 0 0 0 2px rgba(180, 35, 24, 0.07) !important;
+  border-color: rgba(180, 35, 24, 0.5) !important;
+  box-shadow: 0 0 0 2px rgba(180, 35, 24, 0.055) !important;
 }
 
 .occurrence-validation-summary {
