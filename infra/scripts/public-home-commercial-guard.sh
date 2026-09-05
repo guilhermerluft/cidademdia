@@ -28,18 +28,34 @@ grep -q 'commercial-signup-modal__brand-header' "$COMMERCIAL_CSS" || fail "heade
 grep -q 'commercial-signup-modal__brand' "$COMMERCIAL_CSS" || fail "logotipo comercial sem estilo dedicado"
 
 grep -q "import './modules/home/home-benefits-refinement.css'" "$MAIN" || fail "refinamento visual dos benefícios do hero não está carregado"
-grep -q 'Apoie ocorrências da sua região' "$HOME_BENEFITS" || fail "benefício de apoio ausente do hero"
-grep -q 'Publique ocorrências gratuitamente' "$HOME_BENEFITS" || fail "benefício de publicação gratuita ausente do hero"
-grep -q 'Acompanhe detalhes e atualizações' "$HOME_BENEFITS" || fail "benefício de acompanhamento ausente do hero"
-grep -q 'public-home__hero::after' "$HOME_BENEFITS" || fail "benefícios não permanecem isolados na camada complementar do hero"
-test "$(grep -o 'data:image/svg+xml' "$HOME_BENEFITS" | wc -l | tr -d ' ')" -ge 3 || fail "os três benefícios não possuem ícones vetoriais próprios"
-grep -q '%23005F73' "$HOME_BENEFITS" || fail "ícone de apoio não usa teal do projeto"
-grep -q '%2317A53C' "$HOME_BENEFITS" || fail "ícone de publicação não usa verde do hero/projeto"
-grep -q '%23F09A13' "$HOME_BENEFITS" || fail "ícone de acompanhamento não usa laranja do hero/projeto"
-grep -q 'border-left: 4px solid #005f73' "$HOME_BENEFITS" || fail "painel de benefícios não possui acento visual da identidade"
-if grep -q "content: '✓" "$HOME_BENEFITS"; then
-  fail "benefícios voltaram ao marcador simples em vez de ícones dedicados"
+grep -q 'Apoie ocorrências da sua região' "$HOME" || fail "benefício de apoio ausente do hero"
+grep -q 'Publique ocorrências gratuitamente' "$HOME" || fail "benefício de publicação gratuita ausente do hero"
+grep -q 'Acompanhe detalhes e atualizações' "$HOME" || fail "benefício de acompanhamento ausente do hero"
+grep -q 'Converse com a Conta Master pelo chat' "$HOME" || fail "benefício de chat com Conta Master ausente do hero"
+test "$(grep -c 'className="public-home__hero-benefit public-home__hero-benefit--' "$HOME")" -eq 4 || fail "hero deve renderizar exatamente quatro cards de benefício"
+
+grep -q 'fa-solid fa-arrow-up' "$HOME" || fail "card de apoio não usa ícone Font Awesome"
+grep -q 'fa-solid fa-bullhorn' "$HOME" || fail "card de publicação não usa ícone Font Awesome"
+grep -q 'fa-solid fa-eye' "$HOME" || fail "card de acompanhamento não usa ícone Font Awesome"
+grep -q 'fa-solid fa-comments' "$HOME" || fail "card de chat não usa ícone Font Awesome"
+
+grep -q 'public-home__hero-benefits' "$HOME_BENEFITS" || fail "container de cards do hero não possui estilo dedicado"
+grep -q 'grid-column: 2' "$HOME_BENEFITS" || fail "cards não ocupam a coluna visual do hero no desktop"
+grep -q 'align-self: center' "$HOME_BENEFITS" || fail "cards não estão centralizados verticalmente no hero"
+grep -q 'justify-self: end' "$HOME_BENEFITS" || fail "cards não alinham com a margem lateral direita do hero-inner"
+grep -q 'background: rgba(255, 255, 255, .68)' "$HOME_BENEFITS" || fail "cards não usam fundo translúcido para preservar a imagem traseira"
+grep -q 'border: none' "$HOME_BENEFITS" || fail "cards ainda possuem borda"
+if grep -q 'border-left:' "$HOME_BENEFITS"; then
+  fail "cards não podem usar borda lateral"
 fi
+if grep -q 'data:image/svg+xml' "$HOME_BENEFITS"; then
+  fail "benefícios devem usar a biblioteca de ícones instalada, não SVG embutido no CSS"
+fi
+
+grep -q 'color: #005f73' "$HOME_BENEFITS" || fail "ícone de apoio não usa teal do projeto"
+grep -q 'color: #17a53c' "$HOME_BENEFITS" || fail "ícone de publicação não usa verde do projeto"
+grep -q 'color: #f09a13' "$HOME_BENEFITS" || fail "ícone de acompanhamento não usa laranja do projeto"
+grep -q 'color: #075ff0' "$HOME_BENEFITS" || fail "ícone de chat não usa azul do projeto"
 
 grep -q 'Uma cidade melhor<br />' "$HOME" || fail "título original do hero foi alterado ou removido"
 grep -q 'quem precisa <span className="public-home__hero-green">é ouvido</span><br />' "$HOME" || fail "destaque verde original do hero foi alterado"
@@ -50,9 +66,13 @@ grep -q '>Conheça os planos<' "$HOME" || fail "CTA Conheça os planos foi alter
 grep -q 'Como funciona' "$HOME" || fail "CTA Como funciona foi alterado ou removido"
 
 echo "commercial_signup_brand_header=OK"
-echo "hero_participation_benefits=OK"
-echo "hero_participation_benefit_icons=OK"
-echo "hero_participation_project_colors=OK"
+echo "hero_four_benefit_cards=OK"
+echo "hero_master_chat_benefit=OK"
+echo "hero_benefit_fontawesome_icons=OK"
+echo "hero_benefit_translucent_background=OK"
+echo "hero_benefit_no_side_border=OK"
+echo "hero_benefit_vertical_center=OK"
+echo "hero_benefit_project_margin_alignment=OK"
 echo "hero_original_copy_preserved=OK"
 echo "hero_original_ctas_preserved=OK"
 echo "PUBLIC HOME COMMERCIAL GUARD: OK"
