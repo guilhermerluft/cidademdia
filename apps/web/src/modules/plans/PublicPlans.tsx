@@ -343,7 +343,6 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
         <div className="plans-page__catalog-heading">
           <span>Escolha sua estrutura</span>
           <h2 id="plans-catalog-title">Planos e condições de pagamento</h2>
-          <p>Os valores e condições de pagamento abaixo são promocionais e carregados diretamente do catálogo público vigente do CIDADEMDIA.</p>
         </div>
 
         {loading && (
