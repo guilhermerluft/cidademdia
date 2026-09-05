@@ -100,6 +100,7 @@ public sealed class ContentDomainTests
     [InlineData(PostPlacementKeys.Feed)]
     [InlineData(PostPlacementKeys.Horizontal)]
     [InlineData(PostPlacementKeys.Vertical)]
+    [InlineData(PostPlacementKeys.Hero)]
     public void Placement_AcceptsApprovedKeys(string placementKey)
     {
         var placement = new PostPlacement(
