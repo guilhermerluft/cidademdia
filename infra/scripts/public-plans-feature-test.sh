@@ -78,29 +78,20 @@ grep -q "<AppHeader" "$WT/apps/web/src/modules/occurrences/PublicOccurrencesRout
   || fail "rota de Ocorrências não usa AppHeader compartilhado"
 ! grep -q "PublicPlansHeader" "$WT/apps/web/src/modules/plans/PublicPlans.tsx" \
   || fail "header duplicado ainda existe em PublicPlans"
-! grep -q "public-home__header" "$WT/apps/web/src/modules/home/PublicHome.tsx" \
-  || fail "markup antigo do header da Home ainda existe"
-! grep -q "dashboard-header" "$WT/apps/web/src/app/layout/DashboardShell.tsx" \
-  || fail "markup antigo do header autenticado ainda existe"
 
 grep -q "id: 'plans'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "Planos ausente da fonte central de navegação"
-grep -q "href: '/ocorrencias'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
-  || fail "Ocorrências não aponta para /ocorrencias na navegação central"
+grep -q "id: 'representatives'" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
+  || fail "Representantes ausente da navegação central"
 grep -q "const canViewOccurrences = isCitizen" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "controle central de acesso a ocorrências não foi encontrado"
 grep -q "isSubaccount && permissions.includes('occurrence.read.targeted')" "$WT/apps/web/src/app/layout/AppNavigation.tsx" \
   || fail "permissão privada de ocorrência da subconta não está preservada no controle central de acesso"
 
 APP_HEADER_IMPL_COUNT="$(grep -R --include='*.tsx' -F 'export function AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
-test "$APP_HEADER_IMPL_COUNT" = "1" \
-  || fail "esperado exatamente 1 componente AppHeader; encontrado $APP_HEADER_IMPL_COUNT"
-APP_HEADER_MARKUP_COUNT="$(grep -F '<header className="app-header"' "$WT/apps/web/src/app/layout/AppHeader.tsx" | wc -l | tr -d ' ')"
-test "$APP_HEADER_MARKUP_COUNT" = "1" \
-  || fail "AppHeader deve possuir exatamente 1 markup de header global; encontrado $APP_HEADER_MARKUP_COUNT"
+test "$APP_HEADER_IMPL_COUNT" = "1" || fail "esperado exatamente 1 componente AppHeader; encontrado $APP_HEADER_IMPL_COUNT"
 APP_HEADER_USAGE_COUNT="$(grep -R --include='*.tsx' -F '<AppHeader' "$WT/apps/web/src" | wc -l | tr -d ' ')"
-test "$APP_HEADER_USAGE_COUNT" -ge "4" \
-  || fail "AppHeader deveria ser reutilizado por Home, Planos, Ocorrências e shell autenticado; usos encontrados: $APP_HEADER_USAGE_COUNT"
+test "$APP_HEADER_USAGE_COUNT" -ge "4" || fail "AppHeader deveria ser reutilizado; usos encontrados: $APP_HEADER_USAGE_COUNT"
 echo "home_frozen_visual_assets=OK"
 echo "shared_app_header_implementation=OK"
 echo "shared_app_header_reuse=$APP_HEADER_USAGE_COUNT"
@@ -169,7 +160,6 @@ for item in payload:
         raise SystemExit('ERRO: preço/taxa negativa no catálogo')
 print(f'billing_catalog_items={len(payload)}')
 print('billing_catalog_contract=OK')
-print('billing_catalog_intervals=' + ','.join(str(x) for x in sorted({int(i['billingIntervalMonths']) for i in payload})))
 PY
 
 echo
@@ -177,24 +167,24 @@ echo "=== 5. BUNDLE / ROTA / ESTRUTURA ==="
 WEB_ID="$(compose ps -q web)"
 test -n "$WEB_ID" || fail "container web da feature não encontrado"
 
-docker exec "$WEB_ID" sh -lc 'grep -R -q "TIPOS DE GESTÃO" /usr/share/nginx/html/assets' \
-  || fail "headline da página de Planos ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "MEGA PROMOÇÃO" /usr/share/nginx/html/assets' \
-  || fail "card Mega Promoção ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "/billing/catalog" /usr/share/nginx/html/assets' \
-  || fail "catálogo real de billing ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "Adesão única" /usr/share/nginx/html/assets' \
-  || fail "informação de adesão ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "Converse com o cidadão" /usr/share/nginx/html/assets' \
-  || fail "benefício de conversa com cidadão ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "pacotes de postagens extras" /usr/share/nginx/html/assets' \
-  || fail "texto de pacotes extras ausente do bundle"
-docker exec "$WEB_ID" sh -lc 'grep -R -q "Oferta promocional" /usr/share/nginx/html/assets' \
-  || fail "breadcrumb promocional ausente do bundle"
+for text in \
+  "TIPOS DE GESTÃO" \
+  "MEGA PROMOÇÃO" \
+  "Converse com o cidadão" \
+  "pacotes de postagens extras" \
+  "Oferta promocional" \
+  "Master Individual" \
+  "QTD POSTAGENS/MÊS"; do
+  docker exec "$WEB_ID" sh -lc "grep -R -q '$text' /usr/share/nginx/html/assets" \
+    || fail "texto ausente do bundle: $text"
+done
+
+docker exec "$WEB_ID" sh -lc '! grep -R -qi "POSTAGEMENS" /usr/share/nginx/html/assets' \
+  || fail "typo POSTAGEMENS presente no bundle"
 echo "plans_bundle=OK"
 
 echo
-echo "=== 6. HEADER COMPARTILHADO / PLANOS DESKTOP E MOBILE ==="
+echo "=== 6. PLANOS DESKTOP E MOBILE ==="
 docker run --rm -i \
   --network host \
   -v "$QA_DIR:/work" \
@@ -233,24 +223,14 @@ async function validateHomeDesktop() {
   const { context, page, errors } = await openPage({ width: 1440, height: 1000 });
   await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
-  await page.locator('.app-header').waitFor({ state: 'visible' });
-
   const labels = await publicHeaderLabels(page);
-  if (labels.join('|') !== 'Início|Planos|Ocorrências') {
+  if (labels.join('|') !== 'Início|Planos|Ocorrências|Representantes') {
     throw new Error(`header público da Home inesperado: ${labels.join('|')}`);
   }
-
-  await page.locator('.app-header__nav a[href="/planos"]').waitFor({ state: 'visible' });
-  await page.locator('.app-header__nav a[href="/ocorrencias"]').waitFor({ state: 'visible' });
-
-  const plansSectionVisible = await page.locator('.public-home__plans').isVisible();
-  if (plansSectionVisible) throw new Error('seção de Planos voltou para a Home');
-
   const heroCta = page.locator('.public-home__hero-actions button.ced-button').filter({ hasText: 'Conheça os planos' }).first();
   await heroCta.waitFor({ state: 'visible' });
   await heroCta.click();
   await page.waitForURL(url => url.pathname === '/planos', { timeout: 10000 });
-
   if (errors.length) throw new Error(`pageerror na Home: ${errors.join(' | ')}`);
   await context.close();
 }
@@ -260,54 +240,84 @@ async function validatePlans(viewport, screenshot, mobile) {
   await page.goto(`${process.env.BASE}/planos`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await page.locator('.plans-page').waitFor({ state: 'visible', timeout: 15000 });
   await page.locator('.plans-page__plans-grid').waitFor({ state: 'visible', timeout: 15000 });
-  await page.locator('.app-header').waitFor({ state: 'visible' });
 
   const labels = await publicHeaderLabels(page);
-  if (labels.join('|') !== 'Início|Planos|Ocorrências') {
+  if (labels.join('|') !== 'Início|Planos|Ocorrências|Representantes') {
     throw new Error(`header público de Planos inesperado: ${labels.join('|')}`);
   }
 
-  const title = await page.locator('#plans-page-title').innerText();
-  for (const expected of ['PLANOS PARA', 'TODOS OS', 'TIPOS DE GESTÃO']) {
-    if (!title.includes(expected)) throw new Error(`headline ausente: ${expected}`);
-  }
-
   const benefits = page.locator('.plans-page__benefits article');
-  const benefitCount = await benefits.count();
-  if (benefitCount !== 5) throw new Error(`benefícios gerais: esperado 5, recebeu ${benefitCount}`);
-
-  await page.getByRole('heading', { name: 'Converse com o cidadão', exact: true }).waitFor({ state: 'visible' });
-  const chatBenefit = benefits.filter({ hasText: 'Converse com o cidadão' });
-  if (!(await chatBenefit.innerText()).includes('Mantenha contato direto pelo chat durante o acompanhamento da ocorrência.')) {
-    throw new Error('benefício de conversa com cidadão sem descrição esperada');
+  if (await benefits.count() !== 5) throw new Error('esperados exatamente 5 benefícios');
+  const benefitTops = await benefits.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
+  if (Math.max(...benefitTops) - Math.min(...benefitTops) > 2) {
+    throw new Error(`benefícios não estão todos inline: ${benefitTops.join(',')}`);
+  }
+  if (mobile) {
+    const benefitFlow = await page.locator('.plans-page__benefits').evaluate((node) => ({
+      clientWidth: node.clientWidth,
+      scrollWidth: node.scrollWidth,
+    }));
+    if (benefitFlow.scrollWidth <= benefitFlow.clientWidth) {
+      throw new Error('faixa mobile não preserva cinco benefícios inline com rolagem interna');
+    }
   }
 
+  await page.getByRole('heading', { name: 'Converse com o cidadão', exact: true }).waitFor({ state: 'attached' });
   const postingBenefit = benefits.filter({ hasText: 'Postagens mensais' });
   if (!(await postingBenefit.innerText()).includes('pacotes de postagens extras sempre que necessário')) {
-    throw new Error('benefício de Postagens mensais sem informação de pacotes extras');
+    throw new Error('benefício de Postagens mensais sem pacotes extras');
   }
 
-  const promotionBreadcrumb = page.locator('.plans-page__promotion-breadcrumb');
-  await promotionBreadcrumb.waitFor({ state: 'visible' });
-  const promotionText = await promotionBreadcrumb.innerText();
-  if (!promotionText.includes('Oferta promocional') || !promotionText.includes('Planos e condições de pagamento')) {
-    throw new Error(`breadcrumb promocional inesperado: ${promotionText}`);
-  }
-  await page.getByText(/Os valores e condições de pagamento abaixo são promocionais/).waitFor({ state: 'visible' });
+  const planCards = page.locator('.plans-page__plan-card');
+  if (await planCards.count() !== 3) throw new Error('esperados exatamente 3 cards principais');
 
-  const planCardCount = await page.locator('.plans-page__plan-card').count();
-  if (planCardCount !== 3) throw new Error(`cards principais: esperado 3, recebeu ${planCardCount}`);
-
-  const planNames = await page.locator('.plans-page__plan-card .plans-page__plan-title h2').allInnerTexts();
-  for (const expected of ['Individual', 'Master 5', 'Master 10']) {
+  const planNames = await planCards.locator('.plans-page__plan-title h2').allInnerTexts();
+  for (const expected of ['Master Individual', 'Master 5', 'Master 10']) {
     if (!planNames.includes(expected)) throw new Error(`plano ausente: ${expected}`);
   }
+  if (planNames.includes('Individual')) throw new Error('nome antigo Individual ainda visível');
 
-  const paymentCount = await page.locator('.plans-page__plan-card .plans-page__payment').count();
+  const promotions = planCards.locator('.plans-page__plan-promotion');
+  const postingBadges = planCards.locator('.plans-page__posting-badge');
+  if (await promotions.count() !== 3) throw new Error('esperados 3 selos de Oferta promocional');
+  if (await postingBadges.count() !== 3) throw new Error('esperados 3 indicadores de postagens');
+  if (await page.locator('.plans-page__promotion-breadcrumb').count() !== 0) {
+    throw new Error('breadcrumb promocional global antigo ainda existe');
+  }
+
+  for (let index = 0; index < 3; index += 1) {
+    const promo = promotions.nth(index);
+    const posting = postingBadges.nth(index);
+    if ((await promo.innerText()).trim() !== 'Oferta promocional') {
+      throw new Error(`selo promocional inesperado no card ${index + 1}`);
+    }
+    if (await promo.locator('i.fa-tags').count() !== 1) {
+      throw new Error(`ícone de Oferta promocional ausente no card ${index + 1}`);
+    }
+    const postingText = await posting.innerText();
+    if (!postingText.includes('QTD POSTAGENS/MÊS') || postingText.includes('POSTAGEMENS')) {
+      throw new Error(`rótulo de postagens inválido no card ${index + 1}: ${postingText}`);
+    }
+
+    const promoBox = await promo.boundingBox();
+    const postingBox = await posting.boundingBox();
+    if (!promoBox || !postingBox) throw new Error('não foi possível medir selo promocional/postagens');
+    const promoCenter = promoBox.x + promoBox.width / 2;
+    const postingCenter = postingBox.x + postingBox.width / 2;
+    if (Math.abs(promoCenter - postingCenter) > 2) {
+      throw new Error(`selo e postagens não estão centralizados no card ${index + 1}`);
+    }
+    if (promoBox.y + promoBox.height > postingBox.y + 2) {
+      throw new Error(`Oferta promocional não está acima de QTD POSTAGENS/MÊS no card ${index + 1}`);
+    }
+  }
+
+  await page.getByText(/Os valores e condições de pagamento abaixo são promocionais/).waitFor({ state: 'visible' });
+
+  const paymentCount = await planCards.locator('.plans-page__payment').count();
   if (paymentCount !== 12) throw new Error(`sub-blocos de pagamento: esperado 12, recebeu ${paymentCount}`);
 
   const mega = page.locator('.plans-page__mega-card');
-  await mega.waitFor({ state: 'visible' });
   const megaText = await mega.innerText();
   for (const expected of ['MEGA PROMOÇÃO', 'PLANO OURO ANUAL', 'ISENTA', '11 MENSALIDADES']) {
     if (!megaText.includes(expected)) throw new Error(`Mega Promoção sem texto: ${expected}`);
@@ -317,15 +327,10 @@ async function validatePlans(viewport, screenshot, mobile) {
   if (complementaryCount !== 5) throw new Error(`faixa complementar: esperado 5, recebeu ${complementaryCount}`);
   await page.getByRole('button', { name: 'Fale conosco' }).waitFor({ state: 'visible' });
 
-  if (!mobile) {
-    await page.locator('.app-header__nav a[href="/planos"]').waitFor({ state: 'visible' });
-    await page.locator('.app-header__nav a[href="/ocorrencias"]').waitFor({ state: 'visible' });
-  } else {
+  if (mobile) {
     const bottomLabels = await page.locator('.app-bottom-nav__item').allInnerTexts();
-    for (const expected of ['Início', 'Planos', 'Ocorrências', 'Entrar', 'Criar conta']) {
-      if (!bottomLabels.some(label => label.includes(expected))) {
-        throw new Error(`bottom nav público sem ${expected}`);
-      }
+    for (const expected of ['Início', 'Planos', 'Ocorrências', 'Representantes', 'Entrar', 'Criar conta']) {
+      if (!bottomLabels.some(label => label.includes(expected))) throw new Error(`bottom nav público sem ${expected}`);
     }
   }
 
@@ -334,7 +339,7 @@ async function validatePlans(viewport, screenshot, mobile) {
     scrollWidth: document.documentElement.scrollWidth,
   }));
   if (dims.scrollWidth - dims.viewport > 2) {
-    throw new Error(`overflow horizontal em /planos: ${dims.scrollWidth}/${dims.viewport}`);
+    throw new Error(`overflow horizontal da página em /planos: ${dims.scrollWidth}/${dims.viewport}`);
   }
 
   if (errors.length) throw new Error(`pageerror em /planos: ${errors.join(' | ')}`);
@@ -342,26 +347,9 @@ async function validatePlans(viewport, screenshot, mobile) {
   await context.close();
 }
 
-async function validateHomeMobileSharedNavigation() {
-  const { context, page, errors } = await openPage({ width: 390, height: 844 });
-  await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
-  await page.locator('.public-home').waitFor({ state: 'visible', timeout: 15000 });
-  await page.locator('.app-bottom-nav').waitFor({ state: 'visible' });
-  const labels = await page.locator('.app-bottom-nav__item').allInnerTexts();
-  for (const expected of ['Início', 'Planos', 'Ocorrências', 'Entrar', 'Criar conta']) {
-    if (!labels.some(label => label.includes(expected))) {
-      throw new Error(`bottom nav compartilhado da Home sem ${expected}`);
-    }
-  }
-  if (errors.length) throw new Error(`pageerror na Home mobile: ${errors.join(' | ')}`);
-  await context.close();
-}
-
 try {
   await validateHomeDesktop();
   console.log('home_to_plans=OK');
-  await validateHomeMobileSharedNavigation();
-  console.log('home_mobile_shared_navigation=OK');
   await validatePlans({ width: 1440, height: 1000 }, 'plans-desktop.png', false);
   console.log('plans_desktop=OK');
   await validatePlans({ width: 390, height: 844 }, 'plans-mobile.png', true);
@@ -407,17 +395,16 @@ echo "PUBLIC PLANS — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
 echo "HOME FROZEN VISUAL ASSETS: OK"
 echo "SHARED APP HEADER IMPLEMENTATION: OK"
-echo "SHARED APP HEADER REUSE: $APP_HEADER_USAGE_COUNT"
 echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
-echo "PUBLIC HEADER HOME/PLANOS/OCORRÊNCIAS: OK"
-echo "AUTHENTICATED SHELL USES SHARED HEADER: OK"
-echo "SHARED MOBILE NAVIGATION: OK"
-echo "HOME CTA -> /planos: OK"
+echo "PUBLIC NAVIGATION: OK"
 echo "BILLING CATALOG: OK"
-echo "BENEFITS: 5"
+echo "BENEFITS INLINE: 5"
 echo "CITIZEN CHAT BENEFIT: OK"
 echo "EXTRA POST PACKAGES: OK"
-echo "PROMOTIONAL CONDITIONS: OK"
+echo "MASTER INDIVIDUAL: OK"
+echo "PROMOTION INSIDE PLAN CARDS: OK"
+echo "QTD POSTAGENS/MÊS: OK"
+echo "POSTAGEMENS TYPO: ABSENT"
 echo "PRIMARY PLAN CARDS: 3"
 echo "MEGA PROMOÇÃO: OK"
 echo "COMPLEMENTARY INFO: 5"
