@@ -287,6 +287,29 @@
 .public-home__bottom-nav > :nth-child(3) span::before { content: '\f008'; font-size: 1rem; }
 .public-home__bottom-nav > :nth-child(5) span::before { content: '\f2bd'; font-size: 1rem; }
 
+/* Complementary benefit panel. Existing hero copy and CTAs remain untouched. */
+.public-home__hero::after {
+  content: '✓  Apoie ocorrências da sua região\A✓  Publique ocorrências gratuitamente\A✓  Acompanhe detalhes e atualizações';
+  position: absolute;
+  z-index: 3;
+  right: clamp(28px, 6vw, 92px);
+  bottom: 34px;
+  box-sizing: border-box;
+  width: min(360px, 30vw);
+  padding: 15px 18px;
+  border: 1px solid rgba(18, 101, 172, .16);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .94);
+  color: #0c1657;
+  box-shadow: 0 14px 34px rgba(20, 54, 87, .16);
+  backdrop-filter: blur(10px);
+  white-space: pre-line;
+  font-size: .93rem;
+  font-weight: 800;
+  line-height: 1.9;
+  pointer-events: none;
+}
+
 @media (max-width: 900px) {
   .public-home__header-inner {
     width: min(100% - 34px, 860px);
@@ -309,6 +332,15 @@
     min-height: 430px;
     max-width: 620px;
     padding: 38px 18px;
+  }
+
+  .public-home__hero::after {
+    position: relative;
+    right: auto;
+    bottom: auto;
+    display: block;
+    width: min(620px, calc(100% - 36px));
+    margin: -12px 18px 24px;
   }
 }
 
@@ -334,6 +366,15 @@
   .public-home__hero-line {
     width: 280px;
     max-width: 76%;
+  }
+
+  .public-home__hero::after {
+    width: calc(100% - 24px);
+    margin: -6px 12px 20px;
+    padding: 13px 15px;
+    border-radius: 15px;
+    font-size: .86rem;
+    line-height: 1.75;
   }
 
   .public-home__footer-inner {
