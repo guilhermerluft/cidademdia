@@ -212,11 +212,13 @@ try {
 
     let commercialDialog = page.getByRole('dialog', { name: 'Crie sua conta gratuita para interagir' });
     await commercialDialog.waitFor({ state: 'visible', timeout: 5000 });
+    await commercialDialog.getByRole('link', { name: 'CidadeEmDia', exact: true }).waitFor({ state: 'visible' });
     await commercialDialog.getByText('Publique ocorrências gratuitamente', { exact: true }).waitFor({ state: 'visible' });
     await commercialDialog.getByRole('button', { name: 'Cadastre-se', exact: true }).waitFor({ state: 'visible' });
     if (await page.getByRole('dialog', { name: title }).count() !== 0) {
       throw new Error('apoio anônimo abriu detalhes da ocorrência');
     }
+    console.log('commercial_signup_brand_visible=OK');
     console.log('anonymous_support_commercial_modal=OK');
 
     await commercialDialog.getByRole('button', { name: 'Fechar convite para cadastro', exact: true }).click();
@@ -242,12 +244,43 @@ try {
     await page.getByRole('button', { name: 'Criar conta', exact: true }).waitFor({ state: 'visible' });
     console.log('commercial_signup_cta_registration_form=OK');
 
+    await page.goto(process.env.BASE, { waitUntil: 'domcontentloaded', timeout: 30000 });
+    const hero = page.locator('.public-home__hero');
+    await hero.waitFor({ state: 'visible', timeout: 10000 });
+    await page.getByRole('heading', { name: /Uma cidade melhor.*é ouvido.*pode resolver\./ }).waitFor({ state: 'visible' });
+    await page.getByText(/O CIDADEMDIA conecta cidadãos e gestores, facilitando a comunicação e o acompanhamento das demandas,/).waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: 'Conheça os planos', exact: true }).waitFor({ state: 'visible' });
+    await page.getByRole('button', { name: 'Como funciona', exact: true }).waitFor({ state: 'visible' });
+
+    const benefitContent = await hero.evaluate((element) => getComputedStyle(element, '::after').content);
+    for (const phrase of [
+      'Apoie ocorrências da sua região',
+      'Publique ocorrências gratuitamente',
+      'Acompanhe detalhes e atualizações',
+    ]) {
+      if (!benefitContent.includes(phrase)) throw new Error(`benefício ausente do hero: ${phrase}; content=${benefitContent}`);
+    }
+    await hero.screenshot({ path: '/work/home-hero-benefits-desktop.png' });
+    console.log('home_hero_original_content_visible=OK');
+    console.log('home_hero_benefits_desktop=OK');
+
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+    const mobileHero = page.locator('.public-home__hero');
+    await mobileHero.waitFor({ state: 'visible', timeout: 10000 });
+    const mobileBenefitContent = await mobileHero.evaluate((element) => getComputedStyle(element, '::after').content);
+    if (!mobileBenefitContent.includes('Publique ocorrências gratuitamente')) {
+      throw new Error(`benefícios não renderizaram no hero mobile: ${mobileBenefitContent}`);
+    }
+    await mobileHero.screenshot({ path: '/work/home-hero-benefits-mobile.png' });
+    console.log('home_hero_benefits_mobile=OK');
+
     await page.goto(`${process.env.BASE}/ocorrencias`, { waitUntil: 'domcontentloaded', timeout: 30000 });
     await page.locator(`.public-occurrences__card[data-occurrence-id="${occurrence.id}"]`).waitFor({ state: 'visible', timeout: 20000 });
     await page.locator(`.public-occurrences__card[data-occurrence-id="${occurrence.id}"]`).getByRole('heading', { name: title, exact: true }).click();
     const mobileDialog = page.getByRole('dialog', { name: 'Crie sua conta gratuita para interagir' });
     await mobileDialog.waitFor({ state: 'visible', timeout: 5000 });
+    await mobileDialog.getByRole('link', { name: 'CidadeEmDia', exact: true }).waitFor({ state: 'visible' });
     const box = await mobileDialog.boundingBox();
     if (!box || box.width > 390 || box.height > 844) throw new Error(`modal comercial mobile fora da viewport: ${JSON.stringify(box)}`);
     await page.screenshot({ path: '/work/commercial-signup-mobile.png', fullPage: true });
@@ -263,6 +296,8 @@ JS
 
 test -f "$QA_DIR/commercial-signup-desktop.png" || fail "screenshot desktop ausente"
 test -f "$QA_DIR/commercial-signup-mobile.png" || fail "screenshot mobile ausente"
+test -f "$QA_DIR/home-hero-benefits-desktop.png" || fail "screenshot desktop do hero ausente"
+test -f "$QA_DIR/home-hero-benefits-mobile.png" || fail "screenshot mobile do hero ausente"
 
 cleanup_qa_user
 QA_LEFT="$(compose exec -T db sh -lc "psql -At -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -c \"SELECT count(*) FROM users WHERE email = '${QA_EMAIL}';\"")"
@@ -273,13 +308,17 @@ test -z "$(git -C "$ROOT" status --porcelain)" || fail "main worktree ficou suja
 
 echo "============================================================"
 echo "PUBLIC OCCURRENCE COMMERCIAL SIGNUP — FEATURE HOMOLOG: OK"
+echo "COMMERCIAL MODAL BRAND: OK"
 echo "ANONYMOUS SUPPORT COMMERCIAL MODAL: OK"
 echo "ANONYMOUS DETAILS COMMERCIAL MODAL: OK"
 echo "DETAILS BLOCKED FOR ANONYMOUS: OK"
 echo "CTA TO REGISTRATION FORM: OK"
+echo "HERO ORIGINAL CONTENT: OK"
+echo "HERO PARTICIPATION BENEFITS DESKTOP: OK"
+echo "HERO PARTICIPATION BENEFITS MOBILE: OK"
 echo "DESKTOP COMMERCIAL MODAL: OK"
 echo "MOBILE COMMERCIAL MODAL: OK"
 echo "QA CLEANUP: OK"
 echo "MAIN WORKTREE: CLEAN"
-echo "SCREENSHOTS: $QA_DIR/commercial-signup-desktop.png | $QA_DIR/commercial-signup-mobile.png"
+echo "SCREENSHOTS: $QA_DIR/commercial-signup-desktop.png | $QA_DIR/commercial-signup-mobile.png | $QA_DIR/home-hero-benefits-desktop.png | $QA_DIR/home-hero-benefits-mobile.png"
 echo "============================================================"
