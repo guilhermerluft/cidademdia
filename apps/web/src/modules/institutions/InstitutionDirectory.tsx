@@ -63,10 +63,10 @@ function InstitutionCard({ institution }: { institution: InstitutionItem }) {
         ) : null}
 
         {institution.representatives.length === 0 ? (
-          <p className="institution-directory__empty">Nenhum representante cadastrado ainda.</p>
+          <p className="institution-directory__empty">Nenhum agente público cadastrado ainda.</p>
         ) : (
           <div className="institution-directory__representatives">
-            <span className="institution-directory__label">Representantes</span>
+            <span className="institution-directory__label">Agentes públicos</span>
             {institution.representatives.map((representative) => (
               <div className="institution-directory__representative" key={representative.id}>
                 <div>
@@ -145,17 +145,17 @@ export function InstitutionDirectory() {
       aria-labelledby="institution-directory-title"
     >
       <SectionHeading
-        title="Instituições e representantes"
-        subtitle="Consulte órgãos e representantes cadastrados no CidadeEmDia, inclusive perfis que ainda não aderiram à plataforma."
+        title="Órgãos e agentes públicos"
+        subtitle="Consulte órgãos e agentes públicos cadastrados no CidadeEmDia, inclusive perfis que ainda não aderiram à plataforma."
       />
 
       <div className="institution-directory__filters">
         <label>
-          <span>Buscar instituição ou representante</span>
+          <span>Buscar órgão ou agente público</span>
           <input
             type="search"
             value={search}
-            placeholder="Ex.: Prefeitura, Câmara, nome do representante"
+            placeholder="Ex.: Prefeitura, Câmara, nome do agente público"
             onChange={(event) => setSearch(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
@@ -180,7 +180,7 @@ export function InstitutionDirectory() {
       ) : institutions.length === 0 ? (
         <Card>
           <CardBody>
-            <p>Nenhuma instituição encontrada{appliedSearch ? ' para essa busca' : ''}.</p>
+            <p>Nenhum órgão encontrado{appliedSearch ? ' para essa busca' : ''}.</p>
           </CardBody>
         </Card>
       ) : (
