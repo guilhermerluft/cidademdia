@@ -42,6 +42,22 @@ check_dns_target() {
   grep -Fxq "$ORIGIN_IPV4" <<<"$resolved" || fail "$host não aponta para $ORIGIN_IPV4 via $label"
 }
 
+wait_for_edge_health() {
+  local attempts="${1:-15}"
+  local attempt
+
+  for attempt in $(seq 1 "$attempts"); do
+    if curl -fsS -H "Host: $DOMAIN" http://127.0.0.1/health/live >/dev/null 2>&1; then
+      echo "production_http_edge_attempt=$attempt"
+      return 0
+    fi
+
+    sleep 1
+  done
+
+  return 1
+}
+
 for host in "$DOMAIN" "$WWW"; do
   for ns in "${AUTH_NS[@]}"; do
     check_dns_target "$host" "$ns" "authoritative:$ns"
@@ -58,7 +74,7 @@ install -m 0644 "$TEMPLATE" "$TARGET"
 nginx -t
 systemctl reload nginx
 
-curl -fsS -H "Host: $DOMAIN" http://127.0.0.1/health/live >/dev/null || fail "vhost HTTP de produção não alcança o stack"
+wait_for_edge_health 15 || fail "vhost HTTP de produção não alcança o stack após reload"
 echo "production_http_edge=OK"
 
 CERTBOT_ARGS=(--nginx --non-interactive --agree-tos --redirect -d "$DOMAIN" -d "$WWW")
