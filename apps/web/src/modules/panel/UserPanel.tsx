@@ -1,7 +1,6 @@
 import { MasterTeamPanel } from '../../app/dashboard/MasterTeamPanel';
 import type { UserPanelAccess } from '../../app/layout/AppNavigation';
 import type { AuthenticatedUser } from '../auth/types';
-import { ChatInbox } from '../chat/ChatInbox';
 import { OccurrenceAssignmentPanel } from '../occurrenceAssignments/OccurrenceAssignmentPanel';
 import { OccurrenceCenter } from '../occurrences/OccurrenceCenter';
 import { PostManagementPanel } from '../posts/PostManagementPanel';
@@ -29,10 +28,9 @@ export function UserPanel({ user, access }: UserPanelProps) {
         </div>
       </section>
 
-      {(access.canViewOccurrences || access.canViewChat || access.mode === 'master') && (
+      {(access.canViewOccurrences || access.mode === 'master') && (
         <nav className="user-panel__shortcuts" aria-label="Seções do painel">
           {access.canViewOccurrences && <a href="#painel-ocorrencias">{occurrenceLabel}</a>}
-          {access.canViewChat && <a href="#painel-conversas">Conversas</a>}
           {access.mode === 'master' && <a href="#painel-publicacoes">Publicações</a>}
           {access.mode === 'master' && <a href="#painel-equipe">Equipe e permissões</a>}
         </nav>
@@ -44,14 +42,6 @@ export function UserPanel({ user, access }: UserPanelProps) {
             {access.mode === 'citizen' && <OccurrenceCenter />}
             {access.mode === 'master' && <OccurrenceAssignmentPanel mode="master" />}
             {access.mode === 'subaccount' && <OccurrenceAssignmentPanel mode="subaccount" />}
-          </section>
-        )}
-
-        {access.canViewChat && (
-          <section className="user-panel__module" id="painel-conversas" aria-label="Conversas">
-            {access.mode === 'citizen' && <ChatInbox mode="citizen" />}
-            {access.mode === 'master' && <ChatInbox mode="master" />}
-            {access.mode === 'subaccount' && <ChatInbox mode="subaccount" />}
           </section>
         )}
 
