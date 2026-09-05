@@ -42,7 +42,7 @@ const BENEFITS = [
   {
     icon: 'fa-clipboard-list',
     title: 'Acesso às ocorrências',
-    description: 'Visualize e acompanhe as demandas da sua gestão, com interação direta e contínua com o cidadão via chat integrado na própria ocorrência.',
+    description: 'Acompanhe demandas e interaja via chat com o cidadão no chamado.',
     tone: 'blue',
   },
   {
