@@ -1,4 +1,5 @@
 import { api } from '../../services/api';
+import type { PublicOccurrenceMediaItem } from '../home/homeService';
 
 export interface OccurrenceAssignment {
   assignmentId: string;
@@ -20,6 +21,7 @@ export interface MasterOccurrenceTarget {
   occurrenceStatus: string;
   targetStatus: string;
   updatedAt: string;
+  coverMedia?: PublicOccurrenceMediaItem | null;
   assignment: OccurrenceAssignment | null;
 }
 
