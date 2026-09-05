@@ -22,7 +22,7 @@ for title in \
   grep -q "title: '$title'" "$PLANS" || fail "benefício original ausente: $title"
 done
 
-grep -q "description: 'Visualize e acompanhe as demandas da sua gestão, com interação direta e contínua com o cidadão via chat integrado na própria ocorrência.'" "$PLANS" || fail "descrição refinada de ocorrências/chat ausente"
+grep -q "description: 'Acompanhe demandas e interaja via chat com o cidadão no chamado.'" "$PLANS" || fail "descrição curta de ocorrências/chat ausente"
 grep -q "description: 'Organize equipes e distribua acessos conforme a capacidade do plano.'" "$PLANS" || fail "descrição original de subcontas ausente"
 grep -q "description: 'Acompanhe movimentações importantes sem perder atualizações.'" "$PLANS" || fail "descrição original de notificações ausente"
 grep -q "description: 'Publique conteúdos institucionais de acordo com a franquia contratada.'" "$PLANS" || fail "descrição original de postagens ausente"
