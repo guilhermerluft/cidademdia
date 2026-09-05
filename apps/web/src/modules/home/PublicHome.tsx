@@ -336,6 +336,33 @@ export function PublicHome({
               </div>
             </div>
 
+            <div className="public-home__hero-benefits" aria-label="Recursos gratuitos para cidadãos">
+              <article className="public-home__hero-benefit public-home__hero-benefit--support">
+                <span className="public-home__hero-benefit-icon" aria-hidden="true">
+                  <i className="fa-solid fa-arrow-up" />
+                </span>
+                <strong>Apoie ocorrências da sua região</strong>
+              </article>
+              <article className="public-home__hero-benefit public-home__hero-benefit--publish">
+                <span className="public-home__hero-benefit-icon" aria-hidden="true">
+                  <i className="fa-solid fa-bullhorn" />
+                </span>
+                <strong>Publique ocorrências gratuitamente</strong>
+              </article>
+              <article className="public-home__hero-benefit public-home__hero-benefit--follow">
+                <span className="public-home__hero-benefit-icon" aria-hidden="true">
+                  <i className="fa-solid fa-eye" />
+                </span>
+                <strong>Acompanhe detalhes e atualizações</strong>
+              </article>
+              <article className="public-home__hero-benefit public-home__hero-benefit--chat">
+                <span className="public-home__hero-benefit-icon" aria-hidden="true">
+                  <i className="fa-solid fa-comments" />
+                </span>
+                <strong>Converse com a Conta Master pelo chat</strong>
+              </article>
+            </div>
+
             <div className="public-home__hero-visual" aria-label="Cidade conectada pelo CidadeEmDia">
               <div className="public-home__sky" aria-hidden="true">
                 <div className="public-home__sun" />
