@@ -1,38 +1,33 @@
 .plans-page__benefits {
-  grid-template-columns: repeat(5, minmax(220px, 1fr));
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scroll-snap-type: inline proximity;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  overflow: visible;
 }
 
 .plans-page__benefits article {
-  min-width: 220px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: 9px;
+  justify-content: center;
+  gap: 4px;
   text-align: center;
-  scroll-snap-align: start;
 }
 
 .plans-page__benefits article > div {
   min-width: 0;
   width: 100%;
+  text-align: center;
 }
 
 .plans-page__benefits h2 {
-  white-space: nowrap;
+  margin-inline: auto;
+  text-align: center;
 }
 
 .plans-page__benefits p {
-  max-width: 230px;
+  max-width: 280px;
   margin-inline: auto;
-}
-
-.plans-page__benefit-icon--purple {
-  color: #6d55a3;
-  background: #f1ecfb;
+  text-align: center;
 }
 
 .plans-page__plan-promotion {
@@ -91,24 +86,20 @@
 
 @media (max-width: 1180px) {
   .plans-page__benefits {
-    grid-template-columns: repeat(5, minmax(230px, 230px));
-    padding-bottom: 18px;
+    grid-template-columns: 1fr;
   }
 
   .plans-page__benefits article {
+    min-height: 92px;
     margin-top: 0;
-    padding-top: 4px;
+    padding: 16px 18px;
+    border-left: 0 !important;
     border-top: 0;
   }
 
   .plans-page__benefits article + article,
-  .plans-page__benefits article:nth-child(odd) {
-    border-left: 1px solid #e5ebf0;
-  }
-}
-
-@media (max-width: 720px) {
-  .plans-page__benefits {
-    grid-template-columns: repeat(5, minmax(230px, 230px));
+  .plans-page__benefits article:nth-child(n+2) {
+    border-left: 0;
+    border-top: 1px solid #e5ebf0;
   }
 }
