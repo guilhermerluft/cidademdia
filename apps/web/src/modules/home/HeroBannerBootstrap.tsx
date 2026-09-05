@@ -4,7 +4,7 @@ import { listPlacementPosts } from '../posts/postService';
 export const HERO_BANNER_UPDATED_EVENT = 'cidademdia:hero-banner-updated';
 
 const STYLE_ID = 'cidademdia-dynamic-hero-banner';
-const REFRESH_INTERVAL_MS = 10 * 60 * 1000;
+const REFRESH_INTERVAL_MS = 4 * 60 * 1000;
 
 function applyHeroBanner(url?: string | null) {
   document.getElementById(STYLE_ID)?.remove();
