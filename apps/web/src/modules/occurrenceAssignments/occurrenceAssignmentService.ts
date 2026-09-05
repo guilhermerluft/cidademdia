@@ -23,6 +23,19 @@ export interface MasterOccurrenceTarget {
   assignment: OccurrenceAssignment | null;
 }
 
+export interface OccurrenceTargetDecision {
+  targetId: string;
+  occurrenceId: string;
+  masterUserId: string;
+  occurrenceStatus: string;
+  targetStatus: string;
+  rejectionReason?: string | null;
+  sentAt: string;
+  acceptedAt?: string | null;
+  rejectedAt?: string | null;
+  closedAt?: string | null;
+}
+
 export interface AssignedOccurrence {
   assignmentId: string;
   targetId: string;
@@ -41,6 +54,28 @@ export interface AssignedOccurrence {
 
 export async function listMasterOccurrenceTargets(): Promise<MasterOccurrenceTarget[]> {
   const { data } = await api.get<MasterOccurrenceTarget[]>('/master/occurrence-targets');
+  return data;
+}
+
+export async function acceptOccurrenceTarget(
+  occurrenceId: string,
+  targetId: string,
+): Promise<OccurrenceTargetDecision> {
+  const { data } = await api.post<OccurrenceTargetDecision>(
+    `/occurrences/${occurrenceId}/targets/${targetId}/accept`,
+  );
+  return data;
+}
+
+export async function rejectOccurrenceTarget(
+  occurrenceId: string,
+  targetId: string,
+  reason: string,
+): Promise<OccurrenceTargetDecision> {
+  const { data } = await api.post<OccurrenceTargetDecision>(
+    `/occurrences/${occurrenceId}/targets/${targetId}/reject`,
+    { reason },
+  );
   return data;
 }
 
