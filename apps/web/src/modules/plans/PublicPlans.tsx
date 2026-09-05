@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Brand } from '../../components/ui';
 import { listPublicPlanOffers, type PublicPlanOffer } from './plansService';
+import './plans-commercial-highlights.css';
 
 interface PublicPlansProps {
   embedded?: boolean;
@@ -57,9 +58,15 @@ const BENEFITS = [
     tone: 'orange',
   },
   {
+    icon: 'fa-comments',
+    title: 'Converse com o cidadão',
+    description: 'Mantenha contato direto pelo chat durante o acompanhamento da ocorrência.',
+    tone: 'purple',
+  },
+  {
     icon: 'fa-photo-film',
     title: 'Postagens mensais',
-    description: 'Publique conteúdos institucionais de acordo com a franquia contratada.',
+    description: 'Publique conteúdos institucionais de acordo com a franquia contratada, com a possibilidade de adquirir pacotes de postagens extras sempre que necessário.',
     tone: 'yellow',
   },
 ] as const;
@@ -339,8 +346,13 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
       <section className="plans-page__catalog" aria-labelledby="plans-catalog-title">
         <div className="plans-page__catalog-heading">
           <span>Escolha sua estrutura</span>
+          <nav className="plans-page__promotion-breadcrumb" aria-label="Condição promocional dos planos">
+            <span><i className="fa-solid fa-tags" aria-hidden="true" /> Oferta promocional</span>
+            <i className="fa-solid fa-chevron-right" aria-hidden="true" />
+            <strong>Planos e condições de pagamento</strong>
+          </nav>
           <h2 id="plans-catalog-title">Planos e condições de pagamento</h2>
-          <p>Os valores abaixo são carregados diretamente do catálogo público vigente do CIDADEMDIA.</p>
+          <p>Os valores e condições de pagamento abaixo são promocionais e carregados diretamente do catálogo público vigente do CIDADEMDIA.</p>
         </div>
 
         {loading && (
