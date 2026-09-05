@@ -13,7 +13,7 @@ interface CitizenOccurrenceTarget {
 interface CitizenOccurrenceChatButtonProps {
   occurrenceId: string;
   publicCode: string;
-  occurrenceTitle: string;
+  occurrenceTitle?: string;
 }
 
 export function CitizenOccurrenceChatButton({
@@ -64,7 +64,7 @@ export function CitizenOccurrenceChatButton({
         <OccurrenceChatModal
           targetId={selectedTarget.id}
           publicCode={publicCode}
-          title={occurrenceTitle}
+          title={occurrenceTitle ?? `Ocorrência ${publicCode}`}
           onClose={() => setSelectedTarget(null)}
         />
       ) : null}
