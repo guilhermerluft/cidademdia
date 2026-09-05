@@ -14,10 +14,12 @@ HOME_ASSETS="$ROOT/apps/web/src/modules/home/home-assets.css"
 HOME_REFINEMENT="$ROOT/apps/web/src/modules/home/home-refinement.css"
 HOME_DIR="$ROOT/apps/web/src/modules/home"
 HOME_BANNER="$ROOT/apps/web/src/modules/home/assets/banner-city.jpg"
+MOBILE_APP_NOTICE="$ROOT/apps/web/src/modules/home/MobileAppComingSoonNotice.tsx"
+MOBILE_APP_NOTICE_CSS="$ROOT/apps/web/src/modules/home/mobile-app-coming-soon.css"
 COMMERCIAL_MODAL="$ROOT/apps/web/src/components/CommercialSignupModal.tsx"
 COMMERCIAL_CSS="$ROOT/apps/web/src/styles/commercial-signup-modal.css"
 
-for file in "$MAIN" "$HOME" "$HOME_ASSETS" "$HOME_REFINEMENT" "$HOME_BANNER" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS"; do
+for file in "$MAIN" "$HOME" "$HOME_ASSETS" "$HOME_REFINEMENT" "$HOME_BANNER" "$MOBILE_APP_NOTICE" "$MOBILE_APP_NOTICE_CSS" "$COMMERCIAL_MODAL" "$COMMERCIAL_CSS"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -69,6 +71,19 @@ grep -Fq "content: '\f19c';" "$HOME_REFINEMENT" || fail "ícone de planos não e
 grep -Fq 'public-home__cta-play::before' "$HOME_REFINEMENT" || fail "ícone de Como funciona não está configurado"
 grep -Fq "content: '\f144';" "$HOME_REFINEMENT" || fail "ícone de play de Como funciona não está configurado"
 
+grep -q "import { MobileAppComingSoonNotice } from './modules/home/MobileAppComingSoonNotice';" "$MAIN" || fail "aviso dos apps não está importado"
+grep -q "import './modules/home/mobile-app-coming-soon.css';" "$MAIN" || fail "estilo do aviso dos apps não está carregado"
+grep -q '<MobileAppComingSoonNotice />' "$MAIN" || fail "aviso dos apps não está montado"
+grep -q "const PUBLIC_PATHS = new Set(\['/', '/ocorrencias', '/representantes', '/planos'\]);" "$MOBILE_APP_NOTICE" || fail "aviso dos apps não está restrito às rotas públicas"
+grep -q 'Em breve no Android e iOS' "$MOBILE_APP_NOTICE" || fail "texto do aviso dos apps foi removido"
+grep -q 'fa-brands fa-android' "$MOBILE_APP_NOTICE" || fail "ícone Android ausente do aviso"
+grep -q 'fa-brands fa-apple' "$MOBILE_APP_NOTICE" || fail "ícone iOS ausente do aviso"
+grep -q 'sessionStorage.setItem(DISMISSED_KEY' "$MOBILE_APP_NOTICE" || fail "fechamento do aviso não persiste na sessão"
+grep -q 'aria-label="Fechar aviso dos aplicativos"' "$MOBILE_APP_NOTICE" || fail "botão de fechar do aviso está sem rótulo acessível"
+grep -q '.mobile-app-coming-soon {' "$MOBILE_APP_NOTICE_CSS" || fail "container flutuante do aviso está sem estilo"
+grep -q 'position: fixed;' "$MOBILE_APP_NOTICE_CSS" || fail "aviso dos apps não está flutuante"
+grep -q 'bottom: 76px;' "$MOBILE_APP_NOTICE_CSS" || fail "aviso mobile não respeita a bottom navigation"
+
 echo "commercial_signup_brand_header=OK"
 echo "hero_benefit_cards_removed=OK"
 echo "hero_benefit_pseudo_after_removed=OK"
@@ -79,4 +94,5 @@ echo "hero_free_occurrence_copy_bold=OK"
 echo "hero_original_title_preserved=OK"
 echo "hero_cta_order=OK"
 echo "hero_cta_icons=OK"
+echo "mobile_app_notice=OK"
 echo "PUBLIC HOME COMMERCIAL GUARD: OK"

@@ -9,6 +9,7 @@ import { installNativeAlertToastBridge } from './components/toast';
 import { AdminRoute } from './modules/admin/AdminRoute';
 import { AuthProvider } from './modules/auth/AuthProvider';
 import { HeroBannerBootstrap } from './modules/home/HeroBannerBootstrap';
+import { MobileAppComingSoonNotice } from './modules/home/MobileAppComingSoonNotice';
 import { RepresentativesRoute } from './modules/institutions/RepresentativesRoute';
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
 import { installOccurrenceFormValidationUi } from './modules/occurrences/occurrenceFormValidationUi';
@@ -35,6 +36,7 @@ import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
 import './modules/home/home-session.css';
 import './modules/home/how-it-works-modal.css';
+import './modules/home/mobile-app-coming-soon.css';
 import './modules/institutions/representatives.css';
 import './modules/occurrences/occurrence-media.css';
 import './modules/occurrences/public-occurrences.css';
@@ -55,6 +57,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       <BrowserRouter>
         <AuthProvider>
           <HeroBannerBootstrap />
+          <MobileAppComingSoonNotice />
           <ToastViewport />
           <CommercialSignupModal />
           <Routes>
