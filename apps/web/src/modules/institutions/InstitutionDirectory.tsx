@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/ui';
-import { listInstitutions } from './institutionService';
-import type { InstitutionItem, InstitutionRepresentativeItem } from './types';
+import { listActiveMasters } from './institutionService';
+import type { MasterDirectoryInstitutionItem, MasterDirectoryItem } from './types';
 
 const institutionTypeLabels: Record<string, string> = {
   CITY_HALL: 'Prefeitura',
@@ -20,79 +20,57 @@ const scopeLabels: Record<string, string> = {
   OTHER: 'Outro',
 };
 
-function publicInstitutionCopy(value: string) {
-  return value
-    .replace(/\brepresentantes\b/gi, 'agentes públicos')
-    .replace(/\brepresentante\b/gi, 'agente público');
+function institutionMeta(institution: MasterDirectoryInstitutionItem) {
+  return [
+    institutionTypeLabels[institution.type] ?? institution.type,
+    scopeLabels[institution.scopeLevel] ?? institution.scopeLevel,
+    institution.stateCode,
+  ].filter(Boolean).join(' · ');
 }
 
-function representativeStatusLabel(representative: InstitutionRepresentativeItem) {
-  switch (representative.profileStatus) {
-    case 'ACTIVE':
-      return 'Perfil ativo';
-    case 'INVITED':
-      return 'Convite enviado';
-    case 'INACTIVE':
-      return 'Inativo';
-    default:
-      return 'Ainda não aderiu';
-  }
-}
-
-function representativeStatusVariant(representative: InstitutionRepresentativeItem) {
-  return representative.profileStatus === 'ACTIVE'
-    ? 'success' as const
-    : representative.profileStatus === 'INVITED'
-      ? 'info' as const
-      : 'neutral' as const;
-}
-
-function InstitutionCard({ institution }: { institution: InstitutionItem }) {
+function MasterCard({ master }: { master: MasterDirectoryItem }) {
   return (
     <Card className="institution-directory__card">
       <CardBody>
         <div className="institution-directory__card-header">
           <div>
-            <Badge variant="primary">
-              {institutionTypeLabels[institution.type] ?? institution.type}
-            </Badge>
-            <h3>{publicInstitutionCopy(institution.name)}</h3>
+            <Badge variant="success">Master ativo</Badge>
+            <h3>{master.displayName}</h3>
           </div>
-          <span className="institution-directory__scope">
-            {scopeLabels[institution.scopeLevel] ?? institution.scopeLevel}
-            {institution.stateCode ? ` · ${institution.stateCode}` : ''}
-          </span>
+          {master.institutions.length > 0 ? (
+            <span className="institution-directory__scope">
+              {master.institutions.map((institution) => institution.name).join(' · ')}
+            </span>
+          ) : null}
         </div>
 
-        {institution.description ? (
-          <p className="institution-directory__description">{publicInstitutionCopy(institution.description)}</p>
-        ) : null}
-
-        {institution.representatives.length === 0 ? (
-          <p className="institution-directory__empty">Nenhum agente público cadastrado ainda.</p>
-        ) : (
+        {master.institutions.length > 0 ? (
           <div className="institution-directory__representatives">
             <span className="institution-directory__label">Agentes públicos</span>
-            {institution.representatives.map((representative) => (
-              <div className="institution-directory__representative" key={representative.id}>
+            {master.institutions.map((institution) => (
+              <div className="institution-directory__representative" key={institution.institutionId}>
                 <div>
-                  <strong>{representative.name}</strong>
-                  <span>{publicInstitutionCopy(representative.publicRole)}</span>
+                  <strong>{institution.name}</strong>
+                  <span>
+                    {institution.publicRole
+                      ? `${institution.publicRole} · ${institutionMeta(institution)}`
+                      : institutionMeta(institution)}
+                  </span>
                 </div>
-                <Badge variant={representativeStatusVariant(representative)}>
-                  {representativeStatusLabel(representative)}
+                <Badge variant="primary">
+                  {institutionTypeLabels[institution.type] ?? 'Instituição'}
                 </Badge>
               </div>
             ))}
           </div>
-        )}
+        ) : null}
       </CardBody>
     </Card>
   );
 }
 
 export function InstitutionDirectory() {
-  const [institutions, setInstitutions] = useState<InstitutionItem[]>([]);
+  const [masters, setMasters] = useState<MasterDirectoryItem[]>([]);
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -106,14 +84,14 @@ export function InstitutionDirectory() {
     setLoading(true);
     setError(null);
 
-    void listInstitutions({
+    void listActiveMasters({
       search: appliedSearch || undefined,
       page,
       pageSize,
     })
       .then((result) => {
         if (!active) return;
-        setInstitutions(result.items);
+        setMasters(result.items);
         setTotalItems(result.totalItems);
       })
       .catch(() => {
@@ -183,22 +161,22 @@ export function InstitutionDirectory() {
         <Card><CardBody><p>Carregando diretório...</p></CardBody></Card>
       ) : error ? (
         <Card><CardBody><p className="institution-directory__error" role="alert">{error}</p></CardBody></Card>
-      ) : institutions.length === 0 ? (
+      ) : masters.length === 0 ? (
         <Card>
           <CardBody>
-            <p>Nenhum órgão encontrado{appliedSearch ? ' para essa busca' : ''}.</p>
+            <p>Nenhuma conta Master ativa encontrada{appliedSearch ? ' para essa busca' : ''}.</p>
           </CardBody>
         </Card>
       ) : (
         <>
           <div className="institution-directory__grid">
-            {institutions.map((institution) => (
-              <InstitutionCard key={institution.id} institution={institution} />
+            {masters.map((master) => (
+              <MasterCard key={master.id} master={master} />
             ))}
           </div>
 
           {totalPages > 1 ? (
-            <div className="institution-directory__pagination" aria-label="Paginação do diretório">
+            <div className="institution-directory__pagination" aria-label="Paginação das contas Master">
               <Button
                 variant="secondary"
                 disabled={page <= 1}

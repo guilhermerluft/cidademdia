@@ -65,3 +65,26 @@ export interface InstitutionDirectoryPage {
   pageSize: number;
   totalItems: number;
 }
+
+export interface MasterDirectoryInstitutionItem {
+  institutionId: string;
+  name: string;
+  type: InstitutionType;
+  scopeLevel: InstitutionScopeLevel;
+  stateCode?: string | null;
+  publicRole?: string | null;
+}
+
+export interface MasterDirectoryItem {
+  id: string;
+  displayName: string;
+  avatarMediaId?: string | null;
+  institutions: MasterDirectoryInstitutionItem[];
+}
+
+export interface MasterDirectoryPage {
+  items: MasterDirectoryItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+}

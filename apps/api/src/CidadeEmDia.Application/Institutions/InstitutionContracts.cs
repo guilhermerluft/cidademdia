@@ -77,6 +77,26 @@ public sealed record InstitutionDirectoryPage(
     int PageSize,
     int TotalItems);
 
+public sealed record MasterDirectoryInstitutionItem(
+    Guid InstitutionId,
+    string Name,
+    string Type,
+    string ScopeLevel,
+    string? StateCode,
+    string? PublicRole);
+
+public sealed record MasterDirectoryItem(
+    Guid Id,
+    string DisplayName,
+    Guid? AvatarMediaId,
+    IReadOnlyCollection<MasterDirectoryInstitutionItem> Institutions);
+
+public sealed record MasterDirectoryPage(
+    IReadOnlyCollection<MasterDirectoryItem> Items,
+    int Page,
+    int PageSize,
+    int TotalItems);
+
 public sealed record InstitutionOperationResult(
     bool Succeeded,
     InstitutionItem? Institution = null,
@@ -165,6 +185,12 @@ public interface IInstitutionService
         string? search = null,
         string? type = null,
         string? stateCode = null,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default);
+
+    Task<MasterDirectoryPage> ListActiveMastersAsync(
+        string? search = null,
         int page = 1,
         int pageSize = 20,
         CancellationToken cancellationToken = default);

@@ -68,6 +68,135 @@ internal sealed class InstitutionService(AppDbContext dbContext) : IInstitutionS
             totalItems);
     }
 
+    public async Task<MasterDirectoryPage> ListActiveMastersAsync(
+        string? search = null,
+        int page = 1,
+        int pageSize = 20,
+        CancellationToken cancellationToken = default)
+    {
+        page = Math.Max(page, 1);
+        pageSize = Math.Clamp(pageSize, 1, 50);
+
+        var query = dbContext.Users
+            .AsNoTracking()
+            .Where(user =>
+                user.Status == UserStatus.Active
+                && user.Roles.Any(link => link.Role.Key == IdentityRoleKeys.Master));
+
+        var normalizedSearch = search?.Trim();
+        if (!string.IsNullOrWhiteSpace(normalizedSearch))
+        {
+            var pattern = $"%{normalizedSearch}%";
+            query = query.Where(user =>
+                (user.Profile != null && EF.Functions.ILike(user.Profile.DisplayName, pattern))
+                || dbContext.InstitutionMemberships.Any(link =>
+                    link.UserId == user.Id
+                    && link.Status == InstitutionMembershipStatusKeys.Active
+                    && link.Institution.Status == InstitutionStatusKeys.Active
+                    && EF.Functions.ILike(link.Institution.Name, pattern))
+                || dbContext.InstitutionRepresentatives.Any(representative =>
+                    representative.AccountId == user.Id
+                    && representative.ProfileStatus == RepresentativeProfileStatusKeys.Active
+                    && representative.Institution.Status == InstitutionStatusKeys.Active
+                    && (EF.Functions.ILike(representative.Name, pattern)
+                        || EF.Functions.ILike(representative.PublicRole, pattern))));
+        }
+
+        var totalItems = await query.CountAsync(cancellationToken);
+        var masters = await query
+            .OrderBy(user => user.Profile != null ? user.Profile.DisplayName : string.Empty)
+            .ThenBy(user => user.Id)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .Select(user => new
+            {
+                user.Id,
+                DisplayName = user.Profile != null ? user.Profile.DisplayName : null,
+                AvatarMediaId = user.Profile != null ? user.Profile.AvatarMediaId : null
+            })
+            .ToListAsync(cancellationToken);
+
+        if (masters.Count == 0)
+            return new MasterDirectoryPage([], page, pageSize, totalItems);
+
+        var masterIds = masters.Select(master => master.Id).ToArray();
+
+        var membershipLinks = await dbContext.InstitutionMemberships
+            .AsNoTracking()
+            .Where(link =>
+                masterIds.Contains(link.UserId)
+                && link.Status == InstitutionMembershipStatusKeys.Active
+                && link.Institution.Status == InstitutionStatusKeys.Active)
+            .Select(link => new MasterInstitutionLink(
+                link.UserId,
+                link.InstitutionId,
+                link.Institution.Name,
+                link.Institution.Type,
+                link.Institution.ScopeLevel,
+                link.Institution.StateCode,
+                link.Representative != null
+                    && link.Representative.ProfileStatus == RepresentativeProfileStatusKeys.Active
+                        ? link.Representative.PublicRole
+                        : null))
+            .ToListAsync(cancellationToken);
+
+        var representativeLinks = await dbContext.InstitutionRepresentatives
+            .AsNoTracking()
+            .Where(representative =>
+                representative.AccountId.HasValue
+                && masterIds.Contains(representative.AccountId.Value)
+                && representative.ProfileStatus == RepresentativeProfileStatusKeys.Active
+                && representative.Institution.Status == InstitutionStatusKeys.Active)
+            .Select(representative => new MasterInstitutionLink(
+                representative.AccountId!.Value,
+                representative.InstitutionId,
+                representative.Institution.Name,
+                representative.Institution.Type,
+                representative.Institution.ScopeLevel,
+                representative.Institution.StateCode,
+                representative.PublicRole))
+            .ToListAsync(cancellationToken);
+
+        var institutionLinks = membershipLinks
+            .Concat(representativeLinks)
+            .GroupBy(link => link.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .GroupBy(link => new
+                    {
+                        link.InstitutionId,
+                        link.Name,
+                        link.Type,
+                        link.ScopeLevel,
+                        link.StateCode
+                    })
+                    .Select(institutionGroup => new MasterDirectoryInstitutionItem(
+                        institutionGroup.Key.InstitutionId,
+                        institutionGroup.Key.Name,
+                        institutionGroup.Key.Type,
+                        institutionGroup.Key.ScopeLevel,
+                        institutionGroup.Key.StateCode,
+                        institutionGroup
+                            .Select(link => link.PublicRole)
+                            .FirstOrDefault(role => !string.IsNullOrWhiteSpace(role))))
+                    .OrderBy(institution => institution.Name)
+                    .ThenBy(institution => institution.InstitutionId)
+                    .ToArray());
+
+        return new MasterDirectoryPage(
+            masters
+                .Select(master => new MasterDirectoryItem(
+                    master.Id,
+                    string.IsNullOrWhiteSpace(master.DisplayName) ? "Conta Master" : master.DisplayName,
+                    master.AvatarMediaId,
+                    institutionLinks.GetValueOrDefault(master.Id) ?? []))
+                .ToArray(),
+            page,
+            pageSize,
+            totalItems);
+    }
+
     public async Task<InstitutionOperationResult> GetAsync(
         Guid institutionId,
         CancellationToken cancellationToken = default)
@@ -479,4 +608,13 @@ internal sealed class InstitutionService(AppDbContext dbContext) : IInstitutionS
         Convert.ToHexString(
             SHA256.HashData(Encoding.UTF8.GetBytes(token)))
             .ToLowerInvariant();
+
+    private sealed record MasterInstitutionLink(
+        Guid UserId,
+        Guid InstitutionId,
+        string Name,
+        string Type,
+        string ScopeLevel,
+        string? StateCode,
+        string? PublicRole);
 }
