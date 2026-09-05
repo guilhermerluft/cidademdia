@@ -32,16 +32,16 @@ export function PublicOccurrencesRoute() {
         user={authenticatedUser}
         permissions={access.permissions}
         onLogout={authenticatedUser ? logout : undefined}
-        onLogin={authenticatedUser ? undefined : () => navigate('/')}
-        onRegister={authenticatedUser ? undefined : () => navigate('/')}
+        onLogin={authenticatedUser ? undefined : () => navigate('/?auth=login')}
+        onRegister={authenticatedUser ? undefined : () => navigate('/?auth=register')}
       />
       <PublicOccurrences />
       <AppBottomNavigation
         active="occurrences"
         user={authenticatedUser}
         permissions={access.permissions}
-        onLogin={authenticatedUser ? undefined : () => navigate('/')}
-        onRegister={authenticatedUser ? undefined : () => navigate('/')}
+        onLogin={authenticatedUser ? undefined : () => navigate('/?auth=login')}
+        onRegister={authenticatedUser ? undefined : () => navigate('/?auth=register')}
       />
     </div>
   );
