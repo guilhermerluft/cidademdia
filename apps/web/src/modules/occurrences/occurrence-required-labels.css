@@ -37,27 +37,21 @@
 }
 
 .occurrence-required-marker::after {
-  content: ' Campo obrigatório';
+  content: ' Esse campo é obrigatório';
   margin-left: 0.15rem;
   font-weight: 650;
 }
 
-.occurrence-form--validation-visible .occurrence-required-invalid > .occurrence-required-marker {
+.occurrence-required-invalid > .occurrence-required-marker {
   display: inline-flex;
 }
 
 .occurrence-form .occurrence-required-input-invalid {
-  border-color: rgba(180, 35, 24, 0.38) !important;
-  box-shadow: 0 0 0 1px rgba(180, 35, 24, 0.025);
+  border-color: rgba(180, 35, 24, 0.48) !important;
 }
 
 .occurrence-form .occurrence-required-input-invalid:focus {
-  border-color: rgba(180, 35, 24, 0.5) !important;
-  box-shadow: 0 0 0 2px rgba(180, 35, 24, 0.055) !important;
-}
-
-.occurrence-validation-summary {
-  display: none !important;
+  border-color: rgba(180, 35, 24, 0.58) !important;
 }
 
 .occurrence-form__protocol-field {
