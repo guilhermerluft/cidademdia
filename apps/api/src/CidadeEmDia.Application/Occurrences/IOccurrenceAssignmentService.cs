@@ -41,6 +41,7 @@ public sealed record MasterOccurrenceTargetItem(
     string OccurrenceStatus,
     string TargetStatus,
     DateTimeOffset UpdatedAt,
+    PublicOccurrenceMediaItem? CoverMedia,
     OccurrenceAssignmentItem? Assignment);
 
 public sealed record AssignedOccurrenceItem(
