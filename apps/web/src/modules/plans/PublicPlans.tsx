@@ -214,8 +214,7 @@ function PlanCard({
       </div>
 
       <div className="plans-page__posting-badge">
-        <span>QTD POSTAGENS/MÊS</span>
-        <strong>{publicationLimit > 0 ? publicationLimit : 'Conforme catálogo'}</strong>
+        <strong>{publicationLimit} POSTAGENS/MÊS</strong>
       </div>
 
       <div className="plans-page__plan-title">
