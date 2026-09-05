@@ -18,5 +18,8 @@ grep -q '1.1.1.1' "$ROOT/infra/scripts/setup-production-edge.sh"
 grep -q '8.8.8.8' "$ROOT/infra/scripts/setup-production-edge.sh"
 grep -q 'production_dns_public=OK' "$ROOT/infra/scripts/setup-production-edge.sh"
 ! grep -q 'getent ahostsv4' "$ROOT/infra/scripts/setup-production-edge.sh"
+grep -q 'CIDADEMDIA_PROD_RESOLVE_IP="\$ORIGIN_IPV4"' "$ROOT/infra/scripts/setup-production-edge.sh"
+grep -q -- '--resolve "\$DOMAIN:443:\$RESOLVE_IP"' "$ROOT/infra/scripts/production-deploy-smoke.sh"
+grep -q 'production_smoke_origin=' "$ROOT/infra/scripts/production-deploy-smoke.sh"
 
 echo "PRODUCTION DEPLOY GUARD: OK"

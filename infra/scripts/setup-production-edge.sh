@@ -71,7 +71,7 @@ nginx -t
 systemctl reload nginx
 systemctl enable --now certbot-renew.timer 2>/dev/null || true
 
-bash "$ROOT/infra/scripts/production-deploy-smoke.sh"
+CIDADEMDIA_PROD_RESOLVE_IP="$ORIGIN_IPV4" bash "$ROOT/infra/scripts/production-deploy-smoke.sh"
 curl -fsS https://homolog.cidademdia.com.br/health/live >/dev/null || fail "homolog indisponível após publicar produção"
 echo "homolog_after_edge=OK"
 
