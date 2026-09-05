@@ -133,7 +133,7 @@
 }
 
 /* Font Awesome Free — use the library font instead of ad-hoc unicode glyphs. */
-.public-home__hero-actions .ced-button:first-child::before,
+.public-home__outline-cta::before,
 .public-home__cta-play::before,
 .public-home__section-icon::before,
 .public-home__play span::before,
@@ -150,9 +150,8 @@
   -webkit-font-smoothing: antialiased;
 }
 
-.public-home__hero-actions .ced-button:first-child::before {
+.public-home__outline-cta::before {
   content: '\f19c';
-  margin-right: 9px;
   font-size: .98rem;
 }
 

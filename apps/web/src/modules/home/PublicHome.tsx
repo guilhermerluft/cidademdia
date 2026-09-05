@@ -328,10 +328,12 @@ export function PublicHome({
               </p>
 
               <div className="public-home__hero-actions">
-                <Button size="lg" onClick={() => navigate('/planos')}>Conheça os planos</Button>
-                <button className="public-home__outline-cta" type="button" onClick={() => setHowItWorksOpen(true)}>
+                <Button size="lg" onClick={() => setHowItWorksOpen(true)}>
                   <span className="public-home__cta-play" aria-hidden="true">▶</span>
                   Como funciona
+                </Button>
+                <button className="public-home__outline-cta" type="button" onClick={() => navigate('/planos')}>
+                  Conheça os planos
                 </button>
               </div>
             </div>
