@@ -1,0 +1,50 @@
+/* Visual refinement for the complementary participation benefits in the public hero.
+   Loaded after home-refinement.css so the existing hero copy, colors and CTAs remain untouched. */
+
+.public-home__hero::after {
+  content: 'Apoie ocorrências da sua região\APublique ocorrências gratuitamente\AAcompanhe detalhes e atualizações';
+  width: min(390px, 32vw);
+  padding: 12px 18px 12px 64px;
+  border: 1px solid rgba(0, 95, 115, .2);
+  border-left: 4px solid #005f73;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, .96);
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23E7F4F6'/%3E%3Cpath d='M18 25V11M18 11l-5 5M18 11l5 5' fill='none' stroke='%23005F73' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23EAF7EE'/%3E%3Crect x='11' y='10' width='14' height='16' rx='3' fill='none' stroke='%2317A53C' stroke-width='2.2'/%3E%3Cpath d='M18 14v8M14 18h8' fill='none' stroke='%2317A53C' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 36 36'%3E%3Ccircle cx='18' cy='18' r='18' fill='%23FFF3DE'/%3E%3Cpath d='M9.5 18s3.2-5 8.5-5 8.5 5 8.5 5-3.2 5-8.5 5-8.5-5-8.5-5Z' fill='none' stroke='%23F09A13' stroke-width='2.1' stroke-linejoin='round'/%3E%3Ccircle cx='18' cy='18' r='2.4' fill='%23F09A13'/%3E%3C/svg%3E"),
+    linear-gradient(135deg, rgba(255, 255, 255, .99), rgba(240, 249, 250, .97));
+  background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+  background-size: 36px 36px, 36px 36px, 36px 36px, 100% 100%;
+  background-position: 16px 16px, 16px 60px, 16px 104px, 0 0;
+  color: #003e51;
+  box-shadow:
+    0 16px 38px rgba(0, 59, 78, .16),
+    inset 0 1px 0 rgba(255, 255, 255, .9);
+  backdrop-filter: blur(12px);
+  white-space: pre-line;
+  font-size: .9rem;
+  font-weight: 800;
+  line-height: 44px;
+  letter-spacing: -.01em;
+}
+
+@media (max-width: 900px) {
+  .public-home__hero::after {
+    width: min(620px, calc(100% - 36px));
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 720px) {
+  .public-home__hero::after {
+    width: calc(100% - 24px);
+    padding: 10px 12px 10px 58px;
+    border-left-width: 3px;
+    border-radius: 17px;
+    background-size: 32px 32px, 32px 32px, 32px 32px, 100% 100%;
+    background-position: 14px 14px, 14px 54px, 14px 94px, 0 0;
+    font-size: .84rem;
+    line-height: 40px;
+  }
+}
