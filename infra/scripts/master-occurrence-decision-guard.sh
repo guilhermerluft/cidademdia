@@ -25,9 +25,9 @@ grep -q '/targets/${targetId}/reject' "$SERVICE" \
   || fail "recusa não usa endpoint de decisão existente"
 grep -q "target.targetStatus === 'PENDING'" "$PANEL" \
   || fail "painel não identifica ocorrência aguardando decisão"
-grep -q '>Aceitar ocorrência<' "$PANEL" \
+grep -q "'Aceitar ocorrência'" "$PANEL" \
   || fail "painel Master não apresenta ação de aceite"
-grep -q '>Confirmar recusa<' "$PANEL" \
+grep -q "'Confirmar recusa'" "$PANEL" \
   || fail "painel Master não apresenta confirmação de recusa"
 grep -q 'maxLength={1000}' "$PANEL" \
   || fail "motivo da recusa não respeita limite do domínio"
