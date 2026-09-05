@@ -26,7 +26,7 @@ interface PaymentDefinition {
 }
 
 const PLAN_DEFINITIONS: PlanDefinition[] = [
-  { id: 'individual', title: 'Individual', icon: 'fa-user', tone: 'blue', subaccountLimit: 0 },
+  { id: 'individual', title: 'Master Individual', icon: 'fa-user', tone: 'blue', subaccountLimit: 0 },
   { id: 'master-5', title: 'Master 5', icon: 'fa-building-user', tone: 'green', subaccountLimit: 5 },
   { id: 'master-10', title: 'Master 10', icon: 'fa-people-group', tone: 'sky', subaccountLimit: 10 },
 ];
@@ -208,11 +208,14 @@ function PlanCard({
 
   return (
     <article className={`plans-page__plan-card plans-page__plan-card--${definition.tone}`}>
+      <div className="plans-page__plan-promotion" aria-label="Oferta promocional">
+        <i className="fa-solid fa-tags" aria-hidden="true" />
+        <span>Oferta promocional</span>
+      </div>
+
       <div className="plans-page__posting-badge">
-        <i className="fa-solid fa-bullhorn" aria-hidden="true" />
-        {publicationLimit > 0
-          ? `${publicationLimit} postagem${publicationLimit === 1 ? '' : 'ens'}/mês`
-          : 'Postagens conforme catálogo'}
+        <span>QTD POSTAGENS/MÊS</span>
+        <strong>{publicationLimit > 0 ? publicationLimit : 'Conforme catálogo'}</strong>
       </div>
 
       <div className="plans-page__plan-title">
@@ -346,11 +349,6 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
       <section className="plans-page__catalog" aria-labelledby="plans-catalog-title">
         <div className="plans-page__catalog-heading">
           <span>Escolha sua estrutura</span>
-          <nav className="plans-page__promotion-breadcrumb" aria-label="Condição promocional dos planos">
-            <span><i className="fa-solid fa-tags" aria-hidden="true" /> Oferta promocional</span>
-            <i className="fa-solid fa-chevron-right" aria-hidden="true" />
-            <strong>Planos e condições de pagamento</strong>
-          </nav>
           <h2 id="plans-catalog-title">Planos e condições de pagamento</h2>
           <p>Os valores e condições de pagamento abaixo são promocionais e carregados diretamente do catálogo público vigente do CIDADEMDIA.</p>
         </div>
