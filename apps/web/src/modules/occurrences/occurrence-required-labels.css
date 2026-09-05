@@ -27,7 +27,48 @@
 }
 
 .occurrence-required-marker {
+  display: none;
   flex: 0 0 auto;
+  align-items: center;
+  color: #a44840;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.occurrence-required-marker::after {
+  content: ' Campo obrigatório';
+  margin-left: 0.15rem;
+  font-weight: 650;
+}
+
+.occurrence-form--validation-visible .occurrence-required-invalid > .occurrence-required-marker {
+  display: inline-flex;
+}
+
+.occurrence-form .occurrence-required-input-invalid {
+  border-color: rgba(180, 35, 24, 0.48) !important;
+  box-shadow: 0 0 0 1px rgba(180, 35, 24, 0.035);
+}
+
+.occurrence-form .occurrence-required-input-invalid:focus {
+  border-color: rgba(180, 35, 24, 0.62) !important;
+  box-shadow: 0 0 0 2px rgba(180, 35, 24, 0.07) !important;
+}
+
+.occurrence-validation-summary {
+  display: none !important;
+}
+
+.occurrence-form__protocol-field {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.occurrence-form__protocol-field input {
+  border-color: var(--ced-color-border);
 }
 
 .occurrence-form__protocol-field,
