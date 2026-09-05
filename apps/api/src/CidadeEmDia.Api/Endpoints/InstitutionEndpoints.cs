@@ -30,6 +30,22 @@ public static class InstitutionEndpoints
             return Results.Ok(result);
         });
 
+        api.MapGet("/masters", async (
+            string? search,
+            int? page,
+            int? pageSize,
+            IInstitutionService service,
+            CancellationToken cancellationToken) =>
+        {
+            var result = await service.ListActiveMastersAsync(
+                search,
+                page ?? 1,
+                pageSize ?? 20,
+                cancellationToken);
+
+            return Results.Ok(result);
+        });
+
         institutions.MapGet("/{institutionId:guid}", async (
             Guid institutionId,
             IInstitutionService service,
