@@ -33,9 +33,9 @@ grep -Fq "api.get<MasterDirectoryPage>('/masters'" "$WEB_SERVICE" || fail "front
 grep -Fq "import { listActiveMasters } from './institutionService';" "$DIRECTORY" || fail "diretório não usa listActiveMasters"
 grep -Fq 'void listActiveMasters({' "$DIRECTORY" || fail "diretório não carrega as contas Master"
 if grep -Fq 'void listInstitutions({' "$DIRECTORY"; then
-  fail "diretório de Masters ainda depende de listInstitutions"
+  fail "diretório público ainda depende de listInstitutions para montar a lista"
 fi
-grep -Fq 'title="Masters"' "$DIRECTORY" || fail "título da tela não está alinhado com Masters"
+grep -Fq 'Master ativo' "$DIRECTORY" || fail "cards não identificam a conta Master ativa"
 grep -Fq 'Conta Master ativa sem órgão público vinculado.' "$DIRECTORY" || fail "Master sem órgão não possui estado visível"
 grep -Fq "label: 'Masters'" "$NAVIGATION" || fail "navegação pública não identifica a tela como Masters"
 
