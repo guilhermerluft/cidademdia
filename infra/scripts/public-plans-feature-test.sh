@@ -181,6 +181,8 @@ for text in \
     || fail "texto ausente do bundle: $text"
 done
 
+docker exec "$WEB_ID" sh -lc "grep -R -q 'Visualize e acompanhe as demandas da sua gestão, com interação direta e contínua com o cidadão via chat integrado na própria ocorrência.' /usr/share/nginx/html/assets" \
+  || fail "descrição refinada de ocorrências/chat ausente do bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -q "Acesso às ocorrências e conversa com o cidadão" /usr/share/nginx/html/assets' \
   || fail "benefício consolidado antigo ainda está presente no bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -q "QTD POSTAGENS/MÊS" /usr/share/nginx/html/assets' \
@@ -214,7 +216,7 @@ const browser = await chromium.launch({
 });
 
 const expectedBenefits = [
-  ['Acesso às ocorrências', 'Visualize e acompanhe as demandas compartilhadas com sua gestão.'],
+  ['Acesso às ocorrências', 'Visualize e acompanhe as demandas da sua gestão, com interação direta e contínua com o cidadão via chat integrado na própria ocorrência.'],
   ['Gerencie subcontas', 'Organize equipes e distribua acessos conforme a capacidade do plano.'],
   ['Receba notificações', 'Acompanhe movimentações importantes sem perder atualizações.'],
   ['Postagens mensais', 'Publique conteúdos institucionais de acordo com a franquia contratada.'],
@@ -453,6 +455,7 @@ echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
 echo "PUBLIC NAVIGATION: OK"
 echo "BILLING CATALOG: OK"
 echo "ORIGINAL PLAN BENEFITS: 4"
+echo "OCCURRENCE CHAT COPY: OK"
 echo "BENEFIT ICONS RESTORED: OK"
 echo "BENEFITS INLINE DESKTOP: 4"
 echo "BENEFITS STACKED RESPONSIVE: OK"
