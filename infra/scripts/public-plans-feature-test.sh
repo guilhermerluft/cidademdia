@@ -7,7 +7,7 @@ ENV_FILE="${CIDADEMDIA_ENV_FILE:-$ROOT/.env}"
 BASE="${CIDADEMDIA_BASE_URL:-https://homolog.cidademdia.com.br}"
 WT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 QA_DIR="${CIDADEMDIA_QA_DIR:-$HOME/cidademdia-qa/plans-$(date +%Y%m%d-%H%M%S)}"
-APPROVED_HOME_HEAD="d3b0b56b4a601d260feea1535c49968f99bfd776"
+APPROVED_HOME_HEAD="5e24a56e84b9d8d79dab0b5e101bbf00491c365b"
 
 fail() {
   echo
@@ -183,6 +183,12 @@ docker exec "$WEB_ID" sh -lc 'grep -R -q "/billing/catalog" /usr/share/nginx/htm
   || fail "catálogo real de billing ausente do bundle"
 docker exec "$WEB_ID" sh -lc 'grep -R -q "Adesão única" /usr/share/nginx/html/assets' \
   || fail "informação de adesão ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'grep -R -q "Converse com o cidadão" /usr/share/nginx/html/assets' \
+  || fail "benefício de conversa com cidadão ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'grep -R -q "pacotes de postagens extras" /usr/share/nginx/html/assets' \
+  || fail "texto de pacotes extras ausente do bundle"
+docker exec "$WEB_ID" sh -lc 'grep -R -q "Oferta promocional" /usr/share/nginx/html/assets' \
+  || fail "breadcrumb promocional ausente do bundle"
 echo "plans_bundle=OK"
 
 echo
@@ -264,8 +270,28 @@ async function validatePlans(viewport, screenshot, mobile) {
     if (!title.includes(expected)) throw new Error(`headline ausente: ${expected}`);
   }
 
-  const benefitCount = await page.locator('.plans-page__benefits article').count();
-  if (benefitCount !== 4) throw new Error(`benefícios gerais: esperado 4, recebeu ${benefitCount}`);
+  const benefits = page.locator('.plans-page__benefits article');
+  const benefitCount = await benefits.count();
+  if (benefitCount !== 5) throw new Error(`benefícios gerais: esperado 5, recebeu ${benefitCount}`);
+
+  await page.getByRole('heading', { name: 'Converse com o cidadão', exact: true }).waitFor({ state: 'visible' });
+  const chatBenefit = benefits.filter({ hasText: 'Converse com o cidadão' });
+  if (!(await chatBenefit.innerText()).includes('Mantenha contato direto pelo chat durante o acompanhamento da ocorrência.')) {
+    throw new Error('benefício de conversa com cidadão sem descrição esperada');
+  }
+
+  const postingBenefit = benefits.filter({ hasText: 'Postagens mensais' });
+  if (!(await postingBenefit.innerText()).includes('pacotes de postagens extras sempre que necessário')) {
+    throw new Error('benefício de Postagens mensais sem informação de pacotes extras');
+  }
+
+  const promotionBreadcrumb = page.locator('.plans-page__promotion-breadcrumb');
+  await promotionBreadcrumb.waitFor({ state: 'visible' });
+  const promotionText = await promotionBreadcrumb.innerText();
+  if (!promotionText.includes('Oferta promocional') || !promotionText.includes('Planos e condições de pagamento')) {
+    throw new Error(`breadcrumb promocional inesperado: ${promotionText}`);
+  }
+  await page.getByText(/Os valores e condições de pagamento abaixo são promocionais/).waitFor({ state: 'visible' });
 
   const planCardCount = await page.locator('.plans-page__plan-card').count();
   if (planCardCount !== 3) throw new Error(`cards principais: esperado 3, recebeu ${planCardCount}`);
@@ -386,7 +412,10 @@ echo "AUTHENTICATED SHELL USES SHARED HEADER: OK"
 echo "SHARED MOBILE NAVIGATION: OK"
 echo "HOME CTA -> /planos: OK"
 echo "BILLING CATALOG: OK"
-echo "BENEFITS: 4"
+echo "BENEFITS: 5"
+echo "CITIZEN CHAT BENEFIT: OK"
+echo "EXTRA POST PACKAGES: OK"
+echo "PROMOTIONAL CONDITIONS: OK"
 echo "PRIMARY PLAN CARDS: 3"
 echo "MEGA PROMOÇÃO: OK"
 echo "COMPLEMENTARY INFO: 5"
