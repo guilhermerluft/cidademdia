@@ -70,7 +70,39 @@ docker run -d \
   -v "$REPO_ROOT:/src:ro" \
   -w /work \
   mcr.microsoft.com/dotnet/sdk:10.0 \
-  bash -lc 'mkdir -p /work && cp -a /src/. /work/ && exec sleep infinity' >/dev/null
+  bash -lc 'set -euo pipefail; mkdir -p /work; cp -a /src/. /work/; touch /tmp/source-ready; exec sleep infinity' >/dev/null
+
+echo "==> Aguardando cópia completa do código no migrator"
+for _ in $(seq 1 60); do
+  if docker exec "$MIGRATOR_NAME" test -f /tmp/source-ready >/dev/null 2>&1; then
+    break
+  fi
+
+  RUNNING="$(docker inspect -f '{{.State.Running}}' "$MIGRATOR_NAME" 2>/dev/null || true)"
+  if [ "$RUNNING" != "true" ]; then
+    echo "Migrator encerrou antes de concluir a cópia do código."
+    exit 1
+  fi
+  sleep 1
+done
+
+if ! docker exec "$MIGRATOR_NAME" test -f /tmp/source-ready >/dev/null 2>&1; then
+  echo "Cópia do código para o migrator não concluiu."
+  exit 1
+fi
+
+for REQUIRED_PROJECT in \
+  apps/api/src/CidadeEmDia.Api/CidadeEmDia.Api.csproj \
+  apps/api/src/CidadeEmDia.Application/CidadeEmDia.Application.csproj \
+  apps/api/src/CidadeEmDia.Domain/CidadeEmDia.Domain.csproj \
+  apps/api/src/CidadeEmDia.Infrastructure/CidadeEmDia.Infrastructure.csproj; do
+  if ! docker exec "$MIGRATOR_NAME" test -f "/work/$REQUIRED_PROJECT"; then
+    echo "Arquivo ausente no migrator após a cópia: $REQUIRED_PROJECT"
+    exit 1
+  fi
+done
+
+echo "migrator_source=READY"
 
 echo "==> Restaurando ferramentas e dependências"
 docker exec "$MIGRATOR_NAME" bash -lc "
