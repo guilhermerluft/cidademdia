@@ -1,6 +1,6 @@
 export type PostType = 'text' | 'image' | 'video' | 'link' | 'carousel';
 export type PostStatus = 'draft' | 'published' | 'archived';
-export type PostPlacementKey = 'feed' | 'horizontal' | 'vertical';
+export type PostPlacementKey = 'feed' | 'horizontal' | 'vertical' | 'hero';
 
 export interface PostPlacement {
   placementKey: PostPlacementKey;
