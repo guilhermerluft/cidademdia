@@ -11,6 +11,7 @@ import { AuthProvider } from './modules/auth/AuthProvider';
 import { HeroBannerBootstrap } from './modules/home/HeroBannerBootstrap';
 import { RepresentativesRoute } from './modules/institutions/RepresentativesRoute';
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
+import { installOccurrenceFormValidationUi } from './modules/occurrences/occurrenceFormValidationUi';
 import { UserPanelRoute } from './modules/panel/UserPanelRoute';
 import { PlansRoute } from './modules/plans/PlansRoute';
 import { ProfileRoute } from './modules/profile/ProfileRoute';
@@ -44,6 +45,7 @@ import './modules/plans/plans-gold-commercial.css';
 import './modules/profile/profile.css';
 
 installNativeAlertToastBridge();
+installOccurrenceFormValidationUi();
 
 const queryClient = new QueryClient();
 
