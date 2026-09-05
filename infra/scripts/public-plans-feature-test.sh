@@ -170,8 +170,10 @@ test -n "$WEB_ID" || fail "container web da feature não encontrado"
 for text in \
   "TIPOS DE GESTÃO" \
   "MEGA PROMOÇÃO" \
-  "Acesso às ocorrências e conversa com o cidadão" \
-  "pacotes de postagens extras" \
+  "Acesso às ocorrências" \
+  "Gerencie subcontas" \
+  "Receba notificações" \
+  "Postagens mensais" \
   "Oferta promocional" \
   "Master Individual" \
   "POSTAGENS/MÊS"; do
@@ -179,6 +181,8 @@ for text in \
     || fail "texto ausente do bundle: $text"
 done
 
+docker exec "$WEB_ID" sh -lc '! grep -R -q "Acesso às ocorrências e conversa com o cidadão" /usr/share/nginx/html/assets' \
+  || fail "benefício consolidado antigo ainda está presente no bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -q "QTD POSTAGENS/MÊS" /usr/share/nginx/html/assets' \
   || fail "rótulo QTD ainda está presente no bundle"
 docker exec "$WEB_ID" sh -lc '! grep -R -qi "POSTAGEMENS" /usr/share/nginx/html/assets' \
@@ -208,6 +212,13 @@ const browser = await chromium.launch({
   headless: true,
   args: ['--no-sandbox', '--disable-dev-shm-usage'],
 });
+
+const expectedBenefits = [
+  ['Acesso às ocorrências', 'Visualize e acompanhe as demandas compartilhadas com sua gestão.'],
+  ['Gerencie subcontas', 'Organize equipes e distribua acessos conforme a capacidade do plano.'],
+  ['Receba notificações', 'Acompanhe movimentações importantes sem perder atualizações.'],
+  ['Postagens mensais', 'Publique conteúdos institucionais de acordo com a franquia contratada.'],
+];
 
 async function openPage(viewport) {
   const context = await browser.newContext({ ignoreHTTPSErrors: true, viewport });
@@ -249,9 +260,9 @@ async function validatePlans(viewport, screenshot, mobile) {
   }
 
   const benefits = page.locator('.plans-page__benefits article');
-  if (await benefits.count() !== 4) throw new Error('esperados exatamente 4 benefícios consolidados');
-  if (await page.locator('.plans-page__benefits .plans-page__benefit-icon').count() !== 0) {
-    throw new Error('ícones ainda estão presentes na faixa de benefícios');
+  if (await benefits.count() !== 4) throw new Error('esperados exatamente 4 benefícios originais');
+  if (await page.locator('.plans-page__benefits .plans-page__benefit-icon').count() !== 4) {
+    throw new Error('esperados exatamente 4 ícones na faixa de benefícios');
   }
 
   const benefitTops = await benefits.evaluateAll((nodes) => nodes.map((node) => Math.round(node.getBoundingClientRect().top)));
@@ -269,15 +280,28 @@ async function validatePlans(viewport, screenshot, mobile) {
 
   for (let index = 0; index < 4; index += 1) {
     const benefit = benefits.nth(index);
+    const [expectedTitle, expectedDescription] = expectedBenefits[index];
+    const title = (await benefit.locator('h2').innerText()).trim();
+    const description = (await benefit.locator('p').innerText()).trim();
+    if (title !== expectedTitle) throw new Error(`título inesperado no benefício ${index + 1}: ${title}`);
+    if (description !== expectedDescription) throw new Error(`descrição inesperada no benefício ${index + 1}: ${description}`);
+
+    const iconBox = await benefit.locator('.plans-page__benefit-icon').boundingBox();
+    const titleBox = await benefit.locator('h2').boundingBox();
+    if (!iconBox || !titleBox) throw new Error(`não foi possível medir benefício ${index + 1}`);
+    if (iconBox.y + iconBox.height > titleBox.y + 2) {
+      throw new Error(`ícone não está acima do título no benefício ${index + 1}`);
+    }
+
     const layout = await benefit.evaluate((node) => {
       const articleStyle = getComputedStyle(node);
-      const title = node.querySelector('h2');
+      const heading = node.querySelector('h2');
       const paragraph = node.querySelector('p');
       return {
         alignItems: articleStyle.alignItems,
         justifyContent: articleStyle.justifyContent,
         textAlign: articleStyle.textAlign,
-        titleAlign: title ? getComputedStyle(title).textAlign : null,
+        titleAlign: heading ? getComputedStyle(heading).textAlign : null,
         paragraphAlign: paragraph ? getComputedStyle(paragraph).textAlign : null,
       };
     });
@@ -289,18 +313,8 @@ async function validatePlans(viewport, screenshot, mobile) {
     }
   }
 
-  const consolidatedBenefit = benefits.first();
-  const consolidatedText = await consolidatedBenefit.innerText();
-  if (!consolidatedText.includes('Acesso às ocorrências e conversa com o cidadão')) {
-    throw new Error('benefício consolidado de ocorrências/chat ausente');
-  }
-  if (!consolidatedText.includes('mantendo contato direto com o cidadão pelo chat')) {
-    throw new Error('descrição consolidada de ocorrências/chat ausente');
-  }
-
-  const postingBenefit = benefits.filter({ hasText: 'Postagens mensais' });
-  if (!(await postingBenefit.innerText()).includes('pacotes de postagens extras sempre que necessário')) {
-    throw new Error('benefício de Postagens mensais sem pacotes extras');
+  if (await page.getByText('Acesso às ocorrências e conversa com o cidadão', { exact: true }).count() !== 0) {
+    throw new Error('benefício consolidado antigo ainda está visível');
   }
 
   const planCards = page.locator('.plans-page__plan-card');
@@ -438,12 +452,11 @@ echo "SHARED APP HEADER IMPLEMENTATION: OK"
 echo "CENTRAL NAVIGATION/PERMISSIONS: OK"
 echo "PUBLIC NAVIGATION: OK"
 echo "BILLING CATALOG: OK"
+echo "ORIGINAL PLAN BENEFITS: 4"
+echo "BENEFIT ICONS RESTORED: OK"
 echo "BENEFITS INLINE DESKTOP: 4"
 echo "BENEFITS STACKED RESPONSIVE: OK"
 echo "BENEFITS CENTERED: OK"
-echo "BENEFIT ICONS REMOVED: OK"
-echo "OCCURRENCE + CHAT CONSOLIDATED: OK"
-echo "EXTRA POST PACKAGES: OK"
 echo "MASTER INDIVIDUAL: OK"
 echo "PROMOTION ICON + TEXT INLINE: OK"
 echo "NUMERIC POSTAGENS/MÊS: OK"
