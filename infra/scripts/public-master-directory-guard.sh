@@ -36,7 +36,13 @@ if grep -Fq 'void listInstitutions({' "$DIRECTORY"; then
   fail "diretório público ainda depende de listInstitutions para montar a lista"
 fi
 grep -Fq 'Master ativo' "$DIRECTORY" || fail "cards não identificam a conta Master ativa"
-grep -Fq 'Conta Master ativa sem órgão público vinculado.' "$DIRECTORY" || fail "Master sem órgão não possui estado visível"
+grep -Fq "master.institutions.map((institution) => institution.name).join(' · ')" "$DIRECTORY" || fail "card não exibe o órgão vinculado no cabeçalho"
+if grep -Fq 'Sem órgão vinculado' "$DIRECTORY"; then
+  fail "card ainda exibe texto de ausência de órgão"
+fi
+if grep -Fq 'Conta Master ativa sem órgão público vinculado.' "$DIRECTORY"; then
+  fail "card ainda exibe mensagem vazia de órgão"
+fi
 grep -Fq "label: 'Masters'" "$NAVIGATION" || fail "navegação pública não identifica a tela como Masters"
 
 MASTER_DTO="$(sed -n '/public sealed record MasterDirectoryItem(/,/);/p' "$CONTRACTS")"
@@ -47,6 +53,8 @@ fi
 echo "active_master_role_filter=OK"
 echo "active_master_status_filter=OK"
 echo "master_without_institution_visible=OK"
+echo "master_without_institution_copy_hidden=OK"
+echo "linked_institution_header=OK"
 echo "master_public_contract_sanitized=OK"
 echo "master_public_endpoint=OK"
 echo "master_public_ui=OK"
