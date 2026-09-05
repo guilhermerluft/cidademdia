@@ -22,7 +22,7 @@ for title in \
   grep -q "title: '$title'" "$PLANS" || fail "benefício original ausente: $title"
 done
 
-grep -q "description: 'Visualize e acompanhe as demandas compartilhadas com sua gestão.'" "$PLANS" || fail "descrição original de ocorrências ausente"
+grep -q "description: 'Visualize e acompanhe as demandas compartilhadas com sua gestão, permitindo a interação direta e contínua com o cidadão por meio de chat na própria ocorrência.'" "$PLANS" || fail "descrição de ocorrências/chat ausente"
 grep -q "description: 'Organize equipes e distribua acessos conforme a capacidade do plano.'" "$PLANS" || fail "descrição original de subcontas ausente"
 grep -q "description: 'Acompanhe movimentações importantes sem perder atualizações.'" "$PLANS" || fail "descrição original de notificações ausente"
 grep -q "description: 'Publique conteúdos institucionais de acordo com a franquia contratada.'" "$PLANS" || fail "descrição original de postagens ausente"
@@ -62,6 +62,7 @@ fi
 grep -q 'Os valores e condições de pagamento abaixo são promocionais' "$PLANS" || fail "aviso de valores promocionais ausente"
 
 echo "plans_original_four_benefits=OK"
+echo "plans_occurrence_chat_copy=OK"
 echo "plans_benefit_icons_restored=OK"
 echo "plans_four_benefits_inline_desktop=OK"
 echo "plans_benefits_stacked_responsive=OK"
