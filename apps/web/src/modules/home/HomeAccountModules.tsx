@@ -10,7 +10,8 @@ export function HomeAccountModules({ user }: HomeAccountModulesProps) {
   const isMaster = user.roles.includes('MASTER');
   const isAdmin = user.roles.includes('ADMIN');
 
-  if (isMaster || isAdmin) return null;
+  if (isMaster) return null;
+  if (isAdmin) return null;
 
   return (
     <section className="public-home__account-zone" aria-label="Recursos da sua conta">
