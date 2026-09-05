@@ -30,7 +30,6 @@ import './modules/home/home.css';
 import './styles/responsive.css';
 import './modules/home/home-assets.css';
 import './modules/home/home-refinement.css';
-import './modules/home/home-benefits-refinement.css';
 import './modules/home/home-session.css';
 import './modules/home/how-it-works-modal.css';
 import './modules/institutions/representatives.css';
