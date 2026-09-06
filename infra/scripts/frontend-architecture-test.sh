@@ -194,14 +194,16 @@ grep -q 'user={user}' "$WEB/modules/home/PublicHome.tsx" \
 grep -q 'permissions={permissions}' "$WEB/modules/home/PublicHome.tsx" \
   || fail "PublicHome não entrega permissões à navegação compartilhada"
 
-grep -q 'HowItWorksModal' "$WEB/modules/home/PublicHome.tsx" \
-  || fail "Home não usa o modal compartilhado Como funciona"
-grep -q 'setHowItWorksOpen(true)' "$WEB/modules/home/PublicHome.tsx" \
-  || fail "CTA Como funciona não abre modal"
+grep -q "navigate('/como-funciona')" "$WEB/modules/home/PublicHome.tsx" \
+  || fail "CTA Como funciona não aponta para a rota dedicada"
+! grep -q 'setHowItWorksOpen' "$WEB/modules/home/PublicHome.tsx" \
+  || fail "Home voltou a manter estado para abrir o modal Como funciona"
+! grep -q '<HowItWorksModal' "$WEB/modules/home/PublicHome.tsx" \
+  || fail "Home voltou a montar o modal Como funciona"
+grep -q 'path="/como-funciona"' "$WEB/main.tsx" \
+  || fail "rota dedicada /como-funciona não está registrada"
 grep -q "'/media/como-funciona.mp4'" "$WEB/modules/home/HowItWorksModal.tsx" \
-  || fail "modal Como funciona não aponta para o vídeo operacional"
-grep -q "how-it-works-modal.css" "$WEB/main.tsx" \
-  || fail "estilos do modal Como funciona não são carregados"
+  || fail "vídeo operacional Como funciona foi alterado"
 grep -q 'CIDADEMDIA_RUNTIME_MEDIA_DIR' "$ROOT/infra/docker-compose.yml" \
   || fail "diretório persistente de mídia não está montado no nginx"
 grep -q 'location = /media/como-funciona.mp4' "$ROOT/infra/nginx/cidademdia.conf" \
@@ -225,5 +227,5 @@ echo "master_operations_in_panel=OK"
 echo "master_home_public_only=OK"
 echo "home_private_operations_removed=OK"
 echo "account_dropdown_profile_and_logout=OK"
-echo "how_it_works_video_modal=OK"
+echo "how_it_works_dedicated_route=OK"
 echo "FRONTEND ARCHITECTURE: OK"
