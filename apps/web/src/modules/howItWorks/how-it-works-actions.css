@@ -1,0 +1,13 @@
+.how-it-works-page__login-cta {
+  justify-content: center;
+}
+
+.how-it-works-page__login-cta::before {
+  content: none !important;
+}
+
+@media (max-width: 720px) {
+  .how-it-works-page__login-cta {
+    flex: 1 1 140px;
+  }
+}
