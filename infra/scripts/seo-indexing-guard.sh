@@ -6,6 +6,7 @@ WEB="$ROOT/apps/web"
 SEO="$WEB/src/app/SeoMetadata.tsx"
 MAIN="$WEB/src/main.tsx"
 INDEX="$WEB/index.html"
+FAVICON="$WEB/public/favicon-96.png"
 ROBOTS="$WEB/public/robots.txt"
 SITEMAP="$WEB/public/sitemap.xml"
 NGINX="$ROOT/infra/nginx/cidademdia.conf"
@@ -16,9 +17,11 @@ fail() {
   exit 1
 }
 
-for file in "$SEO" "$MAIN" "$INDEX" "$ROBOTS" "$SITEMAP" "$NGINX" "$CI"; do
+for file in "$SEO" "$MAIN" "$INDEX" "$FAVICON" "$ROBOTS" "$SITEMAP" "$NGINX" "$CI"; do
   test -f "$file" || fail "arquivo SEO ausente: $file"
 done
+
+test -s "$FAVICON" || fail "favicon PNG está vazio"
 
 grep -q "const PRODUCTION_ORIGIN = 'https://cidademdia.com.br';" "$SEO" \
   || fail "origem canônica de produção não está centralizada"
@@ -42,6 +45,8 @@ grep -q 'name="description"' "$INDEX" || fail "description base ausente do HTML"
 grep -q 'name="robots"' "$INDEX" || fail "robots meta base ausente do HTML"
 grep -q 'rel="canonical" href="https://cidademdia.com.br"' "$INDEX" \
   || fail "canonical base ausente do HTML"
+grep -q 'rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png"' "$INDEX" \
+  || fail "favicon PNG compatível com Google Search não está declarado"
 grep -q 'property="og:title"' "$INDEX" || fail "Open Graph base ausente"
 grep -q 'name="twitter:card"' "$INDEX" || fail "Twitter Card base ausente"
 grep -q 'id="seo-structured-data"' "$INDEX" || fail "JSON-LD base ausente"
@@ -51,6 +56,7 @@ grep -q '^User-agent: \*$' "$ROBOTS" || fail "robots.txt sem regra global"
 grep -q '^Disallow: /api/$' "$ROBOTS" || fail "robots.txt não protege API"
 grep -q '^Sitemap: https://cidademdia.com.br/sitemap.xml$' "$ROBOTS" \
   || fail "robots.txt não referencia sitemap de produção"
+! grep -q '^Disallow: /favicon' "$ROBOTS" || fail "favicon não pode ser bloqueado para crawlers"
 
 for url in \
   'https://cidademdia.com.br/' \
@@ -75,6 +81,7 @@ grep -q 'SEO indexing guard' "$CI" \
 
 echo "seo_public_metadata=OK"
 echo "seo_canonical=OK"
+echo "seo_favicon=OK"
 echo "seo_open_graph=OK"
 echo "seo_twitter_card=OK"
 echo "seo_structured_data=OK"
