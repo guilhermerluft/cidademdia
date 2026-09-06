@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BrowserRouter, Route, Routes, useLocation } from 'react-router-dom';
 import { App } from './app/App';
+import { SeoMetadata } from './app/SeoMetadata';
 import { CommercialSignupModal } from './components/CommercialSignupModal';
 import { ToastViewport } from './components/ToastViewport';
 import { installNativeAlertToastBridge } from './components/toast';
@@ -62,6 +63,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <SeoMetadata />
         <AuthProvider>
           <HeroBannerBootstrap />
           <MobileAppComingSoonNotice />
