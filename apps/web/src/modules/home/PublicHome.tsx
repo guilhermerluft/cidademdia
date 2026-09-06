@@ -13,7 +13,6 @@ import {
 import { listPlacementPosts } from '../posts/postService';
 import type { PostItem } from '../posts/types';
 import { HomeAccountModules } from './HomeAccountModules';
-import { HowItWorksModal } from './HowItWorksModal';
 import {
   getPublicOccurrenceDetails,
   listPublicOccurrences,
@@ -157,7 +156,6 @@ export function PublicHome({
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [occurrenceDetailError, setOccurrenceDetailError] = useState<string | null>(null);
   const [plans, setPlans] = useState<PublicPlanOffer[]>([]);
-  const [howItWorksOpen, setHowItWorksOpen] = useState(false);
   const slidesPerView = useSlidesPerView();
 
   useEffect(() => {
@@ -328,7 +326,7 @@ export function PublicHome({
               </p>
 
               <div className="public-home__hero-actions">
-                <Button size="lg" onClick={() => setHowItWorksOpen(true)}>
+                <Button size="lg" onClick={() => navigate('/como-funciona')}>
                   <span className="public-home__cta-play" aria-hidden="true">▶</span>
                   Como funciona
                 </Button>
@@ -530,7 +528,6 @@ export function PublicHome({
         </div>
       </footer>
 
-      <HowItWorksModal open={howItWorksOpen} onClose={() => setHowItWorksOpen(false)} />
       {selectedOccurrence && (
         <PublicOccurrenceDetailsModal
           occurrence={selectedOccurrence}
