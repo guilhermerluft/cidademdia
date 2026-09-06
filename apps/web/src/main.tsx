@@ -10,6 +10,7 @@ import { AdminRoute } from './modules/admin/AdminRoute';
 import { AuthProvider } from './modules/auth/AuthProvider';
 import { HeroBannerBootstrap } from './modules/home/HeroBannerBootstrap';
 import { MobileAppComingSoonNotice } from './modules/home/MobileAppComingSoonNotice';
+import { HowItWorksRoute } from './modules/howItWorks/HowItWorksRoute';
 import { RepresentativesRoute } from './modules/institutions/RepresentativesRoute';
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
 import { installOccurrenceFormValidationUi } from './modules/occurrences/occurrenceFormValidationUi';
@@ -37,6 +38,7 @@ import './modules/home/home-refinement.css';
 import './modules/home/home-session.css';
 import './modules/home/how-it-works-modal.css';
 import './modules/home/mobile-app-coming-soon.css';
+import './modules/howItWorks/how-it-works-page.css';
 import './modules/institutions/representatives.css';
 import './modules/occurrences/occurrence-media.css';
 import './modules/occurrences/public-occurrences.css';
@@ -67,6 +69,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <CommercialSignupModal />
           <Routes>
             <Route path="/admin" element={<AdminRoute />} />
+            <Route path="/como-funciona" element={<HowItWorksRoute />} />
             <Route path="/ocorrencias" element={<PublicOccurrencesRoute />} />
             <Route path="/representantes" element={<RepresentativesRoute />} />
             <Route path="/painel" element={<UserPanelRoute />} />
