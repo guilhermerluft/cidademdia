@@ -4,10 +4,9 @@ import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
 import { Button } from '../../components/ui';
 import type { AuthenticatedUser } from '../auth/types';
 import { HOW_IT_WORKS_GUIDE_IMAGE } from './assets/guideImage';
+import './how-it-works-actions.css';
 
 const HOW_IT_WORKS_VIDEO_URL = '/media/como-funciona.mp4';
-
-type ContentView = 'both' | 'video' | 'guide';
 
 interface HowItWorksPageProps {
   user?: AuthenticatedUser | null;
@@ -17,16 +16,6 @@ interface HowItWorksPageProps {
   onLogout?: () => void | Promise<void>;
 }
 
-const VIEW_OPTIONS: Array<{
-  id: ContentView;
-  label: string;
-  icon: string;
-}> = [
-  { id: 'both', label: 'Ver os dois', icon: 'fa-table-columns' },
-  { id: 'video', label: 'Assistir vídeo', icon: 'fa-circle-play' },
-  { id: 'guide', label: 'Passo a passo', icon: 'fa-list-check' },
-];
-
 export function HowItWorksPage({
   user,
   permissions = [],
@@ -35,7 +24,6 @@ export function HowItWorksPage({
   onLogout,
 }: HowItWorksPageProps) {
   const navigate = useNavigate();
-  const [view, setView] = useState<ContentView>('both');
   const [guideOpen, setGuideOpen] = useState(false);
   const [videoUnavailable, setVideoUnavailable] = useState(false);
 
@@ -56,9 +44,6 @@ export function HowItWorksPage({
     };
   }, [guideOpen]);
 
-  const showVideo = view !== 'guide';
-  const showGuide = view !== 'video';
-
   return (
     <div className="how-it-works-page-shell">
       <AppHeader
@@ -76,7 +61,7 @@ export function HowItWorksPage({
             <h1 id="how-it-works-page-title">É simples fazer a diferença!</h1>
             <p>
               O CIDADEMDIA conecta você ao poder público de forma rápida, gratuita e segura.
-              Veja no vídeo ou siga o passo a passo para registrar sua ocorrência.
+              Assista ao vídeo e consulte o passo a passo para registrar sua ocorrência.
             </p>
           </div>
 
@@ -105,112 +90,80 @@ export function HowItWorksPage({
         </section>
 
         <section className="how-it-works-page__content" aria-label="Tutorial Como funciona">
-          <div className="how-it-works-page__view-switch" role="group" aria-label="Escolher formato do tutorial">
-            {VIEW_OPTIONS.map((option) => (
-              <button
-                key={option.id}
-                type="button"
-                className={view === option.id
-                  ? 'how-it-works-page__view-option how-it-works-page__view-option--active'
-                  : 'how-it-works-page__view-option'}
-                aria-pressed={view === option.id}
-                onClick={() => setView(option.id)}
-              >
-                <i className={`fa-solid ${option.icon}`} aria-hidden="true" />
-                <span>{option.label}</span>
-              </button>
-            ))}
-          </div>
+          <div className="how-it-works-page__cards how-it-works-page__cards--both">
+            <article className="how-it-works-page__card how-it-works-page__card--video">
+              <header className="how-it-works-page__card-header">
+                <span className="how-it-works-page__card-icon how-it-works-page__card-icon--video" aria-hidden="true">
+                  <i className="fa-solid fa-play" />
+                </span>
+                <div>
+                  <h2>Veja em vídeo como registrar sua ocorrência</h2>
+                  <p>Um tutorial rápido para aprender todo o fluxo em poucos minutos.</p>
+                </div>
+              </header>
 
-          <p className="how-it-works-page__view-hint">
-            <i className="fa-solid fa-arrows-left-right" aria-hidden="true" />
-            Você pode assistir ao vídeo, consultar o passo a passo ou explorar os dois juntos.
-          </p>
-
-          <div className={`how-it-works-page__cards how-it-works-page__cards--${view}`}>
-            {showVideo && (
-              <article className="how-it-works-page__card how-it-works-page__card--video">
-                <header className="how-it-works-page__card-header">
-                  <span className="how-it-works-page__card-icon how-it-works-page__card-icon--video" aria-hidden="true">
-                    <i className="fa-solid fa-play" />
-                  </span>
-                  <div>
-                    <h2>Veja em vídeo como registrar sua ocorrência</h2>
-                    <p>Um tutorial rápido para aprender todo o fluxo em poucos minutos.</p>
+              <div className="how-it-works-page__video-frame">
+                {videoUnavailable ? (
+                  <div className="how-it-works-page__video-unavailable" role="status">
+                    <i className="fa-solid fa-circle-exclamation" aria-hidden="true" />
+                    <strong>Vídeo temporariamente indisponível.</strong>
+                    <span>O passo a passo ao lado continua disponível para consulta.</span>
                   </div>
-                </header>
-
-                <div className="how-it-works-page__video-frame">
-                  {videoUnavailable ? (
-                    <div className="how-it-works-page__video-unavailable" role="status">
-                      <i className="fa-solid fa-circle-exclamation" aria-hidden="true" />
-                      <strong>Vídeo temporariamente indisponível.</strong>
-                      <span>O passo a passo ao lado continua disponível para consulta.</span>
-                    </div>
-                  ) : (
-                    <video
-                      src={HOW_IT_WORKS_VIDEO_URL}
-                      controls
-                      playsInline
-                      preload="metadata"
-                      onError={() => setVideoUnavailable(true)}
-                      aria-label="Vídeo Como funciona do CIDADEMDIA"
-                    >
-                      Seu navegador não suporta reprodução de vídeo.
-                    </video>
-                  )}
-                </div>
-
-                <div className="how-it-works-page__card-copy">
-                  <strong>Como registrar sua ocorrência no CIDADEMDIA</strong>
-                  <span>Assista no seu ritmo, pause quando precisar e use a tela cheia para acompanhar cada etapa.</span>
-                </div>
-
-                <div className="how-it-works-page__video-meta" aria-label="Recursos do vídeo">
-                  <span><i className="fa-regular fa-circle-play" aria-hidden="true" /> Tutorial em vídeo</span>
-                  <span><i className="fa-solid fa-sliders" aria-hidden="true" /> Controles nativos</span>
-                  <span><i className="fa-solid fa-expand" aria-hidden="true" /> Tela cheia</span>
-                </div>
-              </article>
-            )}
-
-            {showGuide && (
-              <article className="how-it-works-page__card how-it-works-page__card--guide">
-                <header className="how-it-works-page__card-header">
-                  <span className="how-it-works-page__card-icon how-it-works-page__card-icon--guide" aria-hidden="true">
-                    <i className="fa-solid fa-list-check" />
-                  </span>
-                  <div>
-                    <h2>Veja o passo a passo em detalhes</h2>
-                    <p>Consulte o infográfico completo enquanto registra sua ocorrência.</p>
-                  </div>
-                  <button
-                    className="how-it-works-page__expand-button"
-                    type="button"
-                    onClick={() => setGuideOpen(true)}
+                ) : (
+                  <video
+                    src={HOW_IT_WORKS_VIDEO_URL}
+                    controls
+                    playsInline
+                    preload="metadata"
+                    onError={() => setVideoUnavailable(true)}
+                    aria-label="Vídeo Como funciona do CIDADEMDIA"
                   >
-                    <i className="fa-solid fa-expand" aria-hidden="true" />
-                    Ampliar
-                  </button>
-                </header>
+                    Seu navegador não suporta reprodução de vídeo.
+                  </video>
+                )}
+              </div>
 
+              <div className="how-it-works-page__card-copy">
+                <strong>Como registrar sua ocorrência no CIDADEMDIA</strong>
+                <span>Assista no seu ritmo, pause quando precisar e use a tela cheia para acompanhar cada etapa.</span>
+              </div>
+            </article>
+
+            <article className="how-it-works-page__card how-it-works-page__card--guide">
+              <header className="how-it-works-page__card-header">
+                <span className="how-it-works-page__card-icon how-it-works-page__card-icon--guide" aria-hidden="true">
+                  <i className="fa-solid fa-list-check" />
+                </span>
+                <div>
+                  <h2>Veja o passo a passo em detalhes</h2>
+                  <p>Consulte o infográfico completo enquanto registra sua ocorrência.</p>
+                </div>
                 <button
-                  className="how-it-works-page__guide-preview"
+                  className="how-it-works-page__expand-button"
                   type="button"
                   onClick={() => setGuideOpen(true)}
-                  aria-label="Ampliar infográfico Como registrar sua ocorrência"
                 >
-                  <img
-                    src={HOW_IT_WORKS_GUIDE_IMAGE}
-                    alt="Infográfico Como registrar sua ocorrência no CIDADEMDIA em oito passos"
-                  />
-                  <span className="how-it-works-page__guide-zoom" aria-hidden="true">
-                    <i className="fa-solid fa-magnifying-glass-plus" />
-                    Clique para ampliar
-                  </span>
+                  <i className="fa-solid fa-expand" aria-hidden="true" />
+                  Ampliar
                 </button>
-              </article>
-            )}
+              </header>
+
+              <button
+                className="how-it-works-page__guide-preview"
+                type="button"
+                onClick={() => setGuideOpen(true)}
+                aria-label="Ampliar infográfico Como registrar sua ocorrência"
+              >
+                <img
+                  src={HOW_IT_WORKS_GUIDE_IMAGE}
+                  alt="Infográfico Como registrar sua ocorrência no CIDADEMDIA em oito passos"
+                />
+                <span className="how-it-works-page__guide-zoom" aria-hidden="true">
+                  <i className="fa-solid fa-magnifying-glass-plus" />
+                  Clique para ampliar
+                </span>
+              </button>
+            </article>
           </div>
         </section>
 
@@ -229,7 +182,15 @@ export function HowItWorksPage({
             ) : (
               <>
                 {onRegister && <Button onClick={onRegister}>Criar conta</Button>}
-                {onLogin && <Button variant="soft" onClick={onLogin}>Entrar</Button>}
+                {onLogin && (
+                  <button
+                    className="public-home__outline-cta how-it-works-page__login-cta"
+                    type="button"
+                    onClick={onLogin}
+                  >
+                    Entrar
+                  </button>
+                )}
               </>
             )}
           </div>
