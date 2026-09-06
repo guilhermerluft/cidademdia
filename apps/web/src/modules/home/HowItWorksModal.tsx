@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface HowItWorksModalProps {
   open: boolean;
@@ -8,6 +9,7 @@ interface HowItWorksModalProps {
 const HOW_IT_WORKS_VIDEO_URL = '/media/como-funciona.mp4';
 
 export function HowItWorksModal({ open, onClose }: HowItWorksModalProps) {
+  const navigate = useNavigate();
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const [videoUnavailable, setVideoUnavailable] = useState(false);
@@ -91,6 +93,23 @@ export function HowItWorksModal({ open, onClose }: HowItWorksModalProps) {
               Seu navegador não suporta reprodução de vídeo.
             </video>
           )}
+        </div>
+
+        <div className="how-it-works-modal__footer">
+          <div>
+            <strong>Prefere acompanhar cada etapa?</strong>
+            <span>Abra o guia completo com vídeo e infográfico lado a lado.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => {
+              onClose();
+              navigate('/como-funciona');
+            }}
+          >
+            Ver guia completo
+            <i className="fa-solid fa-arrow-right" aria-hidden="true" />
+          </button>
         </div>
       </section>
     </div>
