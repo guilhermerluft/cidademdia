@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /health/
+Disallow: /hubs/
+
+Sitemap: https://cidademdia.com.br/sitemap.xml
