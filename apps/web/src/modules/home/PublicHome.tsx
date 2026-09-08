@@ -21,6 +21,7 @@ import {
   type PublicOccurrenceItem,
   type PublicPlanOffer,
 } from './homeService';
+import './public-footer-contacts.css';
 
 interface PublicHomeProps {
   user?: AuthenticatedUser | null;
@@ -516,7 +517,7 @@ export function PublicHome({
       </main>
 
       <footer className="public-home__footer">
-        <div className="public-home__footer-inner">
+        <div className="public-home__footer-inner public-home__footer-inner--contacts">
           <Brand compact />
           <p>CIDADEMDIA — conectando cidadãos e quem pode resolver.</p>
           {!user && (onLogin || onRegister) && (
@@ -525,6 +526,23 @@ export function PublicHome({
               {onRegister && <button type="button" onClick={onRegister}>Criar conta</button>}
             </div>
           )}
+          <section className="public-home__footer-contacts" aria-labelledby="public-home-contact-title">
+            <h2 id="public-home-contact-title">Contato</h2>
+            <ul className="public-home__footer-contact-list">
+              <li>
+                <span>Atendimento</span>
+                <a href="mailto:atendimento@cidademdia.com.br">atendimento@cidademdia.com.br</a>
+              </li>
+              <li>
+                <span>Ouvidoria</span>
+                <a href="mailto:ouvidoria@cidademdia.com.br">ouvidoria@cidademdia.com.br</a>
+              </li>
+              <li>
+                <span>Comercial</span>
+                <a href="mailto:comercial@cidademdia.com.br">comercial@cidademdia.com.br</a>
+              </li>
+            </ul>
+          </section>
         </div>
       </footer>
 
