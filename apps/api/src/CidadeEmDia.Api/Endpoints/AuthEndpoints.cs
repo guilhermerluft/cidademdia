@@ -14,7 +14,10 @@ public static class AuthEndpoints
 
         auth.MapPost("/register", async (RegisterRequest request, IAuthService authService, HttpContext context, CancellationToken cancellationToken) =>
         {
-            var result = await authService.RegisterAsync(request.Email, request.Password, request.DisplayName, request.TermsAccepted, cancellationToken);
+            if (!request.TermsAccepted)
+                return Results.BadRequest(new { error = "terms_not_accepted" });
+
+            var result = await authService.RegisterAsync(request.Email, request.Password, request.DisplayName, cancellationToken);
             if (!result.Succeeded || result.Session is null)
                 return MapFailure(result.ErrorCode);
 
@@ -86,7 +89,6 @@ public static class AuthEndpoints
     private static IResult MapFailure(string? errorCode) => errorCode switch
     {
         "invalid_input" => Results.BadRequest(new { error = errorCode }),
-        "terms_not_accepted" => Results.BadRequest(new { error = errorCode }),
         "email_already_registered" => Results.Conflict(new { error = errorCode }),
         "account_unavailable" => Results.Json(new { error = errorCode }, statusCode: StatusCodes.Status403Forbidden),
         _ => Results.Unauthorized()
