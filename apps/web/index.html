@@ -15,8 +15,10 @@
       name="googlebot"
       content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
     />
-    <link rel="canonical" href="https://cidademdia.com.br" />
+    <link rel="canonical" href="https://cidademdia.com.br/" />
+    <link rel="alternate" hreflang="pt-BR" href="https://cidademdia.com.br/" />
     <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content="Cidademdia" />
@@ -25,7 +27,7 @@
       property="og:description"
       content="Registre ocorrências urbanas gratuitamente, acompanhe demandas e conecte cidadãos a órgãos e agentes públicos pelo Cidademdia."
     />
-    <meta property="og:url" content="https://cidademdia.com.br" />
+    <meta property="og:url" content="https://cidademdia.com.br/" />
     <meta name="twitter:card" content="summary" />
     <meta name="twitter:title" content="Cidademdia | Ocorrências urbanas e participação cidadã" />
     <meta
@@ -42,7 +44,41 @@
             "@type": "Organization",
             "@id": "https://cidademdia.com.br/#organization",
             "name": "Cidademdia",
-            "url": "https://cidademdia.com.br/"
+            "alternateName": "Cidade Em Dia",
+            "url": "https://cidademdia.com.br/",
+            "description": "Cidademdia é uma plataforma digital de participação cidadã que aproxima cidadãos, órgãos, gestores e agentes públicos para registrar e acompanhar ocorrências urbanas com mais transparência.",
+            "logo": {
+              "@type": "ImageObject",
+              "@id": "https://cidademdia.com.br/#logo",
+              "url": "https://cidademdia.com.br/favicon.svg",
+              "contentUrl": "https://cidademdia.com.br/favicon.svg",
+              "caption": "Cidademdia"
+            },
+            "email": "atendimento@cidademdia.com.br",
+            "areaServed": {
+              "@type": "Country",
+              "name": "Brasil"
+            },
+            "contactPoint": [
+              {
+                "@type": "ContactPoint",
+                "contactType": "atendimento",
+                "email": "atendimento@cidademdia.com.br",
+                "availableLanguage": "pt-BR"
+              },
+              {
+                "@type": "ContactPoint",
+                "contactType": "ouvidoria",
+                "email": "ouvidoria@cidademdia.com.br",
+                "availableLanguage": "pt-BR"
+              },
+              {
+                "@type": "ContactPoint",
+                "contactType": "comercial",
+                "email": "comercial@cidademdia.com.br",
+                "availableLanguage": "pt-BR"
+              }
+            ]
           },
           {
             "@type": "WebSite",
@@ -55,13 +91,47 @@
             "publisher": {
               "@id": "https://cidademdia.com.br/#organization"
             }
+          },
+          {
+            "@type": "WebPage",
+            "@id": "https://cidademdia.com.br/#webpage",
+            "url": "https://cidademdia.com.br/",
+            "name": "Cidademdia | Ocorrências urbanas e participação cidadã",
+            "description": "Registre ocorrências urbanas gratuitamente, acompanhe demandas e conecte cidadãos a órgãos e agentes públicos pelo Cidademdia.",
+            "inLanguage": "pt-BR",
+            "isPartOf": {
+              "@id": "https://cidademdia.com.br/#website"
+            },
+            "publisher": {
+              "@id": "https://cidademdia.com.br/#organization"
+            }
           }
         ]
       }
     </script>
+    <style>
+      .seo-static-content{max-width:980px;margin:0 auto;padding:52px 24px 72px;font-family:Arial,sans-serif;color:#16343b}.seo-static-content a{color:#005f73}.seo-static-content__brand{font-weight:900;font-size:1.2rem;text-decoration:none}.seo-static-content__eyebrow{display:block;margin-top:44px;color:#00859e;font-size:.78rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}.seo-static-content h1{max-width:820px;margin:12px 0 18px;font-size:clamp(2rem,6vw,4.2rem);line-height:1.04}.seo-static-content p{max-width:800px;font-size:1.08rem;line-height:1.7}.seo-static-content nav{display:flex;flex-wrap:wrap;gap:14px;margin-top:28px}.seo-static-content footer{margin-top:50px;padding-top:24px;border-top:1px solid #dce6e8;font-size:.92rem}
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- SEO_STATIC_CONTENT_START -->
+      <main class="seo-static-content">
+        <a class="seo-static-content__brand" href="/">Cidademdia</a>
+        <span class="seo-static-content__eyebrow">Participação cidadã e ocorrências urbanas</span>
+        <h1>Cidademdia: participação cidadã e ocorrências urbanas</h1>
+        <p>Cidademdia é uma plataforma digital para registrar ocorrências urbanas, acompanhar demandas e aproximar cidadãos, órgãos, gestores e agentes públicos com mais transparência.</p>
+        <nav aria-label="Páginas públicas do Cidademdia">
+          <a href="/como-funciona">Como funciona</a>
+          <a href="/ocorrencias">Ocorrências</a>
+          <a href="/representantes">Órgãos e agentes públicos</a>
+          <a href="/planos">Planos</a>
+          <a href="/sobre">Sobre</a>
+        </nav>
+        <footer>Atendimento: atendimento@cidademdia.com.br · Ouvidoria: ouvidoria@cidademdia.com.br · Comercial: comercial@cidademdia.com.br</footer>
+      </main>
+      <!-- SEO_STATIC_CONTENT_END -->
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

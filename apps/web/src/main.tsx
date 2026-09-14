@@ -8,6 +8,7 @@ import { CommercialSignupModal } from './components/CommercialSignupModal';
 import { ToastViewport } from './components/ToastViewport';
 import { installNativeAlertToastBridge } from './components/toast';
 import { AdminRoute } from './modules/admin/AdminRoute';
+import { AboutRoute } from './modules/about/AboutRoute';
 import { AuthProvider } from './modules/auth/AuthProvider';
 import { HeroBannerBootstrap } from './modules/home/HeroBannerBootstrap';
 import { MobileAppComingSoonNotice } from './modules/home/MobileAppComingSoonNotice';
@@ -32,6 +33,7 @@ import './styles/assignments.css';
 import './styles/posts.css';
 import './styles/institutions.css';
 import './styles/chat.css';
+import './modules/about/about.css';
 import './modules/home/home.css';
 import './styles/responsive.css';
 import './modules/home/home-assets.css';
@@ -71,6 +73,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <CommercialSignupModal />
           <Routes>
             <Route path="/admin" element={<AdminRoute />} />
+            <Route path="/sobre" element={<AboutRoute />} />
             <Route path="/como-funciona" element={<HowItWorksRoute />} />
             <Route path="/ocorrencias" element={<PublicOccurrencesRoute />} />
             <Route path="/representantes" element={<RepresentativesRoute />} />
