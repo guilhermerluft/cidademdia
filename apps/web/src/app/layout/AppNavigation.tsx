@@ -81,14 +81,6 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     authenticated: true,
   },
   {
-    id: 'about',
-    label: 'Sobre',
-    icon: 'about',
-    href: '/sobre',
-    public: true,
-    authenticated: true,
-  },
-  {
     id: 'media',
     label: 'Mídias',
     icon: 'media',

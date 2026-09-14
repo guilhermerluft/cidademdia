@@ -41,11 +41,36 @@
 }
 
 .about-page__hero h1 {
-  max-width: 880px;
+  max-width: 960px;
   margin: 0;
   font-size: clamp(2.25rem, 5vw, 4.35rem);
   line-height: 1.03;
   letter-spacing: -0.04em;
+  text-wrap: balance;
+}
+
+.about-page__hero-title-line {
+  display: block;
+}
+
+.about-page__hero-title-line + .about-page__hero-title-line {
+  margin-top: 0.06em;
+}
+
+.about-page__hero-title-white {
+  color: #fff;
+}
+
+.about-page__hero-title-green {
+  color: #9bce68;
+}
+
+.about-page__hero-title-blue {
+  color: #86c2ec;
+}
+
+.about-page__hero-title-lime {
+  color: #d0d62f;
 }
 
 .about-page__hero p {
@@ -234,6 +259,10 @@
   .about-page__hero {
     padding: 34px 24px;
     border-radius: 22px;
+  }
+
+  .about-page__hero h1 {
+    font-size: clamp(2rem, 10vw, 3.2rem);
   }
 
   .about-page__pillars,

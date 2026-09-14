@@ -520,6 +520,7 @@ export function PublicHome({
         <div className="public-home__footer-inner public-home__footer-inner--contacts">
           <Brand compact />
           <p>CIDADEMDIA — conectando cidadãos e quem pode resolver.</p>
+          <a className="public-home__footer-about-link" href="/sobre">Sobre o Cidademdia</a>
           {!user && (onLogin || onRegister) && (
             <div className="public-home__footer-actions">
               {onLogin && <button type="button" onClick={onLogin}>Entrar</button>}

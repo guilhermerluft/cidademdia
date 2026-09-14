@@ -5,6 +5,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 WEB="$ROOT/apps/web"
 SEO="$WEB/src/app/SeoMetadata.tsx"
 MAIN="$WEB/src/main.tsx"
+NAV="$WEB/src/app/layout/AppNavigation.tsx"
+HOME="$WEB/src/modules/home/PublicHome.tsx"
+FOOTER_CSS="$WEB/src/modules/home/public-footer-contacts.css"
 INDEX="$WEB/index.html"
 PACKAGE="$WEB/package.json"
 STATIC_GENERATOR="$WEB/scripts/generate-seo-pages.mjs"
@@ -23,8 +26,8 @@ fail() {
 }
 
 for file in \
-  "$SEO" "$MAIN" "$INDEX" "$PACKAGE" "$STATIC_GENERATOR" "$ABOUT_ROUTE" "$ABOUT_CSS" "$WEB_NGINX" \
-  "$FAVICON" "$ROBOTS" "$SITEMAP" "$NGINX" "$CI"; do
+  "$SEO" "$MAIN" "$NAV" "$HOME" "$FOOTER_CSS" "$INDEX" "$PACKAGE" "$STATIC_GENERATOR" \
+  "$ABOUT_ROUTE" "$ABOUT_CSS" "$WEB_NGINX" "$FAVICON" "$ROBOTS" "$SITEMAP" "$NGINX" "$CI"; do
   test -f "$file" || fail "arquivo SEO ausente: $file"
 done
 
@@ -58,6 +61,13 @@ grep -q '<SeoMetadata />' "$MAIN" \
 grep -q 'path="/sobre" element={<AboutRoute />}' "$MAIN" \
   || fail "rota pública /sobre não está registrada"
 
+! grep -Fq "href: '/sobre'" "$NAV" \
+  || fail "Sobre não pode aparecer na navegação principal/mobile"
+grep -Fq '<a className="public-home__footer-about-link" href="/sobre">Sobre o Cidademdia</a>' "$HOME" \
+  || fail "Sobre precisa estar acessível pelo rodapé público"
+grep -Fq '.public-home__footer-about-link' "$FOOTER_CSS" \
+  || fail "link Sobre do rodapé não possui estilo próprio"
+
 grep -q 'name="description"' "$INDEX" || fail "description base ausente do HTML"
 grep -q 'name="robots"' "$INDEX" || fail "robots meta base ausente do HTML"
 grep -q 'rel="canonical" href="https://cidademdia.com.br/"' "$INDEX" \
@@ -72,6 +82,10 @@ grep -q 'id="seo-structured-data"' "$INDEX" || fail "JSON-LD base ausente"
 grep -q 'SEO_STATIC_CONTENT_START' "$INDEX" || fail "fallback HTML indexável ausente"
 grep -q '<h1>Cidademdia: participação cidadã e ocorrências urbanas</h1>' "$INDEX" \
   || fail "H1 semântico da marca ausente do HTML inicial"
+grep -Fq '<footer><a href="/sobre">Sobre o Cidademdia</a>' "$INDEX" \
+  || fail "fallback estático não mantém Sobre no rodapé"
+! grep -Fq '<a href="/sobre">Sobre</a>' "$INDEX" \
+  || fail "fallback estático expõe Sobre na navegação em vez do rodapé"
 grep -Fq 'Cidademdia' "$INDEX" || fail "marca Cidademdia ausente do HTML base"
 ! grep -Fq 'CidadeEmDia' "$INDEX" || fail "grafia antiga da marca presente no HTML base"
 ! grep -qi 'name="keywords"' "$INDEX" || fail "meta keywords obsoleta não deve ser usada"
@@ -80,14 +94,29 @@ grep -q 'generate-seo-pages.mjs' "$PACKAGE" || fail "renderização estática SE
 for route_file in 'como-funciona.html' 'ocorrencias.html' 'representantes.html' 'planos.html' 'sobre.html'; do
   grep -Fq "file: '$route_file'" "$STATIC_GENERATOR" || fail "arquivo estático não configurado: $route_file"
 done
+grep -Fq '<footer><a href="/sobre">Sobre o Cidademdia</a>' "$STATIC_GENERATOR" \
+  || fail "gerador estático não posiciona Sobre no rodapé"
+! grep -Fq '<a href="/sobre">Sobre</a>' "$STATIC_GENERATOR" \
+  || fail "gerador estático expõe Sobre na navegação"
 grep -q 'SEO STATIC RENDER: OK' "$STATIC_GENERATOR" || fail "gerador estático não possui verificação final"
 
 grep -q 'try_files $uri $uri.html /index.html;' "$WEB_NGINX" \
   || fail "Nginx web não serve HTML estático por rota"
 grep -q 'location = /sobre/' "$WEB_NGINX" || fail "redirect canônico de /sobre/ ausente"
 
-grep -q '<h1 id="about-page-title">Cidademdia:' "$ABOUT_ROUTE" \
+grep -q '<h1 id="about-page-title">' "$ABOUT_ROUTE" \
   || fail "página Sobre não possui H1 forte da marca"
+grep -Fq 'about-page__hero-title-white' "$ABOUT_ROUTE" || fail "título Sobre sem trecho branco"
+grep -Fq 'about-page__hero-title-green' "$ABOUT_ROUTE" || fail "título Sobre sem trecho verde"
+grep -Fq 'about-page__hero-title-blue' "$ABOUT_ROUTE" || fail "título Sobre sem trecho azul"
+grep -Fq 'about-page__hero-title-lime' "$ABOUT_ROUTE" || fail "título Sobre sem trecho verde-lima"
+grep -Fq 'Cidademdia:' "$ABOUT_ROUTE" || fail "marca ausente do H1 de Sobre"
+grep -Fq 'participação cidadã' "$ABOUT_ROUTE" || fail "participação cidadã ausente do H1 de Sobre"
+grep -Fq 'quem pode resolver' "$ABOUT_ROUTE" || fail "mensagem final ausente do H1 de Sobre"
+grep -Fq '.about-page__hero-title-line' "$ABOUT_CSS" || fail "layout do título hero de Sobre ausente"
+grep -Fq '.about-page__hero-title-green' "$ABOUT_CSS" || fail "cor verde do título de Sobre ausente"
+grep -Fq '.about-page__hero-title-blue' "$ABOUT_CSS" || fail "cor azul do título de Sobre ausente"
+grep -Fq '.about-page__hero-title-lime' "$ABOUT_CSS" || fail "cor verde-lima do título de Sobre ausente"
 grep -q 'atendimento@cidademdia.com.br' "$ABOUT_ROUTE" || fail "contato de atendimento ausente de /sobre"
 grep -q 'ouvidoria@cidademdia.com.br' "$ABOUT_ROUTE" || fail "contato de ouvidoria ausente de /sobre"
 grep -q 'comercial@cidademdia.com.br' "$ABOUT_ROUTE" || fail "contato comercial ausente de /sobre"
@@ -124,6 +153,8 @@ echo "seo_public_metadata=OK"
 echo "seo_entity_authority=OK"
 echo "seo_static_render=OK"
 echo "seo_about_page=OK"
+echo "seo_about_footer_only=OK"
+echo "seo_about_hero_palette=OK"
 echo "seo_canonical=OK"
 echo "seo_favicon=OK"
 echo "seo_open_graph=OK"
