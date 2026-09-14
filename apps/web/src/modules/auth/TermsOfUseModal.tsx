@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import './terms-of-use.css';
 
 interface TermsOfUseModalProps {
   open: boolean;
