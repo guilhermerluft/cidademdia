@@ -9,7 +9,7 @@ export function Brand({ className, compact = false, href = '/', ...props }: Bran
     <a
       className={['ced-brand', compact ? 'ced-brand--compact' : '', className ?? ''].filter(Boolean).join(' ')}
       href={href}
-      aria-label="CidadeEmDia"
+      aria-label="Cidademdia"
       {...props}
     >
       <span className="ced-brand__mark" aria-hidden="true">

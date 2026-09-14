@@ -231,7 +231,9 @@ export function AppBottomNavigation({
   onRegister,
 }: AppBottomNavigationProps) {
   const navigation = getHeaderNavigation(user, permissions);
-  const visibleNavigation = user ? navigation.slice(0, 5) : navigation;
+  const visibleNavigation = user
+    ? navigation.slice(0, 5)
+    : navigation.filter((item) => item.id !== 'about');
 
   return (
     <nav className="app-bottom-nav" aria-label="Navegação mobile">

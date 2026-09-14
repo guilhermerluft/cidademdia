@@ -7,6 +7,7 @@ export type AppNavigationId =
   | 'plans'
   | 'occurrences'
   | 'representatives'
+  | 'about'
   | 'media'
   | 'team'
   | 'admin'
@@ -76,6 +77,14 @@ export const APP_NAVIGATION: readonly AppNavigationItem[] = [
     label: 'Masters',
     icon: 'representatives',
     href: '/representantes',
+    public: true,
+    authenticated: true,
+  },
+  {
+    id: 'about',
+    label: 'Sobre',
+    icon: 'about',
+    href: '/sobre',
     public: true,
     authenticated: true,
   },
@@ -254,6 +263,8 @@ export function AppNavigationIcon({ name }: { name: AppNavigationIconName }) {
       return <svg {...common}><path d="M8 6h12"/><path d="M8 12h12"/><path d="M8 18h12"/><path d="M4 6h.01"/><path d="M4 12h.01"/><path d="M4 18h.01"/></svg>;
     case 'representatives':
       return <svg {...common}><path d="M3 21h18"/><path d="M5 21V7l7-4 7 4v14"/><path d="M9 10h.01"/><path d="M15 10h.01"/><path d="M9 14h.01"/><path d="M15 14h.01"/><path d="M10 21v-3h4v3"/></svg>;
+    case 'about':
+      return <svg {...common}><circle cx="12" cy="12" r="9"/><path d="M12 11v6"/><path d="M12 7h.01"/></svg>;
     case 'media':
       return <svg {...common}><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m10 9 5 3-5 3Z"/></svg>;
     case 'team':
