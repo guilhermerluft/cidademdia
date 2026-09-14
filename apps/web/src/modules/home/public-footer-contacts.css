@@ -2,6 +2,30 @@
   flex-wrap: wrap;
 }
 
+.public-home__footer-about-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 2px;
+  color: #005f73;
+  font-size: .9rem;
+  font-weight: 750;
+  text-decoration: none;
+  text-underline-offset: 3px;
+}
+
+.public-home__footer-about-link:hover,
+.public-home__footer-about-link:focus-visible {
+  color: #00859e;
+  text-decoration: underline;
+}
+
+.public-home__footer-about-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 3px;
+}
+
 .public-home__footer-contacts {
   flex: 0 0 100%;
   min-width: 0;
@@ -67,6 +91,10 @@
 }
 
 @media (max-width: 720px) {
+  .public-home__footer-about-link {
+    flex: 0 0 100%;
+  }
+
   .public-home__footer-contacts {
     width: 100%;
     text-align: left;
