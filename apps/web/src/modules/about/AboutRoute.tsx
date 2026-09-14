@@ -40,7 +40,20 @@ export function AboutRoute() {
       <main className="about-page">
         <section className="about-page__hero" aria-labelledby="about-page-title">
           <span className="about-page__eyebrow">Sobre a plataforma</span>
-          <h1 id="about-page-title">Cidademdia: participação cidadã para aproximar quem precisa de quem pode resolver</h1>
+          <h1 id="about-page-title">
+            <span className="about-page__hero-title-line">
+              <span className="about-page__hero-title-white">Cidademdia:</span>{' '}
+              <span className="about-page__hero-title-green">participação cidadã</span>
+            </span>
+            <span className="about-page__hero-title-line">
+              <span className="about-page__hero-title-white">para aproximar</span>{' '}
+              <span className="about-page__hero-title-blue">quem precisa</span>
+            </span>
+            <span className="about-page__hero-title-line">
+              <span className="about-page__hero-title-white">de</span>{' '}
+              <span className="about-page__hero-title-lime">quem pode resolver</span>
+            </span>
+          </h1>
           <p>
             O Cidademdia é uma plataforma digital para registrar ocorrências urbanas, acompanhar demandas e aproximar
             cidadãos, órgãos, gestores e agentes públicos em uma experiência mais transparente e organizada.
