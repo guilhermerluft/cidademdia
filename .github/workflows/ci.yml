@@ -95,6 +95,9 @@ jobs:
       - name: How it works page guard
         run: bash ../../infra/scripts/how-it-works-page-guard.sh
 
+      - name: Web static permissions guard
+        run: bash ../../infra/scripts/web-static-permissions-guard.sh
+
       - name: SEO indexing guard
         run: bash ../../infra/scripts/seo-indexing-guard.sh
 
