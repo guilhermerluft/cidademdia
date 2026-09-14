@@ -35,6 +35,8 @@ grep -q "noindex, nofollow" "$SEO" || fail "fallback noindex para rotas privadas
 grep -q "application/ld+json" "$SEO" || fail "dados estruturados JSON-LD ausentes"
 grep -q "WebSite" "$SEO" || fail "schema WebSite ausente"
 grep -q "WebPage" "$SEO" || fail "schema WebPage ausente"
+grep -Fq 'Cidademdia' "$SEO" || fail "marca Cidademdia ausente dos metadados dinâmicos"
+! grep -Fq 'CidadeEmDia' "$SEO" || fail "grafia antiga da marca presente nos metadados dinâmicos"
 
 grep -q "import { SeoMetadata } from './app/SeoMetadata';" "$MAIN" \
   || fail "SeoMetadata não está importado"
@@ -50,6 +52,8 @@ grep -q 'rel="icon" type="image/png" sizes="96x96" href="/favicon-96.png"' "$IND
 grep -q 'property="og:title"' "$INDEX" || fail "Open Graph base ausente"
 grep -q 'name="twitter:card"' "$INDEX" || fail "Twitter Card base ausente"
 grep -q 'id="seo-structured-data"' "$INDEX" || fail "JSON-LD base ausente"
+grep -Fq 'Cidademdia' "$INDEX" || fail "marca Cidademdia ausente do HTML base"
+! grep -Fq 'CidadeEmDia' "$INDEX" || fail "grafia antiga da marca presente no HTML base"
 ! grep -qi 'name="keywords"' "$INDEX" || fail "meta keywords obsoleta não deve ser usada"
 
 grep -q '^User-agent: \*$' "$ROBOTS" || fail "robots.txt sem regra global"
@@ -85,6 +89,7 @@ echo "seo_favicon=OK"
 echo "seo_open_graph=OK"
 echo "seo_twitter_card=OK"
 echo "seo_structured_data=OK"
+echo "seo_brand_name=OK"
 echo "seo_private_noindex=OK"
 echo "seo_homolog_noindex=OK"
 echo "seo_robots=OK"
