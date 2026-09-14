@@ -4,6 +4,7 @@ import { isAxiosError } from 'axios';
 import { Brand, Button, Card } from '../components/ui';
 import { useAuth } from '../modules/auth/AuthProvider';
 import * as authService from '../modules/auth/authService';
+import { TermsOfUseModal } from '../modules/auth/TermsOfUseModal';
 import { PublicHome } from '../modules/home/PublicHome';
 import {
   acceptSubaccountInvitation,
@@ -97,6 +98,8 @@ export function App() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [termsOpen, setTermsOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -167,6 +170,8 @@ export function App() {
     setMessage(null);
     setPassword('');
     setConfirmPassword('');
+    setTermsAccepted(false);
+    setTermsOpen(false);
   }
 
   if (mode === 'home') {
@@ -186,7 +191,12 @@ export function App() {
 
     try {
       if (mode === 'register') {
-        await register({ email, password, displayName });
+        if (!termsAccepted) {
+          setError('Você precisa ler e aceitar os Termos de Uso para criar sua conta.');
+          return;
+        }
+
+        await register({ email, password, displayName, termsAccepted });
         return;
       }
 
@@ -239,7 +249,11 @@ export function App() {
       setMessage('Senha redefinida com sucesso. Entre com a nova senha.');
     } catch (requestError) {
       if (mode === 'register') {
-        setError('Não foi possível criar a conta. Confira os dados e tente novamente.');
+        if (isAxiosError(requestError) && requestError.response?.data?.error === 'terms_not_accepted') {
+          setError('Você precisa aceitar os Termos de Uso para criar sua conta.');
+        } else {
+          setError('Não foi possível criar a conta. Confira os dados e tente novamente.');
+        }
       } else if (mode === 'login') {
         setError('E-mail ou senha inválidos.');
       } else if (mode === 'forgot') {
@@ -392,6 +406,22 @@ export function App() {
               </label>
             )}
 
+            {mode === 'register' && (
+              <div className="auth-terms-consent">
+                <input
+                  id="registration-terms"
+                  type="checkbox"
+                  required
+                  checked={termsAccepted}
+                  onChange={(event) => setTermsAccepted(event.target.checked)}
+                />
+                <div>
+                  <label htmlFor="registration-terms">Li e aceito os</label>{' '}
+                  <button type="button" onClick={() => setTermsOpen(true)}>Termos de Uso</button>.
+                </div>
+              </div>
+            )}
+
             {message && <p className="auth-success" role="status">{message}</p>}
             {error && <p className="auth-error" role="alert">{error}</p>}
 
@@ -399,7 +429,9 @@ export function App() {
               type="submit"
               size="lg"
               fullWidth
-              disabled={submitting || (mode === 'invite' && (inviteLoading || !invitePreview))}
+              disabled={submitting
+                || (mode === 'register' && !termsAccepted)
+                || (mode === 'invite' && (inviteLoading || !invitePreview))}
             >
               {submitting
                 ? 'Aguarde...'
@@ -434,6 +466,8 @@ export function App() {
           </form>
         </Card>
       </div>
+
+      <TermsOfUseModal open={termsOpen} onClose={() => setTermsOpen(false)} />
     </main>
   );
 }
