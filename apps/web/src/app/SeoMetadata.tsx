@@ -9,9 +9,9 @@ interface SeoPageConfig {
   description: string;
 }
 
-const DEFAULT_TITLE = 'CidadeEmDia | Ocorrências urbanas e participação cidadã';
+const DEFAULT_TITLE = 'Cidademdia | Ocorrências urbanas e participação cidadã';
 const DEFAULT_DESCRIPTION =
-  'Registre ocorrências urbanas gratuitamente, acompanhe demandas e conecte cidadãos a órgãos e agentes públicos pelo CidadeEmDia.';
+  'Registre ocorrências urbanas gratuitamente, acompanhe demandas e conecte cidadãos a órgãos e agentes públicos pelo Cidademdia.';
 
 const PUBLIC_SEO: Record<string, SeoPageConfig> = {
   '/': {
@@ -19,24 +19,24 @@ const PUBLIC_SEO: Record<string, SeoPageConfig> = {
     description: DEFAULT_DESCRIPTION,
   },
   '/ocorrencias': {
-    title: 'Ocorrências públicas | CidadeEmDia',
+    title: 'Ocorrências públicas | Cidademdia',
     description:
-      'Acompanhe ocorrências urbanas publicadas no CidadeEmDia, veja detalhes das demandas e apoie situações que também impactam você.',
+      'Acompanhe ocorrências urbanas publicadas no Cidademdia, veja detalhes das demandas e apoie situações que também impactam você.',
   },
   '/representantes': {
-    title: 'Órgãos e agentes públicos | CidadeEmDia',
+    title: 'Órgãos e agentes públicos | Cidademdia',
     description:
-      'Consulte órgãos e agentes públicos cadastrados no CidadeEmDia e encontre quem pode acompanhar as demandas da sua cidade.',
+      'Consulte órgãos e agentes públicos cadastrados no Cidademdia e encontre quem pode acompanhar as demandas da sua cidade.',
   },
   '/planos': {
-    title: 'Planos para órgãos e gestores públicos | CidadeEmDia',
+    title: 'Planos para órgãos e gestores públicos | Cidademdia',
     description:
-      'Conheça os planos do CidadeEmDia para órgãos, gestores e contas Master ampliarem atendimento, comunicação e acompanhamento de ocorrências.',
+      'Conheça os planos do Cidademdia para órgãos, gestores e contas Master ampliarem atendimento, comunicação e acompanhamento de ocorrências.',
   },
   '/como-funciona': {
-    title: 'Como funciona | CidadeEmDia',
+    title: 'Como funciona | Cidademdia',
     description:
-      'Veja em vídeo e passo a passo como registrar uma ocorrência no CidadeEmDia, compartilhar a demanda e acompanhar sua evolução.',
+      'Veja em vídeo e passo a passo como registrar uma ocorrência no Cidademdia, compartilhar a demanda e acompanhar sua evolução.',
   },
 };
 
@@ -77,14 +77,14 @@ function updateStructuredData(pathname: string, config?: SeoPageConfig) {
     {
       '@type': 'Organization',
       '@id': `${PRODUCTION_ORIGIN}/#organization`,
-      name: 'CidadeEmDia',
+      name: 'Cidademdia',
       url: `${PRODUCTION_ORIGIN}/`,
     },
     {
       '@type': 'WebSite',
       '@id': `${PRODUCTION_ORIGIN}/#website`,
       url: `${PRODUCTION_ORIGIN}/`,
-      name: 'CidadeEmDia',
+      name: 'Cidademdia',
       alternateName: 'Cidade Em Dia',
       description: DEFAULT_DESCRIPTION,
       inLanguage: 'pt-BR',
@@ -122,7 +122,7 @@ export function SeoMetadata() {
     const config = PUBLIC_SEO[location.pathname];
     const isProductionHost = PRODUCTION_HOSTS.has(window.location.hostname);
     const isIndexable = Boolean(config) && isProductionHost;
-    const title = config?.title ?? 'CidadeEmDia';
+    const title = config?.title ?? 'Cidademdia';
     const description = config?.description ?? DEFAULT_DESCRIPTION;
     const canonicalPath = config ? location.pathname : '/';
     const canonicalUrl = `${PRODUCTION_ORIGIN}${canonicalPath === '/' ? '' : canonicalPath}`;
@@ -138,7 +138,7 @@ export function SeoMetadata() {
 
     upsertMeta('property', 'og:type', 'website');
     upsertMeta('property', 'og:locale', 'pt_BR');
-    upsertMeta('property', 'og:site_name', 'CidadeEmDia');
+    upsertMeta('property', 'og:site_name', 'Cidademdia');
     upsertMeta('property', 'og:title', title);
     upsertMeta('property', 'og:description', description);
     upsertMeta('property', 'og:url', canonicalUrl);
