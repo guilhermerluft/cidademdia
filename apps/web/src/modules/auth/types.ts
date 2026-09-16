@@ -18,6 +18,7 @@ export interface LoginInput {
 
 export interface RegisterInput extends LoginInput {
   displayName: string;
+  termsAccepted: boolean;
 }
 
 export interface ForgotPasswordInput {

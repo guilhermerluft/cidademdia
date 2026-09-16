@@ -92,6 +92,9 @@ jobs:
       - name: Direct auth navigation guard
         run: bash ../../infra/scripts/direct-auth-navigation-guard.sh
 
+      - name: Registration terms consent guard
+        run: bash ../../infra/scripts/registration-terms-consent-guard.sh
+
       - name: How it works page guard
         run: bash ../../infra/scripts/how-it-works-page-guard.sh
 

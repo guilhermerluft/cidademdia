@@ -14,6 +14,9 @@ public static class AuthEndpoints
 
         auth.MapPost("/register", async (RegisterRequest request, IAuthService authService, HttpContext context, CancellationToken cancellationToken) =>
         {
+            if (!request.TermsAccepted)
+                return Results.BadRequest(new { error = "terms_not_accepted" });
+
             var result = await authService.RegisterAsync(request.Email, request.Password, request.DisplayName, cancellationToken);
             if (!result.Succeeded || result.Session is null)
                 return MapFailure(result.ErrorCode);
@@ -125,7 +128,7 @@ public static class AuthEndpoints
             Path = RefreshCookiePath
         });
 
-    public sealed record RegisterRequest(string Email, string Password, string DisplayName);
+    public sealed record RegisterRequest(string Email, string Password, string DisplayName, bool TermsAccepted);
     public sealed record LoginRequest(string Email, string Password);
     public sealed record ForgotPasswordRequest(string Email);
     public sealed record ResetPasswordRequest(string Token, string NewPassword);
