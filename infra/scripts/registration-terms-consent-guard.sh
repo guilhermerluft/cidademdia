@@ -38,6 +38,12 @@ grep -Fq 'Termos de Uso e Condições de Navegação' "$MODAL" || fail "título 
 grep -Fq 'Sem Vínculo Governamental' "$MODAL" || fail "natureza privada da plataforma ausente"
 grep -Fq 'Privacidade e Compartilhamento de Dados (LGPD)' "$MODAL" || fail "cláusula LGPD ausente"
 grep -Fq 'Marco Civil da Internet' "$MODAL" || fail "cláusula Marco Civil ausente"
+grep -Fq '37.911.166/0001-70' "$MODAL" || fail "CNPJ oficial da ECONTATOS não está nos Termos"
+grep -Fq 'O CIDADEMDIA reserva-se o direito' "$MODAL" || fail "placeholder do nome da plataforma não foi resolvido"
+grep -Fq 'Foro da Comarca de São Paulo/SP' "$MODAL" || fail "foro dos Termos não está preenchido"
+! grep -Fq '[Nome da Plataforma]' "$MODAL" || fail "placeholder [Nome da Plataforma] ainda existe"
+! grep -Fq '[Sào Paulo / SP]' "$MODAL" || fail "placeholder de foro ainda existe"
+! grep -Fq '37.911.116/0001-70' "$MODAL" || fail "CNPJ divergente ainda existe nos Termos"
 grep -Fq "import './terms-of-use.css';" "$MODAL" || fail "estilos do modal não estão importados"
 
 grep -Fq '.auth-terms-consent' "$CSS" || fail "estilo do checkbox ausente"
@@ -49,5 +55,6 @@ grep -Fq 'terms_not_accepted' "$AUTH_ENDPOINTS" || fail "API não retorna erro e
 
 echo 'registration_terms_checkbox=OK'
 echo 'registration_terms_modal=OK'
+echo 'registration_terms_legal_data=OK'
 echo 'registration_terms_api_enforcement=OK'
 echo 'REGISTRATION TERMS CONSENT GUARD: OK'
