@@ -306,11 +306,18 @@ internal sealed class AuthService(
 
     private static bool IsValidEmail(string email)
     {
+        if (string.IsNullOrWhiteSpace(email))
+            return false;
+
         try
         {
             return new MailAddress(email).Address.Equals(email, StringComparison.OrdinalIgnoreCase);
         }
         catch (FormatException)
+        {
+            return false;
+        }
+        catch (ArgumentException)
         {
             return false;
         }
