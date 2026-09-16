@@ -7,13 +7,14 @@ TYPES="$ROOT/apps/web/src/modules/auth/types.ts"
 MODAL="$ROOT/apps/web/src/modules/auth/TermsOfUseModal.tsx"
 CSS="$ROOT/apps/web/src/modules/auth/terms-of-use.css"
 AUTH_ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/AuthEndpoints.cs"
+AUTH_SERVICE="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Identity/AuthService.cs"
 
 fail() {
   echo "ERRO: $*" >&2
   exit 1
 }
 
-for file in "$APP" "$TYPES" "$MODAL" "$CSS" "$AUTH_ENDPOINTS"; do
+for file in "$APP" "$TYPES" "$MODAL" "$CSS" "$AUTH_ENDPOINTS" "$AUTH_SERVICE"; do
   test -f "$file" || fail "arquivo de consentimento ausente: $file"
 done
 
@@ -53,8 +54,12 @@ grep -Fq 'bool TermsAccepted' "$AUTH_ENDPOINTS" || fail "API não recebe o aceit
 grep -Fq 'if (!request.TermsAccepted)' "$AUTH_ENDPOINTS" || fail "API não valida aceite obrigatório"
 grep -Fq 'terms_not_accepted' "$AUTH_ENDPOINTS" || fail "API não retorna erro específico para ausência de aceite"
 
+grep -Fq 'if (string.IsNullOrWhiteSpace(email))' "$AUTH_SERVICE" || fail "validação de e-mail vazio não está protegida"
+grep -Fq 'catch (ArgumentException)' "$AUTH_SERVICE" || fail "validação de e-mail não trata ArgumentException"
+
 echo 'registration_terms_checkbox=OK'
 echo 'registration_terms_modal=OK'
 echo 'registration_terms_legal_data=OK'
 echo 'registration_terms_api_enforcement=OK'
+echo 'registration_terms_blank_email_validation=OK'
 echo 'REGISTRATION TERMS CONSENT GUARD: OK'
