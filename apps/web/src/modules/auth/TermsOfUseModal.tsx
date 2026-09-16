@@ -73,8 +73,8 @@ export function TermsOfUseModal({ open, onClose }: TermsOfUseModalProps) {
           </p>
           <p>Ao se cadastrar e utilizar a plataforma, você concorda integralmente com as regras aqui descritas.</p>
           <p>
-            Este Termo e Condições Gerais (“Termo”) aplica-se ao uso dos serviços oferecidos pela Econtatos
-            Publicidade.Ltda.., sociedade devidamente inscrita no CNPJ/MF sob o nº 37.911.116/0001-70, gestora da
+            Este Termo e Condições Gerais (“Termo”) aplica-se ao uso dos serviços oferecidos pela ECONTATOS
+            PUBLICIDADE LTDA, sociedade devidamente inscrita no CNPJ/MF sob o nº 37.911.166/0001-70, gestora da
             plataforma composta do site www.cidademdia.com.br, e dos aplicativos nas versões Android e IOS e dos
             serviços objeto deste Termo, doravante denominada CIDADEMDIA, a PESSOA FÍSICA ou JURÍDICA maior e capaz,
             que tenha preenchido o Cadastro, cujos dados passam a ser parte integrante deste Termo, bem como que tenha
@@ -122,7 +122,7 @@ export function TermsOfUseModal({ open, onClose }: TermsOfUseModalProps) {
             <li><strong>Violação de Privacidade:</strong> Anexar fotos ou vídeos que exponham rostos de terceiros, placas de veículos particulares ou dados pessoais sem consentimento prévio.</li>
             <li><strong>Fatos Fictícios:</strong> Criar reclamações falsas ou inflar artificialmente o número de queixas sobre um mesmo problema (duplicidade intencional).</li>
           </ul>
-          <p>O [Nome da Plataforma] reserva-se o direito de moderar, editar ou remover conteúdos que violem estas regras, sem aviso prévio.</p>
+          <p>O CIDADEMDIA reserva-se o direito de moderar, editar ou remover conteúdos que violem estas regras, sem aviso prévio.</p>
 
           <h3>4. Privacidade e Compartilhamento de Dados (LGPD)</h3>
           <ul>
@@ -141,7 +141,7 @@ export function TermsOfUseModal({ open, onClose }: TermsOfUseModalProps) {
           <ul>
             <li><strong>Alterações nos Termos:</strong> Estes termos poderão ser atualizados a qualquer momento. O uso contínuo da plataforma após as alterações constituirá aceitação das novas regras.</li>
           </ul>
-          <p><strong>Foro:</strong> Fica eleito o Foro da Comarca de [Sào Paulo / SP] para dirimir quaisquer dúvidas ou litígios decorrentes deste documento.</p>
+          <p><strong>Foro:</strong> Fica eleito o Foro da Comarca de São Paulo/SP para dirimir quaisquer dúvidas ou litígios decorrentes deste documento.</p>
         </div>
 
         <footer className="terms-modal__footer">
