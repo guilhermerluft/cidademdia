@@ -6,6 +6,9 @@ public interface IOccurrenceService
 
     Task<IReadOnlyList<EligibleMasterItem>> GetEligibleMastersAsync(CancellationToken cancellationToken = default);
 
+    Task<IReadOnlyList<InstitutionalDestinationItem>> GetInstitutionalDestinationsAsync(
+        CancellationToken cancellationToken = default);
+
     Task<CreateOccurrenceResult> CreateAsync(
         Guid authorUserId,
         CreateOccurrenceInput input,
@@ -33,6 +36,13 @@ public interface IOccurrenceService
         Guid authorUserId,
         Guid occurrenceId,
         Guid masterUserId,
+        CancellationToken cancellationToken = default);
+
+    Task<AddOccurrenceTargetResult> AddInstitutionTargetAsync(
+        Guid authorUserId,
+        Guid occurrenceId,
+        Guid institutionId,
+        string? addressee,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<OccurrenceTargetItem>?> GetTargetsAsync(
