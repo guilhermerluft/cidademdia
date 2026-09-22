@@ -10,6 +10,15 @@ export interface EligibleMaster {
   displayName: string;
 }
 
+export interface InstitutionalDestination {
+  id: string;
+  displayName: string;
+  type: string;
+  scopeLevel: string;
+  cityId: string | null;
+  stateCode: string | null;
+}
+
 export interface OccurrenceListItem {
   id: string;
   publicCode: string;
@@ -87,7 +96,9 @@ export interface OccurrenceMediaPresentation extends OccurrenceMediaItem {
 
 export interface CreateOccurrencePayload {
   categoryId: string;
-  masterUserId: string;
+  masterUserId: string | null;
+  institutionId: string | null;
+  addressee: string | null;
   title: string;
   description: string | null;
   street: string;
