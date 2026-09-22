@@ -426,7 +426,7 @@ export function OccurrenceCenter() {
                 <small>A ocorrência será compartilhada com a instituição, sem exigir a escolha de uma pessoa específica.</small>
               </label>
 
-              <label className="occurrence-form__paired-field">
+              <label className="occurrence-form__full">
                 Nome ou partido (opcional)
                 <input
                   value={form.addressee}
