@@ -16,7 +16,8 @@ CREATION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceCr
 DECISION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceTargetDecisionService.cs"
 ASSIGNMENT="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceAssignmentService.cs"
 CONFIG="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Persistence/Configurations/OccurrenceTargetConfiguration.cs"
-RESOLVER="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/InstitutionalMasterResolver.cs"\nMIGRATION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/20260922223000_AlignOccurrenceTargetsWithInstitutionalMasters.cs"
+RESOLVER="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/InstitutionalMasterResolver.cs"
+MIGRATION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/20260922223000_AlignOccurrenceTargetsWithInstitutionalMasters.cs"
 ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceEndpoints.cs"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 WEB_SERVICE="$ROOT/apps/web/src/modules/occurrences/occurrenceService.ts"
@@ -70,7 +71,8 @@ grep -Fq "addressee: form.addressee.trim() || null" "$CENTER" || fail "endereça
 grep -Fq 'Destino:' "$MASTER_PANEL" || fail "painel Master não mostra destino institucional"
 grep -Fq 'Endereçado a:' "$MASTER_PANEL" || fail "painel Master não mostra endereçamento opcional"
 
-echo 'institutional_master_resolution=OK'\necho 'institutional_destination_domain=OK'
+echo 'institutional_master_resolution=OK'
+echo 'institutional_destination_domain=OK'
 echo 'institutional_destination_persistence=OK'
 echo 'institutional_destination_api=OK'
 echo 'institutional_destination_form=OK'
