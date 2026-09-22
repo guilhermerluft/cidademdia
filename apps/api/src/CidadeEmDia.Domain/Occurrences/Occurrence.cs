@@ -160,6 +160,20 @@ public sealed class Occurrence : BaseEntity
         return target;
     }
 
+    // Backward-compatible aliases for direct Master targets.
+    public OccurrenceTarget AcceptMasterTarget(
+        Guid targetId,
+        Guid masterUserId,
+        DateTimeOffset acceptedAt) =>
+        AcceptTarget(targetId, masterUserId, acceptedAt);
+
+    public OccurrenceTarget RejectMasterTarget(
+        Guid targetId,
+        Guid masterUserId,
+        string rejectionReason,
+        DateTimeOffset rejectedAt) =>
+        RejectTarget(targetId, masterUserId, rejectionReason, rejectedAt);
+
     public void CancelByAuthor(
         Guid authorUserId,
         DateTimeOffset cancelledAt,
