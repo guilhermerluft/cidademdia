@@ -71,6 +71,9 @@ jobs:
       - name: Master occurrence decision guard
         run: bash ../../infra/scripts/master-occurrence-decision-guard.sh
 
+      - name: Institutional occurrence sharing guard
+        run: bash ../../infra/scripts/institutional-occurrence-sharing-guard.sh
+
       - name: Occurrence media presentation guard
         run: bash ../../infra/scripts/occurrence-media-presentation-guard.sh
 
