@@ -3,6 +3,7 @@ using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Chat;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Identity;
+using CidadeEmDia.Domain.Institutions;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -66,11 +67,21 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
         if (target.Occurrence.AuthorUserId == requesterUserId)
             return ToItem(target, target.Occurrence.Status);
 
-        if (target.MasterUserId != requesterUserId)
+        if (!await IsActiveMasterAsync(requesterUserId, cancellationToken))
             return null;
 
-        var requesterIsActiveMaster = await IsActiveMasterAsync(requesterUserId, cancellationToken);
-        return requesterIsActiveMaster
+        if (target.MasterUserId.HasValue)
+            return target.MasterUserId.Value == requesterUserId
+                ? ToItem(target, target.Occurrence.Status)
+                : null;
+
+        if (!target.InstitutionId.HasValue)
+            return null;
+
+        return await IsActiveInstitutionMemberAsync(
+                requesterUserId,
+                target.InstitutionId.Value,
+                cancellationToken)
             ? ToItem(target, target.Occurrence.Status)
             : null;
     }
@@ -105,11 +116,28 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
         if (occurrence is null)
             return OccurrenceTargetDecisionResult.Failure("target_not_found");
 
-        var target = occurrence.Targets.FirstOrDefault(x =>
-            x.Id == targetId && x.MasterUserId == masterUserId);
-
+        var target = occurrence.Targets.FirstOrDefault(x => x.Id == targetId);
         if (target is null)
             return OccurrenceTargetDecisionResult.Failure("target_not_found");
+
+        if (target.MasterUserId.HasValue)
+        {
+            if (target.MasterUserId.Value != masterUserId)
+                return OccurrenceTargetDecisionResult.Failure("target_not_found");
+        }
+        else
+        {
+            if (!target.InstitutionId.HasValue
+                || !await IsActiveInstitutionMemberAsync(
+                    masterUserId,
+                    target.InstitutionId.Value,
+                    cancellationToken))
+            {
+                return OccurrenceTargetDecisionResult.Failure(
+                    "master_not_eligible",
+                    "The authenticated Master does not represent the destination institution.");
+            }
+        }
 
         if (target.Status != OccurrenceTargetStatus.Pending)
         {
@@ -130,18 +158,13 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
 
         try
         {
-            if (accept)
-            {
-                target = occurrence.AcceptMasterTarget(targetId, masterUserId, decidedAt);
-            }
-            else
-            {
-                target = occurrence.RejectMasterTarget(
+            target = accept
+                ? occurrence.AcceptTarget(targetId, masterUserId, decidedAt)
+                : occurrence.RejectTarget(
                     targetId,
                     masterUserId,
                     rejectionReason ?? string.Empty,
                     decidedAt);
-            }
         }
         catch (DomainException exception)
         {
@@ -165,11 +188,18 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
 
             if (!conversationExists)
             {
+                if (!target.MasterUserId.HasValue)
+                {
+                    return OccurrenceTargetDecisionResult.Failure(
+                        "target_decision_conflict",
+                        "Accepted target was not claimed by a Master.");
+                }
+
                 var conversation = new ChatConversation(
                     occurrence.Id,
                     target.Id,
                     occurrence.AuthorUserId,
-                    target.MasterUserId,
+                    target.MasterUserId.Value,
                     decidedAt);
 
                 dbContext.ChatConversations.Add(conversation);
@@ -207,6 +237,19 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
                     && x.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master),
                 cancellationToken);
 
+    private Task<bool> IsActiveInstitutionMemberAsync(
+        Guid userId,
+        Guid institutionId,
+        CancellationToken cancellationToken) =>
+        dbContext.InstitutionMemberships
+            .AsNoTracking()
+            .AnyAsync(
+                x => x.UserId == userId
+                    && x.InstitutionId == institutionId
+                    && x.Status == InstitutionMembershipStatusKeys.Active
+                    && x.Institution.Status == InstitutionStatusKeys.Active,
+                cancellationToken);
+
     private static OccurrenceTargetDecisionItem ToItem(
         OccurrenceTarget target,
         OccurrenceStatus occurrenceStatus) =>
@@ -214,6 +257,8 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
             target.Id,
             target.OccurrenceId,
             target.MasterUserId,
+            target.InstitutionId,
+            target.Addressee,
             occurrenceStatus.Value,
             target.Status.Value,
             target.RejectionReason,
