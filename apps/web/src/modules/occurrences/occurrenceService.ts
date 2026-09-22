@@ -2,6 +2,7 @@ import { api } from '../../services/api';
 import type {
   CreateOccurrencePayload,
   EligibleMaster,
+  InstitutionalDestination,
   OccurrenceCategory,
   OccurrenceDetails,
   OccurrenceGeoFilters,
@@ -19,6 +20,11 @@ export async function listOccurrenceCategories() {
 
 export async function listEligibleMasters() {
   const { data } = await api.get<EligibleMaster[]>('/occurrences/masters');
+  return data;
+}
+
+export async function listInstitutionalDestinations() {
+  const { data } = await api.get<InstitutionalDestination[]>('/occurrences/destinations');
   return data;
 }
 
