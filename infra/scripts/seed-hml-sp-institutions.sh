@@ -426,27 +426,33 @@ AMBIGUOUS_MASTERS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_masters=
 
 echo "==> Contas Master institucionais de HML"
 "${COMPOSE[@]}" exec -T db sh -lc '
-  psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "
-    select institution.name || ''' | ''' || user_account.email || ''' | MASTER | ''' || membership.membership_role
-    from institutions institution
-    join institution_memberships membership
-      on membership.institution_id = institution.id
-     and membership.status = '''ACTIVE'''
-     and membership.membership_role = '''INSTITUTION_ADMIN'''
-    join users user_account
-      on user_account.id = membership.user_id
-     and user_account.status = '''Active'''
-    join user_roles user_role on user_role.user_id = user_account.id
-    join roles role on role.id = user_role.role_id and role.key = '''MASTER'''
-    where institution.slug in (
-      '''prefeitura-de-sao-paulo''',
-      '''camara-municipal-de-sao-paulo''',
-      '''governo-do-estado-de-sao-paulo''',
-      '''assembleia-legislativa-do-estado-de-sao-paulo'''
-    )
-    order by institution.name;
-  "
-'
+  psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At
+' <<'SQL'
+select
+    institution.name || ' | ' ||
+    user_account.email || ' | MASTER | ' ||
+    membership.membership_role
+from institutions institution
+join institution_memberships membership
+  on membership.institution_id = institution.id
+ and membership.status = 'ACTIVE'
+ and membership.membership_role = 'INSTITUTION_ADMIN'
+join users user_account
+  on user_account.id = membership.user_id
+ and user_account.status = 'Active'
+join user_roles user_role
+  on user_role.user_id = user_account.id
+join roles role
+  on role.id = user_role.role_id
+ and role.key = 'MASTER'
+where institution.slug in (
+  'prefeitura-de-sao-paulo',
+  'camara-municipal-de-sao-paulo',
+  'governo-do-estado-de-sao-paulo',
+  'assembleia-legislativa-do-estado-de-sao-paulo'
+)
+order by institution.name;
+SQL
 
 echo "HML_SP_INSTITUTIONS=OK count=4"
 echo "HML_SP_INSTITUTIONAL_MASTERS=OK count=4"
