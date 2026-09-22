@@ -3,8 +3,7 @@ namespace CidadeEmDia.Application.Occurrences;
 public sealed record OccurrenceTargetDecisionItem(
     Guid TargetId,
     Guid OccurrenceId,
-    Guid? MasterUserId,
-    Guid? InstitutionId,
+    Guid MasterUserId,
     string? Addressee,
     string OccurrenceStatus,
     string TargetStatus,

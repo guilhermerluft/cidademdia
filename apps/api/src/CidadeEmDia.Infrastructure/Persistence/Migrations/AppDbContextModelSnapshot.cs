@@ -2116,11 +2116,7 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<Guid?>("InstitutionId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("institution_id");
-
-                    b.Property<Guid?>("MasterUserId")
+                    b.Property<Guid>("MasterUserId")
                         .HasColumnType("uuid")
                         .HasColumnName("master_user_id");
 
@@ -2155,21 +2151,12 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SentAt");
 
-                    b.HasIndex("InstitutionId", "Status")
-                        .HasDatabaseName("ix_occurrence_targets_institution_status");
-
                     b.HasIndex("MasterUserId", "Status")
                         .HasDatabaseName("ix_occurrence_targets_master_status");
 
-                    b.HasIndex("OccurrenceId", "InstitutionId")
-                        .IsUnique()
-                        .HasDatabaseName("ux_occurrence_targets_occurrence_institution")
-                        .HasFilter("institution_id IS NOT NULL");
-
                     b.HasIndex("OccurrenceId", "MasterUserId")
                         .IsUnique()
-                        .HasDatabaseName("ux_occurrence_targets_occurrence_master")
-                        .HasFilter("master_user_id IS NOT NULL");
+                        .HasDatabaseName("ux_occurrence_targets_occurrence_master");
 
                     b.ToTable("occurrence_targets", (string)null);
                 });
@@ -2815,23 +2802,17 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("CidadeEmDia.Domain.Occurrences.OccurrenceTarget", b =>
                 {
-                    b.HasOne("CidadeEmDia.Domain.Institutions.Institution", "Institution")
-                        .WithMany()
-                        .HasForeignKey("InstitutionId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("CidadeEmDia.Domain.Identity.User", "MasterUser")
                         .WithMany()
                         .HasForeignKey("MasterUserId")
-                        .OnDelete(DeleteBehavior.Restrict);
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("CidadeEmDia.Domain.Occurrences.Occurrence", "Occurrence")
                         .WithMany("Targets")
                         .HasForeignKey("OccurrenceId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("Institution");
 
                     b.Navigation("MasterUser");
 

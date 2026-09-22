@@ -34,7 +34,7 @@ public sealed record InstitutionalDestinationItem(
 public sealed record OccurrenceTargetItem(
     Guid Id,
     Guid OccurrenceId,
-    Guid? MasterUserId,
+    Guid MasterUserId,
     string? MasterDisplayName,
     Guid? InstitutionId,
     string DestinationDisplayName,

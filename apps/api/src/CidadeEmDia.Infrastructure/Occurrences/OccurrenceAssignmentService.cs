@@ -1,6 +1,5 @@
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Identity;
-using CidadeEmDia.Domain.Institutions;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
 using CidadeEmDia.Infrastructure.Storage;
@@ -22,29 +21,19 @@ internal sealed class OccurrenceAssignmentService(
         if (!await IsActiveMasterAsync(masterUserId, cancellationToken))
             return null;
 
-        var institutionIds = await dbContext.InstitutionMemberships
-            .AsNoTracking()
-            .Where(x =>
-                x.UserId == masterUserId
-                && x.Status == InstitutionMembershipStatusKeys.Active
-                && x.Institution.Status == InstitutionStatusKeys.Active)
-            .Select(x => x.InstitutionId)
-            .Distinct()
-            .ToArrayAsync(cancellationToken);
-
         var targets = await dbContext.OccurrenceTargets
             .AsNoTracking()
             .Include(x => x.Occurrence)
-            .Include(x => x.Institution)
-            .Where(x =>
-                x.MasterUserId == masterUserId
-                || (!x.MasterUserId.HasValue
-                    && x.InstitutionId.HasValue
-                    && institutionIds.Contains(x.InstitutionId.Value)))
+            .Where(x => x.MasterUserId == masterUserId)
             .OrderByDescending(x => x.UpdatedAt)
             .ThenByDescending(x => x.Id)
             .Take(MaxItems)
             .ToListAsync(cancellationToken);
+
+        var institutionalDestination = (await InstitutionalMasterResolver.GetEligibleAsync(
+                dbContext,
+                cancellationToken))
+            .SingleOrDefault(item => item.MasterUserId == masterUserId);
 
         var targetIds = targets.Select(x => x.Id).ToArray();
         var occurrenceIds = targets.Select(x => x.OccurrenceId).Distinct().ToArray();
@@ -68,9 +57,8 @@ internal sealed class OccurrenceAssignmentService(
                 target.Occurrence.PublicCode.Value,
                 target.Occurrence.Title,
                 target.Occurrence.AddressText,
-                target.InstitutionId,
-                target.Institution?.Name
-                    ?? (target.MasterUserId == masterUserId ? "Sua conta Master" : "Conta Master"),
+                institutionalDestination?.InstitutionId,
+                institutionalDestination?.DisplayName ?? "Sua conta Master",
                 target.Addressee,
                 target.Occurrence.Status.Value,
                 target.Status.Value,
@@ -299,7 +287,7 @@ internal sealed class OccurrenceAssignmentService(
             assignment.Id,
             target.Id,
             target.OccurrenceId,
-            target.MasterUserId ?? link.MasterUserId,
+            target.MasterUserId,
             link.Id,
             link.SubaccountUserId,
             string.IsNullOrWhiteSpace(link.SubaccountUser.Profile?.DisplayName)

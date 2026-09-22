@@ -21,9 +21,8 @@ internal sealed class OccurrenceTargetConfiguration : IEntityTypeConfiguration<O
             .HasColumnName("occurrence_id")
             .IsRequired();
         builder.Property(x => x.MasterUserId)
-            .HasColumnName("master_user_id");
-        builder.Property(x => x.InstitutionId)
-            .HasColumnName("institution_id");
+            .HasColumnName("master_user_id")
+            .IsRequired();
         builder.Property(x => x.Addressee)
             .HasColumnName("addressee")
             .HasMaxLength(OccurrenceTarget.MaxAddresseeLength);
@@ -50,16 +49,9 @@ internal sealed class OccurrenceTargetConfiguration : IEntityTypeConfiguration<O
 
         builder.HasIndex(x => new { x.OccurrenceId, x.MasterUserId })
             .IsUnique()
-            .HasFilter("master_user_id IS NOT NULL")
             .HasDatabaseName("ux_occurrence_targets_occurrence_master");
-        builder.HasIndex(x => new { x.OccurrenceId, x.InstitutionId })
-            .IsUnique()
-            .HasFilter("institution_id IS NOT NULL")
-            .HasDatabaseName("ux_occurrence_targets_occurrence_institution");
         builder.HasIndex(x => new { x.MasterUserId, x.Status })
             .HasDatabaseName("ix_occurrence_targets_master_status");
-        builder.HasIndex(x => new { x.InstitutionId, x.Status })
-            .HasDatabaseName("ix_occurrence_targets_institution_status");
         builder.HasIndex(x => x.SentAt);
 
         builder.HasOne(x => x.Occurrence)
@@ -70,11 +62,6 @@ internal sealed class OccurrenceTargetConfiguration : IEntityTypeConfiguration<O
         builder.HasOne(x => x.MasterUser)
             .WithMany()
             .HasForeignKey(x => x.MasterUserId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        builder.HasOne(x => x.Institution)
-            .WithMany()
-            .HasForeignKey(x => x.InstitutionId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }

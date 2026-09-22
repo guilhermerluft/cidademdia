@@ -16,33 +16,43 @@ CREATION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceCr
 DECISION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceTargetDecisionService.cs"
 ASSIGNMENT="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/OccurrenceAssignmentService.cs"
 CONFIG="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Persistence/Configurations/OccurrenceTargetConfiguration.cs"
-MIGRATION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/20260922162000_AddInstitutionalOccurrenceTargets.cs"
+RESOLVER="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Occurrences/InstitutionalMasterResolver.cs"\nMIGRATION="$ROOT/apps/api/src/CidadeEmDia.Infrastructure/Persistence/Migrations/20260922223000_AlignOccurrenceTargetsWithInstitutionalMasters.cs"
 ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceEndpoints.cs"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 WEB_SERVICE="$ROOT/apps/web/src/modules/occurrences/occurrenceService.ts"
 MASTER_PANEL="$ROOT/apps/web/src/modules/occurrenceAssignments/OccurrenceAssignmentPanel.tsx"
 
-for file in "$TARGET" "$OCCURRENCE" "$CONTRACTS" "$SERVICE" "$CREATION" "$DECISION" "$ASSIGNMENT" "$CONFIG" "$MIGRATION" "$ENDPOINTS" "$CENTER" "$WEB_SERVICE" "$MASTER_PANEL"; do
+for file in "$TARGET" "$OCCURRENCE" "$RESOLVER" "$CONTRACTS" "$SERVICE" "$CREATION" "$DECISION" "$ASSIGNMENT" "$CONFIG" "$MIGRATION" "$ENDPOINTS" "$CENTER" "$WEB_SERVICE" "$MASTER_PANEL"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
-grep -Fq 'Guid? InstitutionId' "$TARGET" || fail "target não aceita instituição"
+grep -Fq 'public Guid MasterUserId' "$TARGET" || fail "target não exige Master"
+if grep -Fq 'InstitutionId' "$TARGET"; then
+  fail "target ainda mantém instituição como destino persistido"
+fi
+if grep -Fq 'ClaimByMaster' "$TARGET"; then
+  fail "target ainda possui fluxo de claim institucional"
+fi
 grep -Fq 'string? Addressee' "$TARGET" || fail "target não armazena endereçamento opcional"
-grep -Fq 'ClaimByMaster' "$TARGET" || fail "target institucional não pode ser assumido por Master"
-grep -Fq 'AddInstitutionTarget' "$OCCURRENCE" || fail "domínio não cria target institucional"
-grep -Fq 'InstitutionalDestinationItem' "$CONTRACTS" || fail "contrato de destino institucional ausente"
-
-grep -Fq 'GetInstitutionalDestinationsAsync' "$SERVICE" || fail "serviço não lista instituições ativas"
-grep -Fq 'AddInstitutionTargetAsync' "$SERVICE" || fail "serviço não compartilha com instituição"
-grep -Fq 'InstitutionMembershipStatusKeys.Active' "$DECISION" || fail "decisão não valida vínculo institucional ativo"
-grep -Fq 'target.ClaimByMaster' "$OCCURRENCE" || fail "aceite institucional não vincula Master responsável"
-grep -Fq 'x.InstitutionId.HasValue' "$ASSIGNMENT" || fail "painel Master não recebe targets institucionais pendentes"
-
-grep -Fq 'institution_id' "$CONFIG" || fail "persistência não mapeia institution_id"
-grep -Fq 'addressee' "$CONFIG" || fail "persistência não mapeia addressee"
-grep -Fq 'ux_occurrence_targets_occurrence_institution' "$CONFIG" || fail "unicidade institucional não está protegida"
-grep -Fq 'AddColumn<Guid>' "$MIGRATION" || fail "migration não adiciona institution_id"
-grep -Fq 'AddColumn<string>' "$MIGRATION" || fail "migration não adiciona addressee"
+grep -Fq 'AddInstitutionalMasterTarget' "$OCCURRENCE" || fail "domínio não cria target para Master institucional"
+grep -Fq 'InstitutionMembershipRoleKeys.InstitutionAdmin' "$RESOLVER" || fail "resolver não exige vínculo INSTITUTION_ADMIN"
+grep -Fq 'IdentityRoleKeys.Master' "$RESOLVER" || fail "resolver não exige role MASTER"
+grep -Fq 'mastersPerInstitution' "$RESOLVER" || fail "resolver não protege instituição com múltiplas Masters"
+grep -Fq 'institutionsPerMaster' "$RESOLVER" || fail "resolver não protege Master vinculada a múltiplas instituições"
+grep -Fq 'InstitutionalMasterResolver.ResolveAsync' "$SERVICE" || fail "serviço não resolve instituição para Master"
+grep -Fq 'InstitutionalMasterResolver.ResolveAsync' "$CREATION" || fail "criação não resolve instituição para Master"
+grep -Fq 'AddInstitutionalMasterTarget' "$CREATION" || fail "criação não persiste target na Master institucional"
+grep -Fq 'x.MasterUserId == masterUserId' "$ASSIGNMENT" || fail "painel Master não filtra targets pela Master persistida"
+if grep -Fq 'InstitutionMembershipStatusKeys.Active' "$DECISION"; then
+  fail "decisão ainda depende de claim por membership institucional"
+fi
+grep -Fq 'addressee' "$CONFIG" || fail "persistência não preserva addressee"
+if grep -Fq 'institution_id' "$CONFIG"; then
+  fail "persistência ainda mapeia institution_id no target"
+fi
+grep -Fq 'WHERE master_user_id IS NULL' "$MIGRATION" || fail "migration corretiva não protege dados incompatíveis"
+grep -Fq 'name: "institution_id"' "$MIGRATION" || fail "migration corretiva não remove institution_id"
+grep -Fq 'nullable: false' "$MIGRATION" || fail "migration corretiva não restaura master_user_id obrigatório"
 
 grep -Fq '"/destinations"' "$ENDPOINTS" || fail "endpoint de destinos institucionais ausente"
 grep -Fq 'Guid? InstitutionId' "$ENDPOINTS" || fail "request não aceita instituição"
@@ -60,7 +70,7 @@ grep -Fq "addressee: form.addressee.trim() || null" "$CENTER" || fail "endereça
 grep -Fq 'Destino:' "$MASTER_PANEL" || fail "painel Master não mostra destino institucional"
 grep -Fq 'Endereçado a:' "$MASTER_PANEL" || fail "painel Master não mostra endereçamento opcional"
 
-echo 'institutional_destination_domain=OK'
+echo 'institutional_master_resolution=OK'\necho 'institutional_destination_domain=OK'
 echo 'institutional_destination_persistence=OK'
 echo 'institutional_destination_api=OK'
 echo 'institutional_destination_form=OK'

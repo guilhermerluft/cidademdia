@@ -7,73 +7,70 @@ namespace CidadeEmDia.UnitTests;
 public sealed class InstitutionalOccurrenceTargetTests
 {
     [Fact]
-    public void Institutional_target_keeps_optional_addressee_without_requiring_master()
+    public void Institutional_target_is_owned_by_master_and_keeps_optional_addressee()
     {
         var occurrence = CreateOccurrence();
-        var institutionId = Guid.NewGuid();
+        var masterUserId = Guid.NewGuid();
         var sentAt = occurrence.CreatedAt.AddMinutes(1);
 
-        var target = occurrence.AddInstitutionTarget(
-            institutionId,
+        var target = occurrence.AddInstitutionalMasterTarget(
+            masterUserId,
             "  Vereador Exemplo / Partido Exemplo  ",
             sentAt);
 
-        Assert.Equal(institutionId, target.InstitutionId);
-        Assert.Null(target.MasterUserId);
+        Assert.Equal(masterUserId, target.MasterUserId);
         Assert.Equal("Vereador Exemplo / Partido Exemplo", target.Addressee);
         Assert.Equal(OccurrenceTargetStatus.Pending, target.Status);
     }
 
     [Fact]
-    public void Institutional_target_can_be_claimed_and_accepted_by_master()
+    public void Institutional_target_allows_empty_addressee()
     {
         var occurrence = CreateOccurrence();
-        var institutionId = Guid.NewGuid();
+
+        var target = occurrence.AddInstitutionalMasterTarget(
+            Guid.NewGuid(),
+            "   ",
+            occurrence.CreatedAt.AddMinutes(1));
+
+        Assert.Null(target.Addressee);
+    }
+
+    [Fact]
+    public void Institutional_target_can_only_be_decided_by_assigned_master()
+    {
+        var occurrence = CreateOccurrence();
         var masterUserId = Guid.NewGuid();
         var sentAt = occurrence.CreatedAt.AddMinutes(1);
-        var target = occurrence.AddInstitutionTarget(institutionId, null, sentAt);
+        var target = occurrence.AddInstitutionalMasterTarget(masterUserId, null, sentAt);
 
-        var accepted = occurrence.AcceptTarget(
+        Assert.Throws<DomainException>(() =>
+            occurrence.AcceptMasterTarget(
+                target.Id,
+                Guid.NewGuid(),
+                sentAt.AddMinutes(1)));
+
+        var accepted = occurrence.AcceptMasterTarget(
             target.Id,
             masterUserId,
             sentAt.AddMinutes(1));
 
-        Assert.Equal(masterUserId, accepted.MasterUserId);
-        Assert.Equal(institutionId, accepted.InstitutionId);
         Assert.Equal(OccurrenceTargetStatus.Accepted, accepted.Status);
         Assert.Equal(OccurrenceStatus.Received, occurrence.Status);
     }
 
     [Fact]
-    public void Institutional_target_cannot_be_claimed_by_another_master_after_decision()
+    public void Duplicate_institutional_master_destination_is_blocked()
     {
         var occurrence = CreateOccurrence();
-        var sentAt = occurrence.CreatedAt.AddMinutes(1);
-        var target = occurrence.AddInstitutionTarget(Guid.NewGuid(), null, sentAt);
-        var firstMaster = Guid.NewGuid();
-
-        occurrence.AcceptTarget(target.Id, firstMaster, sentAt.AddMinutes(1));
-
-        Assert.Throws<DomainException>(() =>
-            occurrence.RejectTarget(
-                target.Id,
-                Guid.NewGuid(),
-                "Tentativa inválida.",
-                sentAt.AddMinutes(2)));
-    }
-
-    [Fact]
-    public void Duplicate_institutional_destination_is_blocked()
-    {
-        var occurrence = CreateOccurrence();
-        var institutionId = Guid.NewGuid();
+        var masterUserId = Guid.NewGuid();
         var sentAt = occurrence.CreatedAt.AddMinutes(1);
 
-        occurrence.AddInstitutionTarget(institutionId, null, sentAt);
+        occurrence.AddInstitutionalMasterTarget(masterUserId, null, sentAt);
 
         Assert.Throws<DomainException>(() =>
-            occurrence.AddInstitutionTarget(
-                institutionId,
+            occurrence.AddInstitutionalMasterTarget(
+                masterUserId,
                 "Outro destinatário",
                 sentAt.AddMinutes(1)));
     }
@@ -84,7 +81,7 @@ public sealed class InstitutionalOccurrenceTargetTests
         var occurrence = CreateOccurrence();
 
         Assert.Throws<DomainException>(() =>
-            occurrence.AddInstitutionTarget(
+            occurrence.AddInstitutionalMasterTarget(
                 Guid.NewGuid(),
                 new string('a', OccurrenceTarget.MaxAddresseeLength + 1),
                 occurrence.CreatedAt.AddMinutes(1)));
