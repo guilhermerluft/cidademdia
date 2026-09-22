@@ -106,13 +106,13 @@ DESTINATION_LINE="$(grep -n 'Destino institucional <span className="occurrence-r
 TITLE_LINE="$(grep -n 'Título <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
 DESCRIPTION_LINE="$(grep -n '^                Descrição$' "$CENTER" | head -n1 | cut -d: -f1)"
 
-test -n "$PROTOCOL_LINE" && test -n "$CATEGORY_LINE" && test -n "$MASTER_LINE" && test -n "$TITLE_LINE" && test -n "$DESCRIPTION_LINE" \
+test -n "$PROTOCOL_LINE" && test -n "$CATEGORY_LINE" && test -n "$DESTINATION_LINE" && test -n "$TITLE_LINE" && test -n "$DESCRIPTION_LINE" \
   || fail "não foi possível validar a ordem semântica do formulário"
 test "$PROTOCOL_LINE" -lt "$CATEGORY_LINE" || fail "protocolo não é o primeiro campo"
-test "$CATEGORY_LINE" -lt "$MASTER_LINE" || fail "categoria e conta Master não estão pareadas na ordem esperada"
-test "$MASTER_LINE" -lt "$TITLE_LINE" || fail "título deveria vir após categoria/conta Master"
+test "$CATEGORY_LINE" -lt "$DESTINATION_LINE" || fail "categoria e destino institucional não estão pareados na ordem esperada"
+test "$DESTINATION_LINE" -lt "$TITLE_LINE" || fail "título deveria vir após categoria/destino institucional"
 test "$TITLE_LINE" -lt "$DESCRIPTION_LINE" || fail "descrição deveria vir após o título"
-test "$(grep -c 'occurrence-form__paired-field' "$CENTER")" -eq 2 || fail "categoria e conta Master devem ser os dois campos pareados"
+test "$(grep -c 'occurrence-form__paired-field' "$CENTER")" -eq 2 || fail "categoria e destino institucional devem ser os dois campos pareados"
 grep -q 'occurrence-form__protocol-field occurrence-form__full' "$CENTER" || fail "protocolo não ocupa linha isolada"
 grep -q 'occurrence-form__title-field occurrence-form__full' "$CENTER" || fail "título não ocupa linha isolada"
 
