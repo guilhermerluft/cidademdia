@@ -4,6 +4,7 @@ public sealed record OccurrenceTargetDecisionItem(
     Guid TargetId,
     Guid OccurrenceId,
     Guid MasterUserId,
+    string? Addressee,
     string OccurrenceStatus,
     string TargetStatus,
     string? RejectionReason,

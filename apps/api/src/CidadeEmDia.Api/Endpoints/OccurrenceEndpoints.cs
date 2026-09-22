@@ -25,6 +25,14 @@ public static class OccurrenceEndpoints
             return Results.Ok(masters);
         });
 
+        occurrences.MapGet("/destinations", async (
+            IOccurrenceService occurrenceService,
+            CancellationToken cancellationToken) =>
+        {
+            var destinations = await occurrenceService.GetInstitutionalDestinationsAsync(cancellationToken);
+            return Results.Ok(destinations);
+        });
+
         occurrences.MapPost("", async (
             CreateOccurrenceRequest request,
             IOccurrenceCreationService creationService,
@@ -47,6 +55,8 @@ public static class OccurrenceEndpoints
             var result = await creationService.CreateAsync(
                 userId,
                 request.MasterUserId,
+                request.InstitutionId,
+                request.Addressee,
                 new CreateOccurrenceInput(
                     request.CategoryId,
                     request.Title,
@@ -83,11 +93,29 @@ public static class OccurrenceEndpoints
             if (!TryGetCurrentUserId(principal, out var userId))
                 return Results.Unauthorized();
 
-            var result = await occurrenceService.AddMasterTargetAsync(
-                userId,
-                occurrenceId,
-                request.MasterUserId,
-                cancellationToken);
+            var hasMaster = request.MasterUserId.HasValue && request.MasterUserId.Value != Guid.Empty;
+            var hasInstitution = request.InstitutionId.HasValue && request.InstitutionId.Value != Guid.Empty;
+            if (hasMaster == hasInstitution)
+            {
+                return Problem(
+                    httpContext,
+                    StatusCodes.Status400BadRequest,
+                    "invalid_target_input",
+                    "Select exactly one destination.");
+            }
+
+            var result = hasInstitution
+                ? await occurrenceService.AddInstitutionTargetAsync(
+                    userId,
+                    occurrenceId,
+                    request.InstitutionId!.Value,
+                    request.Addressee,
+                    cancellationToken)
+                : await occurrenceService.AddMasterTargetAsync(
+                    userId,
+                    occurrenceId,
+                    request.MasterUserId!.Value,
+                    cancellationToken);
 
             if (result.Succeeded && result.Target is not null)
             {
@@ -191,9 +219,18 @@ public static class OccurrenceEndpoints
     {
         addressText = string.Empty;
 
-        if (request.MasterUserId == Guid.Empty)
+        var hasMaster = request.MasterUserId.HasValue && request.MasterUserId.Value != Guid.Empty;
+        var hasInstitution = request.InstitutionId.HasValue && request.InstitutionId.Value != Guid.Empty;
+        if (hasMaster == hasInstitution)
         {
-            error = "A Master account must be selected before publishing the occurrence.";
+            error = "Exactly one destination must be selected before publishing the occurrence.";
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(request.Addressee)
+            && request.Addressee.Trim().Length > 180)
+        {
+            error = "The optional addressee must contain at most 180 characters.";
             return false;
         }
 
@@ -278,6 +315,16 @@ public static class OccurrenceEndpoints
                 StatusCodes.Status400BadRequest,
                 result.ErrorCode,
                 result.ErrorDetail ?? "The selected Master account is not eligible to receive occurrences."),
+            "institution_not_eligible" => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode,
+                result.ErrorDetail ?? "The selected institution is not eligible to receive occurrences."),
+            "destination_required" => Problem(
+                httpContext,
+                StatusCodes.Status400BadRequest,
+                result.ErrorCode,
+                result.ErrorDetail ?? "Select exactly one destination before publishing the occurrence."),
             "photo_required" => Problem(
                 httpContext,
                 StatusCodes.Status400BadRequest,
@@ -313,7 +360,7 @@ public static class OccurrenceEndpoints
                 StatusCodes.Status404NotFound,
                 result.ErrorCode,
                 "The occurrence does not exist or does not belong to the authenticated user."),
-            "master_not_eligible" => Problem(
+            "master_not_eligible" or "institution_not_eligible" => Problem(
                 httpContext,
                 StatusCodes.Status400BadRequest,
                 result.ErrorCode,
@@ -350,7 +397,9 @@ public static class OccurrenceEndpoints
 
     public sealed record CreateOccurrenceRequest(
         Guid CategoryId,
-        Guid MasterUserId,
+        Guid? MasterUserId,
+        Guid? InstitutionId,
+        string? Addressee,
         string Title,
         string? Description,
         string Street,
@@ -366,5 +415,8 @@ public static class OccurrenceEndpoints
         string? ExternalProtocolAgency,
         IReadOnlyList<Guid>? MediaIds = null);
 
-    public sealed record AddOccurrenceTargetRequest(Guid MasterUserId);
+    public sealed record AddOccurrenceTargetRequest(
+        Guid? MasterUserId,
+        Guid? InstitutionId,
+        string? Addressee);
 }

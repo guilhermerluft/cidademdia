@@ -2103,6 +2103,11 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("accepted_at");
 
+                    b.Property<string>("Addressee")
+                        .HasMaxLength(180)
+                        .HasColumnType("character varying(180)")
+                        .HasColumnName("addressee");
+
                     b.Property<DateTimeOffset?>("ClosedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("closed_at");
@@ -2146,10 +2151,12 @@ namespace CidadeEmDia.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("SentAt");
 
-                    b.HasIndex("MasterUserId", "Status");
+                    b.HasIndex("MasterUserId", "Status")
+                        .HasDatabaseName("ix_occurrence_targets_master_status");
 
                     b.HasIndex("OccurrenceId", "MasterUserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ux_occurrence_targets_occurrence_master");
 
                     b.ToTable("occurrence_targets", (string)null);
                 });

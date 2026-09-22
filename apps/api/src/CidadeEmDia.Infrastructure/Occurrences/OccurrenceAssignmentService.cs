@@ -30,6 +30,11 @@ internal sealed class OccurrenceAssignmentService(
             .Take(MaxItems)
             .ToListAsync(cancellationToken);
 
+        var institutionalDestination = (await InstitutionalMasterResolver.GetEligibleAsync(
+                dbContext,
+                cancellationToken))
+            .SingleOrDefault(item => item.MasterUserId == masterUserId);
+
         var targetIds = targets.Select(x => x.Id).ToArray();
         var occurrenceIds = targets.Select(x => x.OccurrenceId).Distinct().ToArray();
         var covers = await LoadCoverMediaAsync(occurrenceIds, cancellationToken);
@@ -52,6 +57,9 @@ internal sealed class OccurrenceAssignmentService(
                 target.Occurrence.PublicCode.Value,
                 target.Occurrence.Title,
                 target.Occurrence.AddressText,
+                institutionalDestination?.InstitutionId,
+                institutionalDestination?.DisplayName ?? "Sua conta Master",
+                target.Addressee,
                 target.Occurrence.Status.Value,
                 target.Status.Value,
                 target.UpdatedAt,

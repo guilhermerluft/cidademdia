@@ -16,64 +16,70 @@ internal sealed class OccurrenceCreationService(
 {
     public async Task<CreateOccurrenceResult> CreateAsync(
         Guid authorUserId,
-        Guid masterUserId,
+        Guid? masterUserId,
+        Guid? institutionId,
+        string? addressee,
         CreateOccurrenceInput input,
         IReadOnlyCollection<Guid>? mediaIds,
         CancellationToken cancellationToken = default)
     {
-        if (masterUserId == Guid.Empty)
-        {
-            return CreateOccurrenceResult.Failure(
-                "master_not_eligible",
-                "A valid Master account must be selected before publishing the occurrence.");
-        }
+        var hasMaster = masterUserId.HasValue && masterUserId.Value != Guid.Empty;
+        var hasInstitution = institutionId.HasValue && institutionId.Value != Guid.Empty;
+
+        if (hasMaster == hasInstitution)
+            return CreateOccurrenceResult.Failure("destination_required", "Select exactly one destination before publishing the occurrence.");
 
         if (string.IsNullOrWhiteSpace(input.ExternalProtocolNumber))
-        {
-            return CreateOccurrenceResult.Failure(
-                "invalid_input",
-                "External protocol number is required.");
-        }
+            return CreateOccurrenceResult.Failure("invalid_input", "External protocol number is required.");
 
-        var requestedMediaIds = mediaIds?
-            .Where(id => id != Guid.Empty)
-            .ToArray()
-            ?? [];
+        var requestedMediaIds = mediaIds?.Where(id => id != Guid.Empty).ToArray() ?? [];
 
         if (requestedMediaIds.Length == 0)
-        {
-            return CreateOccurrenceResult.Failure(
-                "photo_required",
-                "At least one photo is required to publish an occurrence.");
-        }
+            return CreateOccurrenceResult.Failure("photo_required", "At least one photo is required to publish an occurrence.");
 
         if (mediaIds is null
             || requestedMediaIds.Length != mediaIds.Count
             || requestedMediaIds.Distinct().Count() != requestedMediaIds.Length)
-        {
-            return CreateOccurrenceResult.Failure(
-                "invalid_media_selection",
-                "Occurrence media ids must be non-empty and unique.");
-        }
+            return CreateOccurrenceResult.Failure("invalid_media_selection", "Occurrence media ids must be non-empty and unique.");
 
         await using var transaction = await dbContext.Database.BeginTransactionAsync(
             IsolationLevel.Serializable,
             cancellationToken);
 
-        var masterEligible = await dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(
-                user => user.Id == masterUserId
-                    && user.Status == UserStatus.Active
-                    && user.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master),
-                cancellationToken);
+        Guid resolvedMasterUserId;
+        var institutionalDestination = hasInstitution
+            ? await InstitutionalMasterResolver.ResolveAsync(dbContext, institutionId!.Value, cancellationToken)
+            : null;
 
-        if (!masterEligible)
+        if (hasInstitution)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            return CreateOccurrenceResult.Failure(
-                "master_not_eligible",
-                "The selected user is not an active Master account.");
+            if (institutionalDestination is null)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return CreateOccurrenceResult.Failure(
+                    "institution_not_eligible",
+                    "The selected institution does not have one unique active institutional Master.");
+            }
+
+            resolvedMasterUserId = institutionalDestination.MasterUserId;
+        }
+        else
+        {
+            var masterEligible = await dbContext.Users
+                .AsNoTracking()
+                .AnyAsync(
+                    user => user.Id == masterUserId!.Value
+                        && user.Status == UserStatus.Active
+                        && user.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master),
+                    cancellationToken);
+
+            if (!masterEligible)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return CreateOccurrenceResult.Failure("master_not_eligible", "The selected user is not an active Master account.");
+            }
+
+            resolvedMasterUserId = masterUserId!.Value;
         }
 
         var media = await dbContext.OccurrenceMedia
@@ -83,9 +89,7 @@ internal sealed class OccurrenceCreationService(
         if (media.Count != requestedMediaIds.Length)
         {
             await transaction.RollbackAsync(cancellationToken);
-            return CreateOccurrenceResult.Failure(
-                "media_not_ready_or_owned",
-                "Every selected media item must exist, belong to the author and be ready.");
+            return CreateOccurrenceResult.Failure("media_not_ready_or_owned", "Every selected media item must exist, belong to the author and be ready.");
         }
 
         if (media.Any(item =>
@@ -94,24 +98,16 @@ internal sealed class OccurrenceCreationService(
             || item.OccurrenceId.HasValue))
         {
             await transaction.RollbackAsync(cancellationToken);
-            return CreateOccurrenceResult.Failure(
-                "media_not_ready_or_owned",
-                "Every selected media item must exist, belong to the author, be ready and not already be attached.");
+            return CreateOccurrenceResult.Failure("media_not_ready_or_owned", "Every selected media item must exist, belong to the author, be ready and not already be attached.");
         }
 
         if (!media.Any(item => item.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase)))
         {
             await transaction.RollbackAsync(cancellationToken);
-            return CreateOccurrenceResult.Failure(
-                "photo_required",
-                "At least one selected media item must be a photo.");
+            return CreateOccurrenceResult.Failure("photo_required", "At least one selected media item must be a photo.");
         }
 
-        var occurrenceResult = await occurrenceService.CreateAsync(
-            authorUserId,
-            input,
-            cancellationToken);
-
+        var occurrenceResult = await occurrenceService.CreateAsync(authorUserId, input, cancellationToken);
         if (!occurrenceResult.Succeeded || occurrenceResult.Occurrence is null)
         {
             await transaction.RollbackAsync(cancellationToken);
@@ -122,22 +118,23 @@ internal sealed class OccurrenceCreationService(
             .FirstOrDefault(item => item.Id == occurrenceResult.Occurrence.Id)
             ?? await dbContext.Occurrences
                 .Include(item => item.Targets)
-                .FirstOrDefaultAsync(
-                    item => item.Id == occurrenceResult.Occurrence.Id,
-                    cancellationToken);
+                .FirstOrDefaultAsync(item => item.Id == occurrenceResult.Occurrence.Id, cancellationToken);
 
         if (occurrence is null)
         {
             await transaction.RollbackAsync(cancellationToken);
             return CreateOccurrenceResult.Failure(
                 "occurrence_persistence_conflict",
-                "The new occurrence could not be loaded for its initial assignment.");
+                "The new occurrence could not be loaded for its initial destination.");
         }
 
         try
         {
             var now = DateTimeOffset.UtcNow;
-            var target = occurrence.AddMasterTarget(masterUserId, now);
+            var target = institutionalDestination is not null
+                ? occurrence.AddInstitutionalMasterTarget(resolvedMasterUserId, addressee, now)
+                : occurrence.AddMasterTarget(resolvedMasterUserId, now);
+
             dbContext.OccurrenceTargets.Add(target);
 
             foreach (var item in media)
@@ -156,7 +153,7 @@ internal sealed class OccurrenceCreationService(
             await transaction.RollbackAsync(cancellationToken);
             return CreateOccurrenceResult.Failure(
                 "target_persistence_conflict",
-                "Occurrence, media and the initial Master request could not be persisted atomically.");
+                "Occurrence, media and the initial destination could not be persisted atomically.");
         }
         catch (PostgresException exception) when (exception.SqlState == "40001")
         {

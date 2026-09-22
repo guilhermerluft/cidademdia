@@ -81,21 +81,27 @@ public sealed class Occurrence : BaseEntity
     public IReadOnlyList<OccurrenceTarget> Targets => _targets.AsReadOnly();
     public DateTimeOffset? CurrentServiceForecast => _serviceForecastHistory.LastOrDefault()?.EstimatedFor;
 
-    public OccurrenceTarget AddMasterTarget(Guid masterUserId, DateTimeOffset sentAt)
-    {
-        EnsureNotBeforeCreation(sentAt);
+    public OccurrenceTarget AddMasterTarget(Guid masterUserId, DateTimeOffset sentAt) =>
+        AddTarget(masterUserId, addressee: null, sentAt);
 
-        if (_targets.Any(target => target.MasterUserId == masterUserId))
-            throw new DomainException("Occurrence is already shared with this Master.");
+    public OccurrenceTarget AddInstitutionalMasterTarget(
+        Guid masterUserId,
+        string? addressee,
+        DateTimeOffset sentAt) =>
+        AddTarget(masterUserId, addressee, sentAt);
 
-        if (_targets.Count >= MaxTargetsPerOccurrence)
-            throw new DomainException($"Occurrence cannot have more than {MaxTargetsPerOccurrence} targets.");
+    public OccurrenceTarget AcceptTarget(
+        Guid targetId,
+        Guid masterUserId,
+        DateTimeOffset acceptedAt) =>
+        AcceptMasterTarget(targetId, masterUserId, acceptedAt);
 
-        var target = new OccurrenceTarget(Id, masterUserId, sentAt);
-        _targets.Add(target);
-        Touch();
-        return target;
-    }
+    public OccurrenceTarget RejectTarget(
+        Guid targetId,
+        Guid masterUserId,
+        string rejectionReason,
+        DateTimeOffset rejectedAt) =>
+        RejectMasterTarget(targetId, masterUserId, rejectionReason, rejectedAt);
 
     public OccurrenceTarget AcceptMasterTarget(
         Guid targetId,
@@ -220,6 +226,25 @@ public sealed class Occurrence : BaseEntity
         return forecast;
     }
 
+    private OccurrenceTarget AddTarget(Guid masterUserId, string? addressee, DateTimeOffset sentAt)
+    {
+        EnsureNotBeforeCreation(sentAt);
+
+        if (masterUserId == Guid.Empty)
+            throw new DomainException("Occurrence target Master is required.");
+
+        if (_targets.Any(target => target.MasterUserId == masterUserId))
+            throw new DomainException("Occurrence is already shared with this Master.");
+
+        if (_targets.Count >= MaxTargetsPerOccurrence)
+            throw new DomainException($"Occurrence cannot have more than {MaxTargetsPerOccurrence} targets.");
+
+        var target = new OccurrenceTarget(Id, masterUserId, addressee, sentAt);
+        _targets.Add(target);
+        Touch();
+        return target;
+    }
+
     private OccurrenceTarget FindAssignedTarget(Guid targetId, Guid masterUserId)
     {
         if (targetId == Guid.Empty)
@@ -255,10 +280,8 @@ public sealed class Occurrence : BaseEntity
             return null;
 
         var digits = new string(value.Where(char.IsDigit).ToArray());
-
         if (digits.Length != 8)
             throw new DomainException("Occurrence postal code must contain 8 digits.");
-
         return digits;
     }
 
@@ -268,10 +291,8 @@ public sealed class Occurrence : BaseEntity
             return null;
 
         var normalized = value.Trim().ToUpperInvariant();
-
         if (normalized.Length != 2 || normalized.Any(character => !char.IsLetter(character)))
             throw new DomainException("Occurrence state code must contain 2 letters.");
-
         return normalized;
     }
 }

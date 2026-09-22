@@ -214,6 +214,7 @@ internal sealed class OccurrenceTargetDecisionService(AppDbContext dbContext)
             target.Id,
             target.OccurrenceId,
             target.MasterUserId,
+            target.Addressee,
             occurrenceStatus.Value,
             target.Status.Value,
             target.RejectionReason,

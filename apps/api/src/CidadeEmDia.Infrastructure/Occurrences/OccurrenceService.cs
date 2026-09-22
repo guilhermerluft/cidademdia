@@ -2,6 +2,7 @@ using System.Data;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Identity;
+using CidadeEmDia.Domain.Institutions;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -49,6 +50,25 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
                 string.IsNullOrWhiteSpace(x.DisplayName) ? "Master" : x.DisplayName))
             .OrderBy(x => x.DisplayName)
             .ThenBy(x => x.Id)
+            .ToArray();
+    }
+
+    public async Task<IReadOnlyList<InstitutionalDestinationItem>> GetInstitutionalDestinationsAsync(
+        CancellationToken cancellationToken = default)
+    {
+        var destinations = await InstitutionalMasterResolver.GetEligibleAsync(dbContext, cancellationToken);
+
+        return destinations
+            .OrderBy(item => item.ScopeLevel)
+            .ThenBy(item => item.DisplayName)
+            .ThenBy(item => item.InstitutionId)
+            .Select(item => new InstitutionalDestinationItem(
+                item.InstitutionId,
+                item.DisplayName,
+                item.Type,
+                item.ScopeLevel,
+                item.CityId,
+                item.StateCode))
             .ToArray();
     }
 
@@ -343,6 +363,78 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             string.IsNullOrWhiteSpace(master.DisplayName) ? "Master" : master.DisplayName));
     }
 
+    public async Task<AddOccurrenceTargetResult> AddInstitutionTargetAsync(
+        Guid authorUserId,
+        Guid occurrenceId,
+        Guid institutionId,
+        string? addressee,
+        CancellationToken cancellationToken = default)
+    {
+        if (authorUserId == Guid.Empty || occurrenceId == Guid.Empty || institutionId == Guid.Empty)
+            return AddOccurrenceTargetResult.Failure("invalid_target_input");
+
+        await using var transaction = await dbContext.Database.BeginTransactionAsync(
+            IsolationLevel.Serializable,
+            cancellationToken);
+
+        var occurrence = await dbContext.Occurrences
+            .Include(x => x.Targets)
+            .FirstOrDefaultAsync(
+                x => x.Id == occurrenceId && x.AuthorUserId == authorUserId,
+                cancellationToken);
+
+        if (occurrence is null)
+            return AddOccurrenceTargetResult.Failure("occurrence_not_found");
+
+        var destination = await InstitutionalMasterResolver.ResolveAsync(dbContext, institutionId, cancellationToken);
+        if (destination is null)
+            return AddOccurrenceTargetResult.Failure(
+                "institution_not_eligible",
+                "The selected institution does not have one unique active institutional Master.");
+
+        if (occurrence.Targets.Any(target => target.MasterUserId == destination.MasterUserId))
+            return AddOccurrenceTargetResult.Failure(
+                "duplicate_target",
+                "This occurrence is already shared with the Master account linked to the selected institution.");
+
+        if (occurrence.Targets.Count >= Occurrence.MaxTargetsPerOccurrence)
+            return AddOccurrenceTargetResult.Failure(
+                "target_limit_reached",
+                $"An occurrence can be shared with at most {Occurrence.MaxTargetsPerOccurrence} destinations.");
+
+        OccurrenceTarget target;
+        try
+        {
+            target = occurrence.AddInstitutionalMasterTarget(destination.MasterUserId, addressee, DateTimeOffset.UtcNow);
+        }
+        catch (DomainException exception)
+        {
+            return AddOccurrenceTargetResult.Failure("invalid_target", exception.Message);
+        }
+
+        dbContext.OccurrenceTargets.Add(target);
+
+        try
+        {
+            await dbContext.SaveChangesAsync(cancellationToken);
+            await transaction.CommitAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            return AddOccurrenceTargetResult.Failure(
+                "target_persistence_conflict",
+                "The institutional Master target could not be persisted because the occurrence changed concurrently or the destination is duplicated.");
+        }
+        catch (PostgresException exception) when (exception.SqlState == "40001")
+        {
+            return AddOccurrenceTargetResult.Failure(
+                "target_persistence_conflict",
+                "The occurrence changed concurrently. Retry the operation.");
+        }
+
+        return AddOccurrenceTargetResult.Success(ToTargetItem(target, destination.DisplayName, destination));
+    }
+
     public async Task<IReadOnlyList<OccurrenceTargetItem>?> GetTargetsAsync(
         Guid requesterUserId,
         Guid occurrenceId,
@@ -386,6 +478,7 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
                 x.Id,
                 x.OccurrenceId,
                 x.MasterUserId,
+                x.Addressee,
                 x.Status,
                 x.SentAt,
                 x.AcceptedAt,
@@ -396,37 +489,44 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
         if (!requesterIsAuthor && rows.Count == 0)
             return null;
 
-        var masterUserIds = rows
-            .Select(x => x.MasterUserId)
-            .Distinct()
-            .ToArray();
+        var masterUserIds = rows.Select(x => x.MasterUserId).Distinct().ToArray();
 
         var masterNames = masterUserIds.Length == 0
             ? new Dictionary<Guid, string>()
             : await dbContext.Users
                 .AsNoTracking()
                 .Where(x => masterUserIds.Contains(x.Id))
-                .Select(x => new
-                {
-                    x.Id,
-                    DisplayName = x.Profile != null ? x.Profile.DisplayName : null
-                })
+                .Select(x => new { x.Id, DisplayName = x.Profile != null ? x.Profile.DisplayName : null })
                 .ToDictionaryAsync(
                     x => x.Id,
                     x => string.IsNullOrWhiteSpace(x.DisplayName) ? "Master" : x.DisplayName!,
                     cancellationToken);
 
+        var destinations = await InstitutionalMasterResolver.GetEligibleAsync(dbContext, cancellationToken);
+        var destinationByMaster = destinations
+            .Where(item => masterUserIds.Contains(item.MasterUserId))
+            .ToDictionary(item => item.MasterUserId);
+
         return rows
-            .Select(x => new OccurrenceTargetItem(
-                x.Id,
-                x.OccurrenceId,
-                x.MasterUserId,
-                masterNames.GetValueOrDefault(x.MasterUserId, "Master"),
-                x.Status.Value,
-                x.SentAt,
-                x.AcceptedAt,
-                x.RejectedAt,
-                x.ClosedAt))
+            .Select(x =>
+            {
+                var masterDisplayName = masterNames.GetValueOrDefault(x.MasterUserId, "Master");
+                destinationByMaster.TryGetValue(x.MasterUserId, out var destination);
+
+                return new OccurrenceTargetItem(
+                    x.Id,
+                    x.OccurrenceId,
+                    x.MasterUserId,
+                    masterDisplayName,
+                    destination?.InstitutionId,
+                    destination?.DisplayName ?? masterDisplayName,
+                    x.Addressee,
+                    x.Status.Value,
+                    x.SentAt,
+                    x.AcceptedAt,
+                    x.RejectedAt,
+                    x.ClosedAt);
+            })
             .ToArray();
     }
 
@@ -457,12 +557,18 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
         return ToDetails(occurrence, categoryName);
     }
 
-    private static OccurrenceTargetItem ToTargetItem(OccurrenceTarget target, string masterDisplayName) =>
+    private static OccurrenceTargetItem ToTargetItem(
+        OccurrenceTarget target,
+        string? masterDisplayName,
+        InstitutionalMasterDestination? institutionalDestination = null) =>
         new(
             target.Id,
             target.OccurrenceId,
             target.MasterUserId,
             masterDisplayName,
+            institutionalDestination?.InstitutionId,
+            institutionalDestination?.DisplayName ?? masterDisplayName ?? "Master",
+            target.Addressee,
             target.Status.Value,
             target.SentAt,
             target.AcceptedAt,
@@ -569,6 +675,7 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
         Guid Id,
         Guid OccurrenceId,
         Guid MasterUserId,
+        string? Addressee,
         OccurrenceTargetStatus Status,
         DateTimeOffset SentAt,
         DateTimeOffset? AcceptedAt,

@@ -5,11 +5,17 @@ namespace CidadeEmDia.Domain.Occurrences;
 
 public sealed class OccurrenceTarget : BaseEntity
 {
+    public const int MaxAddresseeLength = 180;
+
     private OccurrenceTarget()
     {
     }
 
-    internal OccurrenceTarget(Guid occurrenceId, Guid masterUserId, DateTimeOffset sentAt)
+    internal OccurrenceTarget(
+        Guid occurrenceId,
+        Guid masterUserId,
+        string? addressee,
+        DateTimeOffset sentAt)
     {
         if (occurrenceId == Guid.Empty)
             throw new DomainException("Occurrence target occurrence is required.");
@@ -18,12 +24,14 @@ public sealed class OccurrenceTarget : BaseEntity
 
         OccurrenceId = occurrenceId;
         MasterUserId = masterUserId;
+        Addressee = NormalizeAddressee(addressee);
         Status = OccurrenceTargetStatus.Pending;
         SentAt = sentAt;
     }
 
     public Guid OccurrenceId { get; private set; }
     public Guid MasterUserId { get; private set; }
+    public string? Addressee { get; private set; }
     public OccurrenceTargetStatus Status { get; private set; } = OccurrenceTargetStatus.Pending;
     public string? RejectionReason { get; private set; }
     public DateTimeOffset SentAt { get; private set; }
@@ -63,6 +71,16 @@ public sealed class OccurrenceTarget : BaseEntity
         RejectedAt = rejectedAt;
         AcceptedAt = null;
         Touch();
+    }
+
+    private static string? NormalizeAddressee(string? value)
+    {
+        var normalized = value?.Trim();
+        if (string.IsNullOrWhiteSpace(normalized))
+            return null;
+        if (normalized.Length > MaxAddresseeLength)
+            throw new DomainException($"Occurrence target addressee must contain at most {MaxAddresseeLength} characters.");
+        return normalized;
     }
 
     private void EnsurePendingDecision()

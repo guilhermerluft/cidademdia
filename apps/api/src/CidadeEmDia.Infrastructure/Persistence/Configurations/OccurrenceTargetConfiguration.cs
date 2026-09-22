@@ -23,6 +23,9 @@ internal sealed class OccurrenceTargetConfiguration : IEntityTypeConfiguration<O
         builder.Property(x => x.MasterUserId)
             .HasColumnName("master_user_id")
             .IsRequired();
+        builder.Property(x => x.Addressee)
+            .HasColumnName("addressee")
+            .HasMaxLength(OccurrenceTarget.MaxAddresseeLength);
         builder.Property(x => x.Status)
             .HasColumnName("status")
             .HasConversion(statusConverter)
@@ -45,8 +48,10 @@ internal sealed class OccurrenceTargetConfiguration : IEntityTypeConfiguration<O
             .IsRequired();
 
         builder.HasIndex(x => new { x.OccurrenceId, x.MasterUserId })
-            .IsUnique();
-        builder.HasIndex(x => new { x.MasterUserId, x.Status });
+            .IsUnique()
+            .HasDatabaseName("ux_occurrence_targets_occurrence_master");
+        builder.HasIndex(x => new { x.MasterUserId, x.Status })
+            .HasDatabaseName("ix_occurrence_targets_master_status");
         builder.HasIndex(x => x.SentAt);
 
         builder.HasOne(x => x.Occurrence)

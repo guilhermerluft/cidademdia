@@ -18,6 +18,9 @@ export interface MasterOccurrenceTarget {
   publicCode: string;
   title: string;
   addressText: string;
+  institutionId?: string | null;
+  destinationDisplayName: string;
+  addressee?: string | null;
   occurrenceStatus: string;
   targetStatus: string;
   updatedAt: string;
@@ -28,7 +31,9 @@ export interface MasterOccurrenceTarget {
 export interface OccurrenceTargetDecision {
   targetId: string;
   occurrenceId: string;
-  masterUserId: string;
+  masterUserId?: string | null;
+  institutionId?: string | null;
+  addressee?: string | null;
   occurrenceStatus: string;
   targetStatus: string;
   rejectionReason?: string | null;
