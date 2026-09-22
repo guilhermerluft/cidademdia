@@ -2,6 +2,7 @@ using System.Data;
 using CidadeEmDia.Application.Occurrences;
 using CidadeEmDia.Domain.Common;
 using CidadeEmDia.Domain.Identity;
+using CidadeEmDia.Domain.Institutions;
 using CidadeEmDia.Domain.Occurrences;
 using CidadeEmDia.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -16,16 +17,21 @@ internal sealed class OccurrenceCreationService(
 {
     public async Task<CreateOccurrenceResult> CreateAsync(
         Guid authorUserId,
-        Guid masterUserId,
+        Guid? masterUserId,
+        Guid? institutionId,
+        string? addressee,
         CreateOccurrenceInput input,
         IReadOnlyCollection<Guid>? mediaIds,
         CancellationToken cancellationToken = default)
     {
-        if (masterUserId == Guid.Empty)
+        var hasMaster = masterUserId.HasValue && masterUserId.Value != Guid.Empty;
+        var hasInstitution = institutionId.HasValue && institutionId.Value != Guid.Empty;
+
+        if (hasMaster == hasInstitution)
         {
             return CreateOccurrenceResult.Failure(
-                "master_not_eligible",
-                "A valid Master account must be selected before publishing the occurrence.");
+                "destination_required",
+                "Select exactly one destination before publishing the occurrence.");
         }
 
         if (string.IsNullOrWhiteSpace(input.ExternalProtocolNumber))
@@ -60,20 +66,40 @@ internal sealed class OccurrenceCreationService(
             IsolationLevel.Serializable,
             cancellationToken);
 
-        var masterEligible = await dbContext.Users
-            .AsNoTracking()
-            .AnyAsync(
-                user => user.Id == masterUserId
-                    && user.Status == UserStatus.Active
-                    && user.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master),
-                cancellationToken);
-
-        if (!masterEligible)
+        if (hasMaster)
         {
-            await transaction.RollbackAsync(cancellationToken);
-            return CreateOccurrenceResult.Failure(
-                "master_not_eligible",
-                "The selected user is not an active Master account.");
+            var masterEligible = await dbContext.Users
+                .AsNoTracking()
+                .AnyAsync(
+                    user => user.Id == masterUserId!.Value
+                        && user.Status == UserStatus.Active
+                        && user.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master),
+                    cancellationToken);
+
+            if (!masterEligible)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return CreateOccurrenceResult.Failure(
+                    "master_not_eligible",
+                    "The selected user is not an active Master account.");
+            }
+        }
+        else
+        {
+            var institutionEligible = await dbContext.Institutions
+                .AsNoTracking()
+                .AnyAsync(
+                    institution => institution.Id == institutionId!.Value
+                        && institution.Status == InstitutionStatusKeys.Active,
+                    cancellationToken);
+
+            if (!institutionEligible)
+            {
+                await transaction.RollbackAsync(cancellationToken);
+                return CreateOccurrenceResult.Failure(
+                    "institution_not_eligible",
+                    "The selected institution is not active or does not exist.");
+            }
         }
 
         var media = await dbContext.OccurrenceMedia
@@ -131,13 +157,15 @@ internal sealed class OccurrenceCreationService(
             await transaction.RollbackAsync(cancellationToken);
             return CreateOccurrenceResult.Failure(
                 "occurrence_persistence_conflict",
-                "The new occurrence could not be loaded for its initial assignment.");
+                "The new occurrence could not be loaded for its initial destination.");
         }
 
         try
         {
             var now = DateTimeOffset.UtcNow;
-            var target = occurrence.AddMasterTarget(masterUserId, now);
+            var target = hasInstitution
+                ? occurrence.AddInstitutionTarget(institutionId!.Value, addressee, now)
+                : occurrence.AddMasterTarget(masterUserId!.Value, now);
             dbContext.OccurrenceTargets.Add(target);
 
             foreach (var item in media)
@@ -156,7 +184,7 @@ internal sealed class OccurrenceCreationService(
             await transaction.RollbackAsync(cancellationToken);
             return CreateOccurrenceResult.Failure(
                 "target_persistence_conflict",
-                "Occurrence, media and the initial Master request could not be persisted atomically.");
+                "Occurrence, media and the initial destination could not be persisted atomically.");
         }
         catch (PostgresException exception) when (exception.SqlState == "40001")
         {
