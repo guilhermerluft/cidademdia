@@ -62,8 +62,9 @@ grep -q 'Neighborhood is required' "$CREATE_ENDPOINTS" || fail "bairro não é v
 grep -q 'City is required' "$CREATE_ENDPOINTS" || fail "cidade não é validada no backend"
 grep -q 'External protocol number is required' "$CREATE_ENDPOINTS" || fail "protocolo não é obrigatório no backend"
 grep -q 'photo_required' "$CREATE_SERVICE" || fail "foto não é obrigatória na criação"
-grep -q 'AddInstitutionTarget(institutionId' "$CREATE_SERVICE" || fail "target inicial institucional não é criado"
-grep -q 'AddMasterTarget(masterUserId' "$CREATE_SERVICE" || fail "compatibilidade de target inicial Master não foi preservada"
+grep -q 'InstitutionalMasterResolver.ResolveAsync' "$CREATE_SERVICE" || fail "destino institucional não é resolvido para Conta Master"
+grep -q 'AddInstitutionalMasterTarget(resolvedMasterUserId' "$CREATE_SERVICE" || fail "target inicial institucional não é persistido na Conta Master"
+grep -q 'AddMasterTarget(resolvedMasterUserId' "$CREATE_SERVICE" || fail "compatibilidade de target inicial Master não foi preservada"
 grep -q 'BeginTransactionAsync' "$CREATE_SERVICE" || fail "criação de ocorrência/target/mídia não é transacional"
 
 grep -q 'listInstitutionalDestinations' "$CENTER" || fail "formulário não lista destinos institucionais"
