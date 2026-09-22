@@ -289,6 +289,10 @@ export function OccurrenceAssignmentPanel({ mode }: OccurrenceAssignmentPanelPro
                             <span className="assignment-card__code">{target.publicCode}</span>
                             <h3>{target.title}</h3>
                             <p>{target.addressText}</p>
+                            <p><strong>Destino:</strong> {target.destinationDisplayName}</p>
+                            {target.addressee ? (
+                              <small><strong>Endereçado a:</strong> {target.addressee}</small>
+                            ) : null}
                             <div className="assignment-card__aux-actions">
                               <Button
                                 variant="ghost"
