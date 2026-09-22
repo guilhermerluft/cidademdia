@@ -85,24 +85,48 @@ public sealed class Occurrence : BaseEntity
     {
         EnsureNotBeforeCreation(sentAt);
 
-        if (_targets.Any(target => target.MasterUserId == masterUserId))
+        if (masterUserId == Guid.Empty)
+            throw new DomainException("Occurrence target Master is required.");
+
+        if (_targets.Any(target => target.MasterUserId == masterUserId && target.InstitutionId is null))
             throw new DomainException("Occurrence is already shared with this Master.");
 
-        if (_targets.Count >= MaxTargetsPerOccurrence)
-            throw new DomainException($"Occurrence cannot have more than {MaxTargetsPerOccurrence} targets.");
+        EnsureTargetCapacity();
 
-        var target = new OccurrenceTarget(Id, masterUserId, sentAt);
+        var target = new OccurrenceTarget(Id, masterUserId, null, null, sentAt);
         _targets.Add(target);
         Touch();
         return target;
     }
 
-    public OccurrenceTarget AcceptMasterTarget(
+    public OccurrenceTarget AddInstitutionTarget(
+        Guid institutionId,
+        string? addressee,
+        DateTimeOffset sentAt)
+    {
+        EnsureNotBeforeCreation(sentAt);
+
+        if (institutionId == Guid.Empty)
+            throw new DomainException("Occurrence target institution is required.");
+
+        if (_targets.Any(target => target.InstitutionId == institutionId))
+            throw new DomainException("Occurrence is already shared with this institution.");
+
+        EnsureTargetCapacity();
+
+        var target = new OccurrenceTarget(Id, null, institutionId, addressee, sentAt);
+        _targets.Add(target);
+        Touch();
+        return target;
+    }
+
+    public OccurrenceTarget AcceptTarget(
         Guid targetId,
         Guid masterUserId,
         DateTimeOffset acceptedAt)
     {
-        var target = FindAssignedTarget(targetId, masterUserId);
+        var target = FindTargetForDecision(targetId, masterUserId);
+        target.ClaimByMaster(masterUserId);
         target.Accept(acceptedAt);
 
         if (Status == OccurrenceStatus.New)
@@ -111,7 +135,9 @@ public sealed class Occurrence : BaseEntity
                 OccurrenceStatus.Received,
                 masterUserId,
                 acceptedAt,
-                "Occurrence received after acceptance by an assigned Master.");
+                target.InstitutionId.HasValue
+                    ? "Occurrence received after acceptance by a Master representing the destination institution."
+                    : "Occurrence received after acceptance by an assigned Master.");
         }
         else
         {
@@ -121,13 +147,14 @@ public sealed class Occurrence : BaseEntity
         return target;
     }
 
-    public OccurrenceTarget RejectMasterTarget(
+    public OccurrenceTarget RejectTarget(
         Guid targetId,
         Guid masterUserId,
         string rejectionReason,
         DateTimeOffset rejectedAt)
     {
-        var target = FindAssignedTarget(targetId, masterUserId);
+        var target = FindTargetForDecision(targetId, masterUserId);
+        target.ClaimByMaster(masterUserId);
         target.Reject(rejectionReason, rejectedAt);
         Touch();
         return target;
@@ -220,16 +247,26 @@ public sealed class Occurrence : BaseEntity
         return forecast;
     }
 
-    private OccurrenceTarget FindAssignedTarget(Guid targetId, Guid masterUserId)
+    private OccurrenceTarget FindTargetForDecision(Guid targetId, Guid masterUserId)
     {
         if (targetId == Guid.Empty)
             throw new DomainException("Occurrence target is required.");
         if (masterUserId == Guid.Empty)
             throw new DomainException("Occurrence target Master is required.");
 
-        return _targets.FirstOrDefault(target =>
-                target.Id == targetId && target.MasterUserId == masterUserId)
-            ?? throw new DomainException("Occurrence target is not assigned to this Master.");
+        var target = _targets.FirstOrDefault(item => item.Id == targetId)
+            ?? throw new DomainException("Occurrence target was not found.");
+
+        if (target.MasterUserId.HasValue && target.MasterUserId.Value != masterUserId)
+            throw new DomainException("Occurrence target is assigned to another Master.");
+
+        return target;
+    }
+
+    private void EnsureTargetCapacity()
+    {
+        if (_targets.Count >= MaxTargetsPerOccurrence)
+            throw new DomainException($"Occurrence cannot have more than {MaxTargetsPerOccurrence} targets.");
     }
 
     private static bool IsAllowedTransition(OccurrenceStatus from, OccurrenceStatus to) =>
