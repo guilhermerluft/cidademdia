@@ -53,22 +53,124 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             .ToArray();
     }
 
-    public async Task<IReadOnlyList<InstitutionalDestinationItem>> GetInstitutionalDestinationsAsync(
+    public async Task<IReadOnlyList<OccurrenceDestinationItem>> GetDestinationsAsync(
+        string? postalCode,
+        string? city,
+        string? stateCode,
         CancellationToken cancellationToken = default)
     {
-        var destinations = await InstitutionalMasterResolver.GetEligibleAsync(dbContext, cancellationToken);
+        _ = postalCode;
 
-        return destinations
-            .OrderBy(item => item.ScopeLevel)
-            .ThenBy(item => item.DisplayName)
-            .ThenBy(item => item.InstitutionId)
-            .Select(item => new InstitutionalDestinationItem(
-                item.InstitutionId,
-                item.DisplayName,
-                item.Type,
-                item.ScopeLevel,
-                item.CityId,
-                item.StateCode))
+        var normalizedState = stateCode?.Trim().ToUpperInvariant();
+        var normalizedCity = city?.Trim();
+
+        if (string.IsNullOrWhiteSpace(normalizedState) || normalizedState.Length != 2)
+            return [];
+
+        var institutionQuery = dbContext.Institutions
+            .AsNoTracking()
+            .Where(institution =>
+                institution.Status == InstitutionStatusKeys.Active
+                && (institution.StateCode == normalizedState
+                    || institution.Jurisdictions.Any(jurisdiction =>
+                        jurisdiction.StateCode == normalizedState)));
+
+        if (!string.IsNullOrWhiteSpace(normalizedCity))
+        {
+            var cityPattern = $"%{normalizedCity}%";
+            institutionQuery = institutionQuery.Where(institution =>
+                institution.ScopeLevel != InstitutionScopeLevelKeys.Municipal
+                || EF.Functions.ILike(institution.Name, cityPattern)
+                || institution.Jurisdictions.Any(jurisdiction =>
+                    jurisdiction.CustomAreaLabel != null
+                    && EF.Functions.ILike(jurisdiction.CustomAreaLabel, cityPattern)));
+        }
+
+        var localInstitutionIds = institutionQuery.Select(institution => institution.Id);
+
+        var localMasters = await dbContext.Users
+            .AsNoTracking()
+            .Where(user =>
+                user.Status == UserStatus.Active
+                && user.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master)
+                && dbContext.InstitutionRepresentatives.Any(representative =>
+                    representative.AccountId == user.Id
+                    && representative.ProfileStatus == RepresentativeProfileStatusKeys.Active
+                    && localInstitutionIds.Contains(representative.InstitutionId)))
+            .Select(user => new
+            {
+                user.Id,
+                DisplayName = user.Profile != null ? user.Profile.DisplayName : null
+            })
+            .ToListAsync(cancellationToken);
+
+        if (localMasters.Count > 0)
+        {
+            return localMasters
+                .Select(master => new OccurrenceDestinationItem(
+                    master.Id,
+                    "MASTER",
+                    string.IsNullOrWhiteSpace(master.DisplayName) ? "Conta Master" : master.DisplayName,
+                    null,
+                    null,
+                    null,
+                    normalizedState))
+                .OrderBy(item => item.DisplayName)
+                .ThenBy(item => item.Id)
+                .ToArray();
+        }
+
+        var institutionalDestinations = await InstitutionalMasterResolver.GetEligibleAsync(
+            dbContext,
+            cancellationToken);
+
+        static string? GetFallbackLabel(string type) =>
+            type switch
+            {
+                InstitutionTypeKeys.CityHall => "Prefeitura",
+                InstitutionTypeKeys.CityCouncil => "Câmara Municipal",
+                InstitutionTypeKeys.PublicAgency => "Governo do Estado",
+                InstitutionTypeKeys.Assembly => "Assembleia Legislativa",
+                InstitutionTypeKeys.PublicService => "SUS",
+                _ => null
+            };
+
+        static int GetFallbackOrder(string label) =>
+            label switch
+            {
+                "Prefeitura" => 1,
+                "Câmara Municipal" => 2,
+                "Governo do Estado" => 3,
+                "Assembleia Legislativa" => 4,
+                "SUS" => 5,
+                _ => 99
+            };
+
+        return institutionalDestinations
+            .Where(item =>
+                string.Equals(item.StateCode, normalizedState, StringComparison.OrdinalIgnoreCase)
+                && (item.ScopeLevel != InstitutionScopeLevelKeys.Municipal
+                    || string.IsNullOrWhiteSpace(normalizedCity)
+                    || item.DisplayName.Contains(normalizedCity, StringComparison.OrdinalIgnoreCase)))
+            .Select(item => new
+            {
+                Destination = item,
+                Label = GetFallbackLabel(item.Type)
+            })
+            .Where(item => item.Label is not null)
+            .GroupBy(item => item.Label!, StringComparer.Ordinal)
+            .Select(group => group
+                .OrderBy(item => item.Destination.InstitutionId)
+                .First())
+            .OrderBy(item => GetFallbackOrder(item.Label!))
+            .Select(item => new OccurrenceDestinationItem(
+                item.Destination.InstitutionId,
+                "INSTITUTION",
+                item.Label!,
+                item.Destination.Type,
+                item.Destination.ScopeLevel,
+                item.Destination.CityId,
+                item.Destination.StateCode))
             .ToArray();
     }
 
