@@ -58,27 +58,46 @@ grep -Fq 'WHERE master_user_id IS NULL' "$MIGRATION" || fail "migration corretiv
 grep -Fq 'name: "institution_id"' "$MIGRATION" || fail "migration corretiva não remove institution_id"
 grep -Fq 'nullable: false' "$MIGRATION" || fail "migration corretiva não restaura master_user_id obrigatório"
 
-grep -Fq '"/destinations"' "$ENDPOINTS" || fail "endpoint de destinos institucionais ausente"
+grep -Fq '"/destinations"' "$ENDPOINTS" || fail "endpoint de destinos ausente"
+grep -Fq 'string? postalCode' "$ENDPOINTS" || fail "endpoint não recebe CEP"
+grep -Fq 'string? city' "$ENDPOINTS" || fail "endpoint não recebe cidade"
+grep -Fq 'string? stateCode' "$ENDPOINTS" || fail "endpoint não recebe UF"
+grep -Fq 'GetDestinationsAsync' "$SERVICE" || fail "serviço não resolve destinos por localidade"
+grep -Fq '"MASTER"' "$SERVICE" || fail "serviço não retorna Masters locais"
+grep -Fq '"Prefeitura"' "$SERVICE" || fail "fallback Prefeitura ausente"
+grep -Fq '"Câmara Municipal"' "$SERVICE" || fail "fallback Câmara ausente"
+grep -Fq '"Governo do Estado"' "$SERVICE" || fail "fallback Governo ausente"
+grep -Fq '"Assembleia Legislativa"' "$SERVICE" || fail "fallback Assembleia ausente"
+grep -Fq '"SUS"' "$SERVICE" || fail "fallback SUS ausente"
 grep -Fq 'Guid? InstitutionId' "$ENDPOINTS" || fail "request não aceita instituição"
 grep -Fq 'string? Addressee' "$ENDPOINTS" || fail "request não aceita endereçamento opcional"
 grep -Fq 'Exactly one destination must be selected' "$ENDPOINTS" || fail "request não exige exatamente um destino"
 
-grep -Fq "listInstitutionalDestinations" "$WEB_SERVICE" || fail "frontend não consulta destinos institucionais"
-grep -Fq "Destino institucional" "$CENTER" || fail "formulário não mostra destino institucional"
+grep -Fq "listOccurrenceDestinations" "$WEB_SERVICE" || fail "frontend não consulta destinos por localidade"
+grep -Fq "Destinatário" "$CENTER" || fail "formulário não mostra destinatário"
 grep -Fq "Nome ou partido (opcional)" "$CENTER" || fail "campo opcional de nome/partido ausente"
 grep -Fq "maxLength={180}" "$CENTER" || fail "campo opcional não possui limite"
-grep -Fq "masterUserId: null" "$CENTER" || fail "novo fluxo ainda tenta selecionar Master individual"
-grep -Fq "institutionId: form.institutionId" "$CENTER" || fail "instituição selecionada não é enviada"
-grep -Fq "addressee: form.addressee.trim() || null" "$CENTER" || fail "endereçamento opcional não é enviado"
+grep -Fq "masterUserId: form.masterUserId || null" "$CENTER" || fail "Master selecionada não é enviada"
+grep -Fq "institutionId: form.institutionId || null" "$CENTER" || fail "instituição selecionada não é enviada"
+grep -Fq "addressee: form.institutionId ?" "$CENTER" || fail "endereçamento opcional não está restrito ao fallback institucional"
+grep -Fq "Encontramos Contas Master elegíveis para esta região" "$CENTER" || fail "formulário não diferencia Masters locais"
+grep -Fq "Mostramos os destinos públicos padrão do CIDADEMDIA" "$CENTER" || fail "formulário não explica fallback institucional"
 
 protocol_line="$(grep -n -F 'Número do protocolo' "$CENTER" | head -n1 | cut -d: -f1)"
 agency_line="$(grep -n -F 'Órgão do protocolo' "$CENTER" | head -n1 | cut -d: -f1)"
 category_line="$(grep -n -F 'Categoria <span' "$CENTER" | head -n1 | cut -d: -f1)"
+location_line="$(grep -n -F '<OccurrenceLocationPicker' "$CENTER" | head -n1 | cut -d: -f1)"
+destination_line="$(grep -n -F 'Destinatário <span' "$CENTER" | head -n1 | cut -d: -f1)"
 test -n "$protocol_line" || fail "campo Número do protocolo ausente"
 test -n "$agency_line" || fail "campo Órgão do protocolo ausente"
 test -n "$category_line" || fail "campo Categoria ausente"
+test -n "$location_line" || fail "campo de endereço ausente"
+test -n "$destination_line" || fail "campo Destinatário ausente"
 if ! [ "$protocol_line" -lt "$agency_line" ] || ! [ "$agency_line" -lt "$category_line" ]; then
   fail "Órgão do protocolo deve ficar imediatamente após Número do protocolo e antes de Categoria"
+fi
+if ! [ "$location_line" -lt "$destination_line" ]; then
+  fail "endereço deve ficar antes do destinatário"
 fi
 
 grep -Fq 'Destino:' "$MASTER_PANEL" || fail "painel Master não mostra destino institucional"
@@ -89,16 +108,19 @@ bash -n "$VISUAL_TEST" || fail "smoke visual institucional possui sintaxe shell 
 bash -n "$FEATURE_TEST" || fail "E2E institucional possui sintaxe shell inválida"
 grep -Fq 'CIDADEMDIA_EXPECTED_BRANCH' "$FEATURE_TEST" || fail "E2E institucional continua preso a uma branch fixa"
 grep -Fq 'PROTOCOL AGENCY ORDER: OK' "$VISUAL_TEST" || fail "smoke visual não valida ordem do órgão do protocolo"
-grep -Fq 'DESTINATIONS: 4 UNIQUE' "$VISUAL_TEST" || fail "smoke visual não valida quatro destinos"
+grep -Fq 'ADDRESS BEFORE DESTINATION: OK' "$VISUAL_TEST" || fail "smoke visual não valida endereço antes do destinatário"
+grep -Fq 'DESTINATIONS: 5 GENERIC FALLBACKS' "$VISUAL_TEST" || fail "smoke visual não valida cinco fallbacks genéricos"
+grep -Fq 'MODAL ENTRYPOINT: OK' "$VISUAL_TEST" || fail "smoke visual não valida botão/modal de nova ocorrência"
 grep -Fq "grep -q '^ASPNETCORE_ENVIRONMENT=Production$'" "$PROD_SEED" || fail "seed de produção não protege ambiente Production"
 grep -Fq 'camara-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Câmara"
 grep -Fq 'governo-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Governo"
 grep -Fq 'alesp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona ALESP"
+grep -Fq 'sus-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona SUS"
 if grep -Fq '@hml.cidademdia.invalid' "$PROD_SEED"; then
   fail "seed de produção contém conta exclusiva de HML"
 fi
-grep -Fq 'PRODUCTION_SP_INSTITUTIONS=OK count=4' "$PROD_SEED" || fail "seed de produção não valida as quatro instituições"
-grep -Fq 'PRODUCTION_SP_INSTITUTIONAL_MASTERS=OK count=4' "$PROD_SEED" || fail "seed de produção não valida as quatro Masters"
+grep -Fq 'PRODUCTION_SP_INSTITUTIONS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro instituições"
+grep -Fq 'PRODUCTION_SP_INSTITUTIONAL_MASTERS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro Masters"
 
 echo 'institutional_master_resolution=OK'
 echo 'institutional_destination_domain=OK'
