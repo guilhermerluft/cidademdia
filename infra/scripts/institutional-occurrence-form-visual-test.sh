@@ -136,18 +136,19 @@ try {
     timeout: 30000,
   });
 
-  await page.locator('#painel-ocorrencias').waitFor({
+  const occurrenceForm = page.locator('.occurrence-form-card').first();
+  await occurrenceForm.waitFor({
     state: 'visible',
     timeout: 15000,
   });
 
-  const protocol = page.getByLabel('Número do protocolo');
-  const agency = page.getByLabel('Órgão do protocolo');
-  const category = page.getByLabel('Categoria');
-  const city = page.getByLabel('Cidade');
-  const postalCode = page.getByLabel('CEP');
-  const stateCode = page.getByLabel('UF');
-  const destination = page.getByLabel('Destinatário');
+  const protocol = occurrenceForm.getByLabel(/^Número do protocolo/);
+  const agency = occurrenceForm.getByLabel(/^Órgão do protocolo$/);
+  const category = occurrenceForm.getByRole('combobox', { name: /^Categoria/ });
+  const city = occurrenceForm.locator('input[autocomplete="address-level2"]');
+  const postalCode = occurrenceForm.locator('input[autocomplete="postal-code"]');
+  const stateCode = occurrenceForm.locator('input[autocomplete="address-level1"]');
+  const destination = occurrenceForm.getByRole('combobox', { name: /^Destinatário/ });
 
   await protocol.waitFor({ state: 'visible' });
   await agency.waitFor({ state: 'visible' });
@@ -159,11 +160,9 @@ try {
   await postalCode.fill('01001-000');
   await stateCode.fill('SP');
 
-  await page.waitForFunction(() => {
-    const selects = [...document.querySelectorAll('select')];
-    const select = selects.find(item =>
-      item.querySelector('option[value=""]')?.textContent?.includes('Selecione quem receberá a ocorrência'));
-    return select ? select.options.length >= 6 : false;
+  await destination.locator('option').nth(5).waitFor({
+    state: 'attached',
+    timeout: 15000,
   });
 
   const optionTexts = await destination.locator('option').allTextContents();
