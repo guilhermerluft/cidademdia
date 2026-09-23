@@ -183,24 +183,31 @@ SQL
 
 active_master_count() {
   local display_name="$1"
+  local sql
 
-  "${COMPOSE[@]}" exec -T db sh -lc '
-    psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
-      -v display_name="$1" \
-      -c "
-        select count(distinct user_account.id)
-        from users user_account
-        join user_profiles profile
-          on profile.user_id = user_account.id
-        join user_roles user_role
-          on user_role.user_id = user_account.id
-        join roles role
-          on role.id = user_role.role_id
-         and role.key = '''MASTER'''
-        where user_account.status = '''Active'''
-          and profile.display_name = :'\''display_name'\'';
-      "
-  ' sh "$display_name" | tr -d '[:space:]'
+  sql="$(cat <<'SQL'
+select count(distinct user_account.id)
+from users user_account
+join user_profiles profile
+  on profile.user_id = user_account.id
+join user_roles user_role
+  on user_role.user_id = user_account.id
+join roles role
+  on role.id = user_role.role_id
+ and role.key = 'MASTER'
+where user_account.status = 'Active'
+  and profile.display_name = :'display_name';
+SQL
+)"
+
+  printf '%s\n' "$sql" |
+    "${COMPOSE[@]}" exec -T \
+      -e QUERY_DISPLAY_NAME="$display_name" \
+      db sh -lc '
+        psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
+          -v display_name="$QUERY_DISPLAY_NAME"
+      ' |
+    tr -d '[:space:]'
 }
 
 hash_password() {
@@ -397,81 +404,116 @@ ensure_membership() {
   local other_institutions
   local other_masters
 
+  local master_sql
+  master_sql="$(cat <<'SQL'
+select distinct user_account.id
+from users user_account
+join user_profiles profile
+  on profile.user_id = user_account.id
+join user_roles user_role
+  on user_role.user_id = user_account.id
+join roles role
+  on role.id = user_role.role_id
+ and role.key = 'MASTER'
+where user_account.status = 'Active'
+  and profile.display_name = :'display_name';
+SQL
+)"
+
   master_id="$(
-    "${COMPOSE[@]}" exec -T db sh -lc '
-      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
-        -v display_name="$1" \
-        -c "
-          select distinct user_account.id
-          from users user_account
-          join user_profiles profile
-            on profile.user_id = user_account.id
-          join user_roles user_role
-            on user_role.user_id = user_account.id
-          join roles role
-            on role.id = user_role.role_id
-           and role.key = '''MASTER'''
-          where user_account.status = '''Active'''
-            and profile.display_name = :'\''display_name'\'';
-        "
-    ' sh "$display_name" | tr -d '[:space:]'
+    printf '%s\n' "$master_sql" |
+      "${COMPOSE[@]}" exec -T \
+        -e QUERY_DISPLAY_NAME="$display_name" \
+        db sh -lc '
+          psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
+            -v display_name="$QUERY_DISPLAY_NAME"
+        ' |
+      tr -d '[:space:]'
   )"
 
   test -n "$master_id" || fail "Master não encontrada para $display_name"
 
+  local institution_sql
+  institution_sql="$(cat <<'SQL'
+select id
+from institutions
+where slug = :'slug'
+  and status = 'ACTIVE';
+SQL
+)"
+
   institution_id="$(
-    "${COMPOSE[@]}" exec -T db sh -lc '
-      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
-        -v slug="$1" \
-        -c "select id from institutions where slug = :'\''slug'\'' and status = '''ACTIVE''';"
-    ' sh "$slug" | tr -d '[:space:]'
+    printf '%s\n' "$institution_sql" |
+      "${COMPOSE[@]}" exec -T \
+        -e QUERY_SLUG="$slug" \
+        db sh -lc '
+          psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
+            -v slug="$QUERY_SLUG"
+        ' |
+      tr -d '[:space:]'
   )"
 
   test -n "$institution_id" || fail "instituição ativa não encontrada: $slug"
 
+  local other_institutions_sql
+  other_institutions_sql="$(cat <<'SQL'
+select count(distinct membership.institution_id)
+from institution_memberships membership
+join institutions institution
+  on institution.id = membership.institution_id
+ and institution.status = 'ACTIVE'
+where membership.user_id = :'master_id'::uuid
+  and membership.status = 'ACTIVE'
+  and membership.membership_role = 'INSTITUTION_ADMIN'
+  and membership.institution_id <> :'institution_id'::uuid;
+SQL
+)"
+
   other_institutions="$(
-    "${COMPOSE[@]}" exec -T db sh -lc '
-      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
-        -v master_id="$1" \
-        -v institution_id="$2" \
-        -c "
-          select count(distinct membership.institution_id)
-          from institution_memberships membership
-          join institutions institution
-            on institution.id = membership.institution_id
-           and institution.status = '''ACTIVE'''
-          where membership.user_id = :'\''master_id'\''::uuid
-            and membership.status = '''ACTIVE'''
-            and membership.membership_role = '''INSTITUTION_ADMIN'''
-            and membership.institution_id <> :'\''institution_id'\''::uuid;
-        "
-    ' sh "$master_id" "$institution_id" | tr -d '[:space:]'
+    printf '%s\n' "$other_institutions_sql" |
+      "${COMPOSE[@]}" exec -T \
+        -e QUERY_MASTER_ID="$master_id" \
+        -e QUERY_INSTITUTION_ID="$institution_id" \
+        db sh -lc '
+          psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
+            -v master_id="$QUERY_MASTER_ID" \
+            -v institution_id="$QUERY_INSTITUTION_ID"
+        ' |
+      tr -d '[:space:]'
   )"
 
   test "$other_institutions" = "0"     || fail "$display_name já administra outra instituição ativa"
 
+  local other_masters_sql
+  other_masters_sql="$(cat <<'SQL'
+select count(distinct membership.user_id)
+from institution_memberships membership
+join users user_account
+  on user_account.id = membership.user_id
+ and user_account.status = 'Active'
+join user_roles user_role
+  on user_role.user_id = user_account.id
+join roles role
+  on role.id = user_role.role_id
+ and role.key = 'MASTER'
+where membership.institution_id = :'institution_id'::uuid
+  and membership.status = 'ACTIVE'
+  and membership.membership_role = 'INSTITUTION_ADMIN'
+  and membership.user_id <> :'master_id'::uuid;
+SQL
+)"
+
   other_masters="$(
-    "${COMPOSE[@]}" exec -T db sh -lc '
-      psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
-        -v master_id="$1" \
-        -v institution_id="$2" \
-        -c "
-          select count(distinct membership.user_id)
-          from institution_memberships membership
-          join users user_account
-            on user_account.id = membership.user_id
-           and user_account.status = '''Active'''
-          join user_roles user_role
-            on user_role.user_id = user_account.id
-          join roles role
-            on role.id = user_role.role_id
-           and role.key = '''MASTER'''
-          where membership.institution_id = :'\''institution_id'\''::uuid
-            and membership.status = '''ACTIVE'''
-            and membership.membership_role = '''INSTITUTION_ADMIN'''
-            and membership.user_id <> :'\''master_id'\''::uuid;
-        "
-    ' sh "$master_id" "$institution_id" | tr -d '[:space:]'
+    printf '%s\n' "$other_masters_sql" |
+      "${COMPOSE[@]}" exec -T \
+        -e QUERY_MASTER_ID="$master_id" \
+        -e QUERY_INSTITUTION_ID="$institution_id" \
+        db sh -lc '
+          psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At \
+            -v master_id="$QUERY_MASTER_ID" \
+            -v institution_id="$QUERY_INSTITUTION_ID"
+        ' |
+      tr -d '[:space:]'
   )"
 
   test "$other_masters" = "0"     || fail "$display_name possui outra Master institucional ativa"
