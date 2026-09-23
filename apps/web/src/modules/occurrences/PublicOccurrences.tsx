@@ -7,6 +7,7 @@ import {
   type PublicOccurrenceItem,
   type PublicOccurrencePage,
 } from '../home/homeService';
+import { OccurrenceCenter } from './OccurrenceCenter';
 import { PublicOccurrenceCard } from './PublicOccurrenceCard';
 import { PublicOccurrenceDetailsModal } from './PublicOccurrenceDetailsModal';
 import { PublicOccurrenceMapFilter } from './PublicOccurrenceMapFilter';
@@ -24,7 +25,13 @@ const SAO_PAULO_POINT: PublicOccurrencePoint = {
   longitude: -46.633308,
 };
 
-export function PublicOccurrences() {
+interface PublicOccurrencesProps {
+  canCreateOccurrence?: boolean;
+}
+
+export function PublicOccurrences({
+  canCreateOccurrence = false,
+}: PublicOccurrencesProps = {}) {
   const [city, setCity] = useState(DEFAULT_PUBLIC_OCCURRENCE_CITY);
   const [radiusKm, setRadiusKm] = useState(DEFAULT_PUBLIC_OCCURRENCE_RADIUS_KM);
   const [point, setPoint] = useState<PublicOccurrencePoint | null>(null);
@@ -35,6 +42,7 @@ export function PublicOccurrences() {
   const [sourceLabel, setSourceLabel] = useState('Definindo sua localização...');
   const [selectedOccurrence, setSelectedOccurrence] = useState<PublicOccurrenceDetails | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
+  const [createOccurrenceOpen, setCreateOccurrenceOpen] = useState(false);
 
   const loadResults = useCallback(async (
     targetPoint: PublicOccurrencePoint,
@@ -164,10 +172,21 @@ export function PublicOccurrences() {
           <h1>Acompanhe o que está acontecendo perto de você.</h1>
           <p>Consulte demandas abertas usando apenas cidade, raio ou um ponto escolhido no mapa.</p>
         </div>
-        <div className="public-occurrences__location-summary">
-          <span>Filtro atual</span>
-          <strong>{sourceLabel}</strong>
-          <small>Raio de {radiusKm} km</small>
+        <div className="public-occurrences__intro-side">
+          {canCreateOccurrence && (
+            <Button
+              type="button"
+              size="lg"
+              onClick={() => setCreateOccurrenceOpen(true)}
+            >
+              Nova ocorrência
+            </Button>
+          )}
+          <div className="public-occurrences__location-summary">
+            <span>Filtro atual</span>
+            <strong>{sourceLabel}</strong>
+            <small>Raio de {radiusKm} km</small>
+          </div>
         </div>
       </section>
 
@@ -285,6 +304,44 @@ export function PublicOccurrences() {
           occurrence={selectedOccurrence}
           onClose={() => setSelectedOccurrence(null)}
         />
+      )}
+
+      {createOccurrenceOpen && (
+        <div
+          className="occurrence-create-modal"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCreateOccurrenceOpen(false);
+          }}
+        >
+          <section
+            className="occurrence-create-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="occurrence-create-modal-title"
+          >
+            <header className="occurrence-create-modal__header">
+              <div>
+                <span>Ocorrências</span>
+                <h2 id="occurrence-create-modal-title">Nova ocorrência</h2>
+              </div>
+              <button
+                type="button"
+                className="occurrence-create-modal__close"
+                aria-label="Fechar nova ocorrência"
+                onClick={() => setCreateOccurrenceOpen(false)}
+              >
+                ×
+              </button>
+            </header>
+            <div className="occurrence-create-modal__body">
+              <OccurrenceCenter
+                formOnly
+                onCreated={() => setCreateOccurrenceOpen(false)}
+              />
+            </div>
+          </section>
+        </div>
       )}
     </main>
   );
