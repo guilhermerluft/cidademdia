@@ -88,10 +88,11 @@ import { chromium } from 'playwright-core';
 
 const base = process.env.BASE;
 const expectedDestinations = [
-  'Prefeitura de São Paulo',
-  'Câmara Municipal de São Paulo',
-  'Governo do Estado de São Paulo',
-  'Assembleia Legislativa do Estado de São Paulo',
+  'Prefeitura',
+  'Câmara Municipal',
+  'Governo do Estado',
+  'Assembleia Legislativa',
+  'SUS',
 ];
 
 const browser = await chromium.launch({
@@ -143,19 +144,27 @@ try {
   const protocol = page.getByLabel('Número do protocolo');
   const agency = page.getByLabel('Órgão do protocolo');
   const category = page.getByLabel('Categoria');
-  const destination = page.getByLabel('Destino institucional');
+  const city = page.getByLabel('Cidade');
+  const postalCode = page.getByLabel('CEP');
+  const stateCode = page.getByLabel('UF');
+  const destination = page.getByLabel('Destinatário');
 
   await protocol.waitFor({ state: 'visible' });
   await agency.waitFor({ state: 'visible' });
   await category.waitFor({ state: 'visible' });
+  await city.waitFor({ state: 'visible' });
   await destination.waitFor({ state: 'visible' });
 
+  await city.fill('São Paulo');
+  await postalCode.fill('01001-000');
+  await stateCode.fill('SP');
+
   await page.waitForFunction(() => {
-    const select = [...document.querySelectorAll('select')]
-      .find(item => item.textContent?.includes('Destino institucional') === false
-        && item.querySelector('option[value=""]')?.textContent?.includes('Selecione o órgão ou instituição'));
-    return select ? select.options.length >= 5 : false;
-  }).catch(() => {});
+    const selects = [...document.querySelectorAll('select')];
+    const select = selects.find(item =>
+      item.querySelector('option[value=""]')?.textContent?.includes('Selecione quem receberá a ocorrência'));
+    return select ? select.options.length >= 6 : false;
+  });
 
   const optionTexts = await destination.locator('option').allTextContents();
   for (const expected of expectedDestinations) {
@@ -167,8 +176,10 @@ try {
   const protocolBox = await protocol.boundingBox();
   const agencyBox = await agency.boundingBox();
   const categoryBox = await category.boundingBox();
+  const cityBox = await city.boundingBox();
+  const destinationBox = await destination.boundingBox();
 
-  if (!protocolBox || !agencyBox || !categoryBox) {
+  if (!protocolBox || !agencyBox || !categoryBox || !cityBox || !destinationBox) {
     throw new Error('não foi possível medir a ordem visual dos campos');
   }
 
@@ -180,8 +191,20 @@ try {
     );
   }
 
+  if (!(cityBox.y < destinationBox.y)) {
+    throw new Error(
+      'o endereço deve aparecer antes do destinatário: cidade=' + cityBox.y
+      + ' destinatário=' + destinationBox.y,
+    );
+  }
+
+  if (optionTexts.some(text => text.includes('São Paulo'))) {
+    throw new Error('fallback exibiu cidade/UF no rótulo: ' + JSON.stringify(optionTexts));
+  }
+
   console.log('institutional_form_protocol_order=OK');
-  console.log('institutional_form_destinations=OK count=4');
+  console.log('institutional_form_address_before_destination=OK');
+  console.log('institutional_form_destinations=OK count=5');
 
   await page.screenshot({
     path: '/work/institutional-occurrence-form-desktop.png',
@@ -224,6 +247,27 @@ try {
 
   console.log('institutional_form_visual_mobile=OK');
 
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.goto(base + '/ocorrencias', {
+    waitUntil: 'domcontentloaded',
+    timeout: 30000,
+  });
+
+  const newOccurrenceButton = page.getByRole('button', { name: 'Nova ocorrência' });
+  await newOccurrenceButton.waitFor({ state: 'visible', timeout: 15000 });
+  await newOccurrenceButton.click();
+
+  const createDialog = page.getByRole('dialog', { name: 'Nova ocorrência' });
+  await createDialog.waitFor({ state: 'visible', timeout: 10000 });
+  await createDialog.getByLabel('Número do protocolo').waitFor({ state: 'visible' });
+
+  await page.screenshot({
+    path: '/work/institutional-occurrence-form-modal.png',
+    fullPage: true,
+  });
+
+  console.log('institutional_form_modal_entrypoint=OK');
+
   if (pageErrors.length > 0) {
     throw new Error('pageerror: ' + pageErrors.join(' | '));
   }
@@ -235,6 +279,7 @@ JS
 
 test -f "$QA_DIR/institutional-occurrence-form-desktop.png" || fail "screenshot desktop não foi criada"
 test -f "$QA_DIR/institutional-occurrence-form-mobile.png" || fail "screenshot mobile não foi criada"
+test -f "$QA_DIR/institutional-occurrence-form-modal.png" || fail "screenshot modal não foi criada"
 
 cleanup_qa
 
@@ -254,8 +299,10 @@ echo "============================================================"
 echo "INSTITUTIONAL OCCURRENCE FORM — VISUAL HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
 echo "PROTOCOL AGENCY ORDER: OK"
-echo "DESTINATIONS: 4 UNIQUE"
+echo "ADDRESS BEFORE DESTINATION: OK"
+echo "DESTINATIONS: 5 GENERIC FALLBACKS"
 echo "DESKTOP: OK"
 echo "MOBILE: OK"
+echo "MODAL ENTRYPOINT: OK"
 echo "QA CLEANUP: OK"
 echo "============================================================"
