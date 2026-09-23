@@ -389,6 +389,15 @@ export function OccurrenceCenter() {
                 <small>Esse protocolo identifica a solicitação junto ao órgão ou serviço relacionado.</small>
               </label>
 
+              <label className="occurrence-form__full">
+                Órgão do protocolo
+                <input
+                  value={form.externalProtocolAgency}
+                  onChange={(event) => updateField('externalProtocolAgency', event.target.value)}
+                  placeholder="Opcional — ex.: Prefeitura / Secretaria de Obras"
+                />
+              </label>
+
               <label className={`occurrence-form__paired-field${fieldErrors.categoryId ? ' occurrence-required-invalid' : ''}`}>
                 Categoria <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
@@ -475,15 +484,6 @@ export function OccurrenceCenter() {
                 onChange={(field, value) => updateField(field, value)}
                 onError={setError}
               />
-
-              <label className="occurrence-form__full">
-                Órgão do protocolo
-                <input
-                  value={form.externalProtocolAgency}
-                  onChange={(event) => updateField('externalProtocolAgency', event.target.value)}
-                  placeholder="Opcional — ex.: Prefeitura / Secretaria de Obras"
-                />
-              </label>
 
               <label className={`occurrence-media-field occurrence-form__full${fieldErrors.photo ? ' occurrence-required-invalid' : ''}`}>
                 Fotos ou vídeos <span className="occurrence-required-marker" aria-hidden="true">*</span>
