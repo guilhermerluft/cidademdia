@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 EXPECTED_HEAD="${1:-}"
+EXPECTED_BRANCH="${CIDADEMDIA_EXPECTED_BRANCH:-}"
 ROOT="${CIDADEMDIA_ROOT:-/opt/cidademdia}"
 ENV_FILE="${CIDADEMDIA_ENV_FILE:-$ROOT/.env}"
 BASE="${CIDADEMDIA_BASE_URL:-https://homolog.cidademdia.com.br}"
@@ -23,7 +24,9 @@ done
 
 test -n "$EXPECTED_HEAD" || fail "informe o HEAD esperado"
 test "$(git -C "$ROOT" rev-parse HEAD)" = "$EXPECTED_HEAD" || fail "repo fora do HEAD esperado"
-test "$(git -C "$ROOT" branch --show-current)" = "feat/institutional-occurrence-sharing" || fail "branch inesperada"
+if [ -n "$EXPECTED_BRANCH" ]; then
+  test "$(git -C "$ROOT" branch --show-current)" = "$EXPECTED_BRANCH" || fail "branch inesperada"
+fi
 test -z "$(git -C "$ROOT" status --porcelain)" || fail "worktree está suja"
 test -f "$ENV_FILE" || fail ".env não encontrado"
 : "${HML_INSTITUTION_MASTER_PASSWORD:?Defina HML_INSTITUTION_MASTER_PASSWORD com a senha das Masters institucionais.}"
