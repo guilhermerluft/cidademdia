@@ -88,19 +88,19 @@ const names = {
 };
 
 const operationalNames = {
-  prefeitura: 'Prefeitura de São Paulo',
-  camara: 'Câmara Municipal de São Paulo',
-  governo: 'Governo do Estado de São Paulo',
-  alesp: 'Assembleia Legislativa do Estado de São Paulo',
-  sus: 'SUS São Paulo',
+  prefeitura: 'Prefeitura',
+  camara: 'Câmara Municipal',
+  governo: 'Governo do Estado',
+  alesp: 'Assembleia Legislativa',
+  sus: 'SUS',
 };
 
 const emails = {
-  prefeitura: 'prefeitura-sp.master@hml.cidademdia.invalid',
-  camara: 'camara-sp.master@hml.cidademdia.invalid',
-  governo: 'governo-sp.master@hml.cidademdia.invalid',
-  alesp: 'alesp.master@hml.cidademdia.invalid',
-  sus: 'sus-sp.master@hml.cidademdia.invalid',
+  prefeitura: 'fallback-prefeitura.master@hml.cidademdia.invalid',
+  camara: 'fallback-camara.master@hml.cidademdia.invalid',
+  governo: 'fallback-governo.master@hml.cidademdia.invalid',
+  alesp: 'fallback-assembleia.master@hml.cidademdia.invalid',
+  sus: 'fallback-sus.master@hml.cidademdia.invalid',
 };
 
 async function api(method, path, token, data) {
