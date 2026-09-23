@@ -129,6 +129,23 @@ VALUES
         'ACTIVE',
         now(),
         now()
+    ),
+    (
+        '9c9ec70d-a59b-40f4-b23c-2f52a07ef005'::uuid,
+        'SUS São Paulo',
+        'sus-sao-paulo',
+        'PUBLIC_SERVICE',
+        'STATE',
+        NULL,
+        NULL,
+        'saude.sp.gov.br',
+        'Destino padrão do Sistema Único de Saúde para o Estado de São Paulo.',
+        NULL,
+        NULL,
+        'SP',
+        'ACTIVE',
+        now(),
+        now()
     )
 ON CONFLICT (slug) DO UPDATE
 SET
@@ -165,7 +182,8 @@ FROM (
         ('prefeitura-de-sao-paulo', '9c9ec70d-a59b-40f4-b23c-2f52a07ef101'::uuid, 'CUSTOM_AREA', 'Município de São Paulo'),
         ('camara-municipal-de-sao-paulo', '9c9ec70d-a59b-40f4-b23c-2f52a07ef102'::uuid, 'CUSTOM_AREA', 'Município de São Paulo'),
         ('governo-do-estado-de-sao-paulo', '9c9ec70d-a59b-40f4-b23c-2f52a07ef103'::uuid, 'STATE', NULL),
-        ('assembleia-legislativa-do-estado-de-sao-paulo', '9c9ec70d-a59b-40f4-b23c-2f52a07ef104'::uuid, 'STATE', NULL)
+        ('assembleia-legislativa-do-estado-de-sao-paulo', '9c9ec70d-a59b-40f4-b23c-2f52a07ef104'::uuid, 'STATE', NULL),
+        ('sus-sao-paulo', '9c9ec70d-a59b-40f4-b23c-2f52a07ef105'::uuid, 'STATE', NULL)
 ) AS seed(slug, id, jurisdiction_type, custom_area_label)
 JOIN institutions institution
   ON institution.slug = seed.slug
@@ -394,6 +412,13 @@ ensure_internal_master_if_missing \
   "9c9ec70d-a59b-40f4-b23c-2f52a07ef304" \
   "PROD_ALESP_MASTER_PASSWORD"
 
+ensure_internal_master_if_missing \
+  "SUS São Paulo" \
+  "sus-sp.master@cidademdia.com.br" \
+  "9c9ec70d-a59b-40f4-b23c-2f52a07ef205" \
+  "9c9ec70d-a59b-40f4-b23c-2f52a07ef305" \
+  "PROD_SUS_MASTER_PASSWORD"
+
 ensure_membership() {
   local slug="$1"
   local display_name="$2"
@@ -577,7 +602,12 @@ ensure_membership \
   "Assembleia Legislativa do Estado de São Paulo" \
   "9c9ec70d-a59b-40f4-b23c-2f52a07ef404"
 
-echo "==> Validando quatro destinos institucionais elegíveis"
+ensure_membership \
+  "sus-sao-paulo" \
+  "SUS São Paulo" \
+  "9c9ec70d-a59b-40f4-b23c-2f52a07ef405"
+
+echo "==> Validando cinco destinos institucionais elegíveis"
 VALIDATION="$(
   "${COMPOSE[@]}" exec -T db sh -lc '
     psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" -At
@@ -606,7 +636,8 @@ WITH candidates AS (
           'prefeitura-de-sao-paulo',
           'camara-municipal-de-sao-paulo',
           'governo-do-estado-de-sao-paulo',
-          'assembleia-legislativa-do-estado-de-sao-paulo'
+          'assembleia-legislativa-do-estado-de-sao-paulo',
+          'sus-sao-paulo'
       )
 ),
 institution_counts AS (
@@ -633,7 +664,7 @@ PAIRS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^pairs=//p')"
 AMBIGUOUS_INSTITUTIONS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_institutions=//p')"
 AMBIGUOUS_MASTERS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_masters=//p')"
 
-test "$PAIRS" = "4" || fail "esperados 4 pares instituição/Master; encontrados ${PAIRS:-0}"
+test "$PAIRS" = "5" || fail "esperados 5 pares instituição/Master; encontrados ${PAIRS:-0}"
 test "$AMBIGUOUS_INSTITUTIONS" = "0" || fail "há instituição com múltiplas Masters elegíveis"
 test "$AMBIGUOUS_MASTERS" = "0" || fail "há Master elegível vinculada a múltiplas instituições"
 
@@ -661,11 +692,12 @@ WHERE institution.slug IN (
     'prefeitura-de-sao-paulo',
     'camara-municipal-de-sao-paulo',
     'governo-do-estado-de-sao-paulo',
-    'assembleia-legislativa-do-estado-de-sao-paulo'
+    'assembleia-legislativa-do-estado-de-sao-paulo',
+    'sus-sao-paulo'
 )
 ORDER BY institution.name;
 SQL
 
-echo "PRODUCTION_SP_INSTITUTIONS=OK count=4"
-echo "PRODUCTION_SP_INSTITUTIONAL_MASTERS=OK count=4"
+echo "PRODUCTION_SP_INSTITUTIONS=OK count=5"
+echo "PRODUCTION_SP_INSTITUTIONAL_MASTERS=OK count=5"
 echo "PRODUCTION INSTITUTIONAL DESTINATIONS SEED: OK"
