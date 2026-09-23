@@ -23,8 +23,10 @@ CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 WEB_SERVICE="$ROOT/apps/web/src/modules/occurrences/occurrenceService.ts"
 MASTER_PANEL="$ROOT/apps/web/src/modules/occurrenceAssignments/OccurrenceAssignmentPanel.tsx"
 PROD_SEED="$ROOT/infra/scripts/seed-production-sp-institutional-destinations.sh"
+VISUAL_TEST="$ROOT/infra/scripts/institutional-occurrence-form-visual-test.sh"
+FEATURE_TEST="$ROOT/infra/scripts/institutional-occurrence-sharing-feature-test.sh"
 
-for file in "$TARGET" "$OCCURRENCE" "$RESOLVER" "$CONTRACTS" "$SERVICE" "$CREATION" "$DECISION" "$ASSIGNMENT" "$CONFIG" "$MIGRATION" "$ENDPOINTS" "$CENTER" "$WEB_SERVICE" "$MASTER_PANEL" "$PROD_SEED"; do
+for file in "$TARGET" "$OCCURRENCE" "$RESOLVER" "$CONTRACTS" "$SERVICE" "$CREATION" "$DECISION" "$ASSIGNMENT" "$CONFIG" "$MIGRATION" "$ENDPOINTS" "$CENTER" "$WEB_SERVICE" "$MASTER_PANEL" "$PROD_SEED" "$VISUAL_TEST" "$FEATURE_TEST"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -83,6 +85,11 @@ grep -Fq 'Destino:' "$MASTER_PANEL" || fail "painel Master não mostra destino i
 grep -Fq 'Endereçado a:' "$MASTER_PANEL" || fail "painel Master não mostra endereçamento opcional"
 
 bash -n "$PROD_SEED" || fail "seed de produção possui sintaxe shell inválida"
+bash -n "$VISUAL_TEST" || fail "smoke visual institucional possui sintaxe shell inválida"
+bash -n "$FEATURE_TEST" || fail "E2E institucional possui sintaxe shell inválida"
+grep -Fq 'CIDADEMDIA_EXPECTED_BRANCH' "$FEATURE_TEST" || fail "E2E institucional continua preso a uma branch fixa"
+grep -Fq 'PROTOCOL AGENCY ORDER: OK' "$VISUAL_TEST" || fail "smoke visual não valida ordem do órgão do protocolo"
+grep -Fq 'DESTINATIONS: 4 UNIQUE' "$VISUAL_TEST" || fail "smoke visual não valida quatro destinos"
 grep -Fq "grep -q '^ASPNETCORE_ENVIRONMENT=Production$'" "$PROD_SEED" || fail "seed de produção não protege ambiente Production"
 grep -Fq 'camara-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Câmara"
 grep -Fq 'governo-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Governo"
