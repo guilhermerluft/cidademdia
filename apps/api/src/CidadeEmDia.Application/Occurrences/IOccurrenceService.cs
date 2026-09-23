@@ -6,7 +6,10 @@ public interface IOccurrenceService
 
     Task<IReadOnlyList<EligibleMasterItem>> GetEligibleMastersAsync(CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<InstitutionalDestinationItem>> GetInstitutionalDestinationsAsync(
+    Task<IReadOnlyList<OccurrenceDestinationItem>> GetDestinationsAsync(
+        string? postalCode,
+        string? city,
+        string? stateCode,
         CancellationToken cancellationToken = default);
 
     Task<CreateOccurrenceResult> CreateAsync(
