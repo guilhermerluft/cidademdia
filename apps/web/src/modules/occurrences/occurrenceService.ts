@@ -2,7 +2,7 @@ import { api } from '../../services/api';
 import type {
   CreateOccurrencePayload,
   EligibleMaster,
-  InstitutionalDestination,
+  OccurrenceDestination,
   OccurrenceCategory,
   OccurrenceDetails,
   OccurrenceGeoFilters,
@@ -23,8 +23,14 @@ export async function listEligibleMasters() {
   return data;
 }
 
-export async function listInstitutionalDestinations() {
-  const { data } = await api.get<InstitutionalDestination[]>('/occurrences/destinations');
+export async function listOccurrenceDestinations(params: {
+  postalCode?: string;
+  city?: string;
+  stateCode?: string;
+}) {
+  const { data } = await api.get<OccurrenceDestination[]>('/occurrences/destinations', {
+    params,
+  });
   return data;
 }
 
