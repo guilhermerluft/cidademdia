@@ -156,6 +156,23 @@ VALUES
         'ACTIVE',
         now(),
         now()
+    ),
+    (
+        '7c9ec70d-a59b-40f4-b23c-2f52a07ef005'::uuid,
+        'SUS São Paulo',
+        'sus-sao-paulo',
+        'PUBLIC_SERVICE',
+        'STATE',
+        NULL,
+        NULL,
+        'saude.sp.gov.br',
+        'Destino padrão do Sistema Único de Saúde para o Estado de São Paulo.',
+        NULL,
+        NULL,
+        'SP',
+        'ACTIVE',
+        now(),
+        now()
     )
 ON CONFLICT (slug) DO UPDATE
 SET
@@ -192,7 +209,8 @@ FROM (
         ('prefeitura-de-sao-paulo', '7c9ec70d-a59b-40f4-b23c-2f52a07ef101'::uuid, 'CUSTOM_AREA', 'Município de São Paulo'),
         ('camara-municipal-de-sao-paulo', '7c9ec70d-a59b-40f4-b23c-2f52a07ef102'::uuid, 'CUSTOM_AREA', 'Município de São Paulo'),
         ('governo-do-estado-de-sao-paulo', '7c9ec70d-a59b-40f4-b23c-2f52a07ef103'::uuid, 'STATE', NULL),
-        ('assembleia-legislativa-do-estado-de-sao-paulo', '7c9ec70d-a59b-40f4-b23c-2f52a07ef104'::uuid, 'STATE', NULL)
+        ('assembleia-legislativa-do-estado-de-sao-paulo', '7c9ec70d-a59b-40f4-b23c-2f52a07ef104'::uuid, 'STATE', NULL),
+        ('sus-sao-paulo', '7c9ec70d-a59b-40f4-b23c-2f52a07ef105'::uuid, 'STATE', NULL)
 ) AS seed(slug, id, jurisdiction_type, custom_area_label)
 JOIN institutions institution ON institution.slug = seed.slug
 WHERE NOT EXISTS (
@@ -259,6 +277,17 @@ VALUES
         NULL,
         now(),
         now()
+    ),
+    (
+        '7c9ec70d-a59b-40f4-b23c-2f52a07ef205'::uuid,
+        'sus-sp.master@hml.cidademdia.invalid',
+        'SUS-SP.MASTER@HML.CIDADEMDIA.INVALID',
+        :'master_hash',
+        'Active',
+        now(),
+        NULL,
+        now(),
+        now()
     )
 ON CONFLICT (normalized_email) DO UPDATE
 SET
@@ -291,7 +320,8 @@ FROM (
         ('PREFEITURA-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef301'::uuid, 'Prefeitura de São Paulo'),
         ('CAMARA-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef302'::uuid, 'Câmara Municipal de São Paulo'),
         ('GOVERNO-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef303'::uuid, 'Governo do Estado de São Paulo'),
-        ('ALESP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef304'::uuid, 'Assembleia Legislativa do Estado de São Paulo')
+        ('ALESP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef304'::uuid, 'Assembleia Legislativa do Estado de São Paulo'),
+        ('SUS-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef305'::uuid, 'SUS São Paulo')
 ) AS seed(normalized_email, profile_id, display_name)
 JOIN users user_account ON user_account.normalized_email = seed.normalized_email
 ON CONFLICT (user_id) DO UPDATE
@@ -308,7 +338,8 @@ WHERE user_role.user_id = user_account.id
       'PREFEITURA-SP.MASTER@HML.CIDADEMDIA.INVALID',
       'CAMARA-SP.MASTER@HML.CIDADEMDIA.INVALID',
       'GOVERNO-SP.MASTER@HML.CIDADEMDIA.INVALID',
-      'ALESP.MASTER@HML.CIDADEMDIA.INVALID'
+      'ALESP.MASTER@HML.CIDADEMDIA.INVALID',
+      'SUS-SP.MASTER@HML.CIDADEMDIA.INVALID'
   );
 
 INSERT INTO user_roles (user_id, role_id, created_at)
@@ -319,7 +350,8 @@ WHERE user_account.normalized_email IN (
     'PREFEITURA-SP.MASTER@HML.CIDADEMDIA.INVALID',
     'CAMARA-SP.MASTER@HML.CIDADEMDIA.INVALID',
     'GOVERNO-SP.MASTER@HML.CIDADEMDIA.INVALID',
-    'ALESP.MASTER@HML.CIDADEMDIA.INVALID'
+    'ALESP.MASTER@HML.CIDADEMDIA.INVALID',
+    'SUS-SP.MASTER@HML.CIDADEMDIA.INVALID'
 )
 ON CONFLICT (user_id, role_id) DO NOTHING;
 
@@ -351,7 +383,8 @@ FROM (
         ('prefeitura-de-sao-paulo', 'PREFEITURA-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef401'::uuid),
         ('camara-municipal-de-sao-paulo', 'CAMARA-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef402'::uuid),
         ('governo-do-estado-de-sao-paulo', 'GOVERNO-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef403'::uuid),
-        ('assembleia-legislativa-do-estado-de-sao-paulo', 'ALESP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef404'::uuid)
+        ('assembleia-legislativa-do-estado-de-sao-paulo', 'ALESP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef404'::uuid),
+        ('sus-sao-paulo', 'SUS-SP.MASTER@HML.CIDADEMDIA.INVALID', '7c9ec70d-a59b-40f4-b23c-2f52a07ef405'::uuid)
 ) AS seed(slug, normalized_email, membership_id)
 JOIN institutions institution ON institution.slug = seed.slug
 JOIN users user_account ON user_account.normalized_email = seed.normalized_email
@@ -393,7 +426,8 @@ WITH candidates AS (
           'prefeitura-de-sao-paulo',
           'camara-municipal-de-sao-paulo',
           'governo-do-estado-de-sao-paulo',
-          'assembleia-legislativa-do-estado-de-sao-paulo'
+          'assembleia-legislativa-do-estado-de-sao-paulo',
+          'sus-sao-paulo'
       )
 ),
 institution_counts AS (
@@ -420,7 +454,7 @@ PAIRS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^pairs=//p')"
 AMBIGUOUS_INSTITUTIONS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_institutions=//p')"
 AMBIGUOUS_MASTERS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_masters=//p')"
 
-[ "$PAIRS" = "4" ] || fail "Esperados 4 pares instituição/Master; encontrados ${PAIRS:-0}."
+[ "$PAIRS" = "5" ] || fail "Esperados 5 pares instituição/Master; encontrados ${PAIRS:-0}."
 [ "$AMBIGUOUS_INSTITUTIONS" = "0" ] || fail "Há instituição com mais de uma Master institucional ativa."
 [ "$AMBIGUOUS_MASTERS" = "0" ] || fail "Há Master institucional ativa vinculada a mais de uma instituição."
 
@@ -449,10 +483,11 @@ where institution.slug in (
   'prefeitura-de-sao-paulo',
   'camara-municipal-de-sao-paulo',
   'governo-do-estado-de-sao-paulo',
-  'assembleia-legislativa-do-estado-de-sao-paulo'
+  'assembleia-legislativa-do-estado-de-sao-paulo',
+  'sus-sao-paulo'
 )
 order by institution.name;
 SQL
 
-echo "HML_SP_INSTITUTIONS=OK count=4"
-echo "HML_SP_INSTITUTIONAL_MASTERS=OK count=4"
+echo "HML_SP_INSTITUTIONS=OK count=5"
+echo "HML_SP_INSTITUTIONAL_MASTERS=OK count=5"
