@@ -68,6 +68,16 @@ grep -Fq "masterUserId: null" "$CENTER" || fail "novo fluxo ainda tenta selecion
 grep -Fq "institutionId: form.institutionId" "$CENTER" || fail "instituição selecionada não é enviada"
 grep -Fq "addressee: form.addressee.trim() || null" "$CENTER" || fail "endereçamento opcional não é enviado"
 
+protocol_line="$(grep -n -F 'Número do protocolo' "$CENTER" | head -n1 | cut -d: -f1)"
+agency_line="$(grep -n -F 'Órgão do protocolo' "$CENTER" | head -n1 | cut -d: -f1)"
+category_line="$(grep -n -F 'Categoria <span' "$CENTER" | head -n1 | cut -d: -f1)"
+test -n "$protocol_line" || fail "campo Número do protocolo ausente"
+test -n "$agency_line" || fail "campo Órgão do protocolo ausente"
+test -n "$category_line" || fail "campo Categoria ausente"
+if ! [ "$protocol_line" -lt "$agency_line" ] || ! [ "$agency_line" -lt "$category_line" ]; then
+  fail "Órgão do protocolo deve ficar imediatamente após Número do protocolo e antes de Categoria"
+fi
+
 grep -Fq 'Destino:' "$MASTER_PANEL" || fail "painel Master não mostra destino institucional"
 grep -Fq 'Endereçado a:' "$MASTER_PANEL" || fail "painel Master não mostra endereçamento opcional"
 
