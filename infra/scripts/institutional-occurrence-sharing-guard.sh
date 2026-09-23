@@ -22,11 +22,12 @@ ENDPOINTS="$ROOT/apps/api/src/CidadeEmDia.Api/Endpoints/OccurrenceEndpoints.cs"
 CENTER="$ROOT/apps/web/src/modules/occurrences/OccurrenceCenter.tsx"
 WEB_SERVICE="$ROOT/apps/web/src/modules/occurrences/occurrenceService.ts"
 MASTER_PANEL="$ROOT/apps/web/src/modules/occurrenceAssignments/OccurrenceAssignmentPanel.tsx"
-PROD_SEED="$ROOT/infra/scripts/seed-production-sp-institutional-destinations.sh"
+PROD_SEED="$ROOT/infra/scripts/seed-production-default-occurrence-destinations.sh"
+HML_FALLBACK_SEED="$ROOT/infra/scripts/seed-hml-default-occurrence-destinations.sh"
 VISUAL_TEST="$ROOT/infra/scripts/institutional-occurrence-form-visual-test.sh"
 FEATURE_TEST="$ROOT/infra/scripts/institutional-occurrence-sharing-feature-test.sh"
 
-for file in "$TARGET" "$OCCURRENCE" "$RESOLVER" "$CONTRACTS" "$SERVICE" "$CREATION" "$DECISION" "$ASSIGNMENT" "$CONFIG" "$MIGRATION" "$ENDPOINTS" "$CENTER" "$WEB_SERVICE" "$MASTER_PANEL" "$PROD_SEED" "$VISUAL_TEST" "$FEATURE_TEST"; do
+for file in "$TARGET" "$OCCURRENCE" "$RESOLVER" "$CONTRACTS" "$SERVICE" "$CREATION" "$DECISION" "$ASSIGNMENT" "$CONFIG" "$MIGRATION" "$ENDPOINTS" "$CENTER" "$WEB_SERVICE" "$MASTER_PANEL" "$PROD_SEED" "$HML_FALLBACK_SEED" "$VISUAL_TEST" "$FEATURE_TEST"; do
   test -f "$file" || fail "arquivo ausente: $file"
 done
 
@@ -104,6 +105,7 @@ grep -Fq 'Destino:' "$MASTER_PANEL" || fail "painel Master não mostra destino i
 grep -Fq 'Endereçado a:' "$MASTER_PANEL" || fail "painel Master não mostra endereçamento opcional"
 
 bash -n "$PROD_SEED" || fail "seed de produção possui sintaxe shell inválida"
+bash -n "$HML_FALLBACK_SEED" || fail "seed HML de fallback possui sintaxe shell inválida"
 bash -n "$VISUAL_TEST" || fail "smoke visual institucional possui sintaxe shell inválida"
 bash -n "$FEATURE_TEST" || fail "E2E institucional possui sintaxe shell inválida"
 grep -Fq 'CIDADEMDIA_EXPECTED_BRANCH' "$FEATURE_TEST" || fail "E2E institucional continua preso a uma branch fixa"
@@ -112,15 +114,18 @@ grep -Fq 'ADDRESS BEFORE DESTINATION: OK' "$VISUAL_TEST" || fail "smoke visual n
 grep -Fq 'DESTINATIONS: 5 GENERIC FALLBACKS' "$VISUAL_TEST" || fail "smoke visual não valida cinco fallbacks genéricos"
 grep -Fq 'MODAL ENTRYPOINT: OK' "$VISUAL_TEST" || fail "smoke visual não valida botão/modal de nova ocorrência"
 grep -Fq "grep -q '^ASPNETCORE_ENVIRONMENT=Production$'" "$PROD_SEED" || fail "seed de produção não protege ambiente Production"
-grep -Fq 'camara-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Câmara"
-grep -Fq 'governo-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Governo"
-grep -Fq 'alesp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona ALESP"
-grep -Fq 'sus-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona SUS"
+grep -Fq 'fallback-prefeitura.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Prefeitura fallback"
+grep -Fq 'fallback-camara.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Câmara fallback"
+grep -Fq 'fallback-governo.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Governo fallback"
+grep -Fq 'fallback-assembleia.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Assembleia fallback"
+grep -Fq 'fallback-sus.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona SUS fallback"
 if grep -Fq '@hml.cidademdia.invalid' "$PROD_SEED"; then
   fail "seed de produção contém conta exclusiva de HML"
 fi
-grep -Fq 'PRODUCTION_SP_INSTITUTIONS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro instituições"
-grep -Fq 'PRODUCTION_SP_INSTITUTIONAL_MASTERS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro Masters"
+grep -Fq 'HML_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=5' "$HML_FALLBACK_SEED" || fail "seed HML não valida cinco fallbacks"
+grep -Fq 'HML_DEFAULT_OCCURRENCE_MASTERS=OK count=5' "$HML_FALLBACK_SEED" || fail "seed HML não valida cinco Masters técnicas"
+grep -Fq 'PRODUCTION_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro instituições"
+grep -Fq 'PRODUCTION_DEFAULT_OCCURRENCE_MASTERS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro Masters"
 
 echo 'institutional_master_resolution=OK'
 echo 'institutional_destination_domain=OK'
