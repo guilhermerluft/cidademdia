@@ -80,10 +80,19 @@ const png = Buffer.from(
 );
 
 const names = {
+  prefeitura: 'Prefeitura',
+  camara: 'Câmara Municipal',
+  governo: 'Governo do Estado',
+  alesp: 'Assembleia Legislativa',
+  sus: 'SUS',
+};
+
+const operationalNames = {
   prefeitura: 'Prefeitura de São Paulo',
   camara: 'Câmara Municipal de São Paulo',
   governo: 'Governo do Estado de São Paulo',
   alesp: 'Assembleia Legislativa do Estado de São Paulo',
+  sus: 'SUS São Paulo',
 };
 
 const emails = {
@@ -91,6 +100,7 @@ const emails = {
   camara: 'camara-sp.master@hml.cidademdia.invalid',
   governo: 'governo-sp.master@hml.cidademdia.invalid',
   alesp: 'alesp.master@hml.cidademdia.invalid',
+  sus: 'sus-sp.master@hml.cidademdia.invalid',
 };
 
 async function api(method, path, token, data) {
@@ -163,7 +173,11 @@ expect(categories, 200, 'categorias');
 const category = categories.body?.[0];
 if (!category?.id) throw new Error('nenhuma categoria ativa');
 
-const destinationResponse = await api('GET', '/api/v1/occurrences/destinations', citizenToken);
+const destinationResponse = await api(
+  'GET',
+  '/api/v1/occurrences/destinations?postalCode=01001-000&city=S%C3%A3o%20Paulo&stateCode=SP',
+  citizenToken,
+);
 expect(destinationResponse, 200, 'destinos');
 const destinations = destinationResponse.body;
 if (!Array.isArray(destinations)) throw new Error('destinos não retornaram lista');
@@ -172,13 +186,13 @@ const byName = Object.fromEntries(
   Object.entries(names).map(([key, name]) => {
     const rows = destinations.filter(item => item.displayName === name);
     if (rows.length !== 1) throw new Error('destino deve existir uma vez: ' + name);
-    if (Object.prototype.hasOwnProperty.call(rows[0], 'masterUserId')) {
-      throw new Error('destino expôs masterUserId: ' + name);
+    if (rows[0].kind !== 'INSTITUTION') {
+      throw new Error('fallback deveria ser institucional: ' + name);
     }
     return [key, rows[0]];
   }),
 );
-console.log('institutional_destinations=OK count=4');
+console.log('institutional_destinations=OK count=5');
 
 const image = await readyImage(citizenToken);
 console.log('institutional_media=READY');
@@ -262,7 +276,7 @@ console.log('institutional_targets_have_master=OK count=3');
 
 const masters = {};
 for (const [key, email] of Object.entries(emails)) masters[key] = await login(email);
-console.log('institutional_master_logins=OK count=4');
+console.log('institutional_master_logins=OK count=5');
 
 const expected = new Map([
   [masters.prefeitura.user.id, prefeituraTarget.id],
@@ -280,8 +294,8 @@ for (const [key, session] of Object.entries(masters)) {
     if (rows.length !== 1 || rows[0].targetId !== targetId) {
       throw new Error('isolamento inválido para Master ' + key);
     }
-    if (rows[0].destinationDisplayName !== names[key]) {
-      throw new Error('nome do destino inválido para Master ' + key);
+    if (rows[0].destinationDisplayName !== operationalNames[key]) {
+      throw new Error('nome operacional do destino inválido para Master ' + key);
     }
   } else if (rows.length !== 0) {
     throw new Error('ALESP enxergou target que não recebeu');
@@ -433,7 +447,7 @@ test -z "$(git -C "$ROOT" status --porcelain)" || fail "worktree ficou suja"
 echo "============================================================"
 echo "INSTITUTIONAL OCCURRENCE SHARING — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
-echo "DESTINATIONS: 4 UNIQUE"
+echo "DESTINATIONS: 5 UNIQUE"
 echo "TARGETS: 3 MASTERS"
 echo "ADDRESSEE EMPTY/FILLED: OK"
 echo "DUPLICATE + FOURTH TARGET: BLOCKED"
