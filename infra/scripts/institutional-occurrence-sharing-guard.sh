@@ -70,6 +70,7 @@ grep -Fq '"Câmara Municipal"' "$SERVICE" || fail "fallback Câmara ausente"
 grep -Fq '"Governo do Estado"' "$SERVICE" || fail "fallback Governo ausente"
 grep -Fq '"Assembleia Legislativa"' "$SERVICE" || fail "fallback Assembleia ausente"
 grep -Fq '"SUS"' "$SERVICE" || fail "fallback SUS ausente"
+grep -Fq '"cidademdia-fallback-"' "$SERVICE" || fail "serviço não restringe fallback às filas globais do CIDADEMDIA"
 grep -Fq 'Guid? InstitutionId' "$ENDPOINTS" || fail "request não aceita instituição"
 grep -Fq 'string? Addressee' "$ENDPOINTS" || fail "request não aceita endereçamento opcional"
 grep -Fq 'Exactly one destination must be selected' "$ENDPOINTS" || fail "request não exige exatamente um destino"
@@ -113,6 +114,8 @@ grep -Fq 'PROTOCOL AGENCY ORDER: OK' "$VISUAL_TEST" || fail "smoke visual não v
 grep -Fq 'ADDRESS BEFORE DESTINATION: OK' "$VISUAL_TEST" || fail "smoke visual não valida endereço antes do destinatário"
 grep -Fq 'DESTINATIONS: 5 GENERIC FALLBACKS' "$VISUAL_TEST" || fail "smoke visual não valida cinco fallbacks genéricos"
 grep -Fq 'MODAL ENTRYPOINT: OK' "$VISUAL_TEST" || fail "smoke visual não valida botão/modal de nova ocorrência"
+grep -Fq 'LOCAL MASTER RESOLUTION: OK' "$FEATURE_TEST" || fail "E2E não valida Master local"
+grep -Fq 'FALLBACK HIDDEN WITH MASTER: OK' "$FEATURE_TEST" || fail "E2E não valida ocultação do fallback quando existe Master"
 grep -Fq "grep -q '^ASPNETCORE_ENVIRONMENT=Production$'" "$PROD_SEED" || fail "seed de produção não protege ambiente Production"
 grep -Fq 'fallback-prefeitura.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Prefeitura fallback"
 grep -Fq 'fallback-camara.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Câmara fallback"
@@ -124,8 +127,8 @@ if grep -Fq '@hml.cidademdia.invalid' "$PROD_SEED"; then
 fi
 grep -Fq 'HML_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=5' "$HML_FALLBACK_SEED" || fail "seed HML não valida cinco fallbacks"
 grep -Fq 'HML_DEFAULT_OCCURRENCE_MASTERS=OK count=5' "$HML_FALLBACK_SEED" || fail "seed HML não valida cinco Masters técnicas"
-grep -Fq 'PRODUCTION_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro instituições"
-grep -Fq 'PRODUCTION_DEFAULT_OCCURRENCE_MASTERS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as quatro Masters"
+grep -Fq 'PRODUCTION_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida os cinco fallbacks"
+grep -Fq 'PRODUCTION_DEFAULT_OCCURRENCE_MASTERS=OK count=5' "$PROD_SEED" || fail "seed de produção não valida as cinco Masters técnicas"
 
 echo 'institutional_master_resolution=OK'
 echo 'institutional_destination_domain=OK'
