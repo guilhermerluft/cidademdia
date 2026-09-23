@@ -23,11 +23,12 @@ public sealed record EligibleMasterItem(
     Guid Id,
     string DisplayName);
 
-public sealed record InstitutionalDestinationItem(
+public sealed record OccurrenceDestinationItem(
     Guid Id,
+    string Kind,
     string DisplayName,
-    string Type,
-    string ScopeLevel,
+    string? Type,
+    string? ScopeLevel,
     Guid? CityId,
     string? StateCode);
 
