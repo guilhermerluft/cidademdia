@@ -102,8 +102,25 @@ if grep -q 'box-shadow:.*180, 35, 24' "$REQUIRED_LABEL_CSS"; then
   fail "erro obrigatório não deve usar box-shadow vermelho"
 fi
 
-PROTOCOL_LINE="$(grep -n 'Número do protocolo <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
-AGENCY_LINE="$(grep -n '^                Órgão do protocolo
+PROTOCOL_LINE="$(grep -n -F 'Número do protocolo <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+AGENCY_LINE="$(grep -n -F 'Órgão do protocolo' "$CENTER" | head -n1 | cut -d: -f1)"
+CATEGORY_LINE="$(grep -n -F 'Categoria <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+TITLE_LINE="$(grep -n -F 'Título <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+DESCRIPTION_LINE="$(grep -n -F 'Descrição' "$CENTER" | head -n1 | cut -d: -f1)"
+LOCATION_LINE="$(grep -n -F '<OccurrenceLocationPicker' "$CENTER" | head -n1 | cut -d: -f1)"
+DESTINATION_LINE="$(grep -n -F 'Destinatário <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+
+test -n "$PROTOCOL_LINE" && test -n "$AGENCY_LINE" && test -n "$CATEGORY_LINE" && test -n "$TITLE_LINE" \
+  && test -n "$DESCRIPTION_LINE" && test -n "$LOCATION_LINE" && test -n "$DESTINATION_LINE" \
+  || fail "não foi possível validar a ordem semântica do formulário"
+test "$PROTOCOL_LINE" -lt "$AGENCY_LINE" || fail "Órgão do protocolo deve vir após Número do protocolo"
+test "$AGENCY_LINE" -lt "$CATEGORY_LINE" || fail "Categoria deve vir após os campos de protocolo"
+test "$CATEGORY_LINE" -lt "$TITLE_LINE" || fail "Título deve vir após Categoria"
+test "$TITLE_LINE" -lt "$DESCRIPTION_LINE" || fail "Descrição deveria vir após o título"
+test "$DESCRIPTION_LINE" -lt "$LOCATION_LINE" || fail "endereço deve vir após os dados principais"
+test "$LOCATION_LINE" -lt "$DESTINATION_LINE" || fail "endereço deve vir antes do destinatário"
+grep -q 'occurrence-form__protocol-field occurrence-form__full' "$CENTER" || fail "protocolo não ocupa linha isolada"
+grep -q 'occurrence-form__title-field occurrence-form__full' "$CENTER" || fail "título não ocupa linha isolada"
 
 grep -q 'ToastViewport' "$MAIN" || fail "viewport global de toast não está montado"
 grep -q 'installNativeAlertToastBridge' "$MAIN" || fail "bridge global de alert para toast não está instalado"
