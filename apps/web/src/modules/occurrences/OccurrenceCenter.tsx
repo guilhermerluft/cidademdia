@@ -5,7 +5,7 @@ import { Badge, Button, Card, CardBody, SectionHeading } from '../../components/
 import { geocodeGoogleAddress } from '../../services/googleMaps';
 import {
   createOccurrence,
-  listInstitutionalDestinations,
+  listOccurrenceDestinations,
   listMyOccurrences,
   listOccurrenceCategories,
   prepareOccurrenceMedia,
@@ -13,7 +13,7 @@ import {
 import { OccurrenceGeoFilter } from './OccurrenceGeoFilter';
 import { OccurrenceLocationPicker } from './OccurrenceLocationPicker';
 import { OccurrenceMediaGallery } from './OccurrenceMediaGallery';
-import type { InstitutionalDestination, OccurrenceCategory, OccurrencePage } from './types';
+import type { OccurrenceCategory, OccurrenceDestination, OccurrencePage } from './types';
 
 const ACCEPTED_MEDIA_TYPES = 'image/jpeg,image/png,image/webp,video/mp4,video/webm';
 const REQUIRED_FIELD_MESSAGE = 'Esse campo é obrigatório';
@@ -21,6 +21,7 @@ const REQUIRED_FIELD_MESSAGE = 'Esse campo é obrigatório';
 interface OccurrenceFormState {
   categoryId: string;
   institutionId: string;
+  masterUserId: string;
   addressee: string;
   title: string;
   description: string;
@@ -54,6 +55,7 @@ type OccurrenceFieldErrors = Partial<Record<OccurrenceRequiredField, string>>;
 const INITIAL_FORM: OccurrenceFormState = {
   categoryId: '',
   institutionId: '',
+  masterUserId: '',
   addressee: '',
   title: '',
   description: '',
@@ -191,7 +193,7 @@ function validateOccurrenceForm(form: OccurrenceFormState, files: File[]): Occur
   const errors: OccurrenceFieldErrors = {};
 
   if (!form.categoryId) errors.categoryId = REQUIRED_FIELD_MESSAGE;
-  if (!form.institutionId) errors.institutionId = REQUIRED_FIELD_MESSAGE;
+  if (!form.institutionId && !form.masterUserId) errors.institutionId = REQUIRED_FIELD_MESSAGE;
   if (!form.title.trim()) errors.title = REQUIRED_FIELD_MESSAGE;
   if (!form.street.trim()) errors.street = REQUIRED_FIELD_MESSAGE;
   if (!form.number.trim()) errors.number = REQUIRED_FIELD_MESSAGE;
@@ -205,14 +207,23 @@ function validateOccurrenceForm(form: OccurrenceFormState, files: File[]): Occur
   return errors;
 }
 
-export function OccurrenceCenter() {
+interface OccurrenceCenterProps {
+  formOnly?: boolean;
+  onCreated?: () => void;
+}
+
+export function OccurrenceCenter({
+  formOnly = false,
+  onCreated,
+}: OccurrenceCenterProps = {}) {
   const [categories, setCategories] = useState<OccurrenceCategory[]>([]);
-  const [destinations, setDestinations] = useState<InstitutionalDestination[]>([]);
+  const [destinations, setDestinations] = useState<OccurrenceDestination[]>([]);
   const [occurrences, setOccurrences] = useState<OccurrencePage | null>(null);
   const [form, setForm] = useState<OccurrenceFormState>(INITIAL_FORM);
   const [files, setFiles] = useState<File[]>([]);
   const [fileInputKey, setFileInputKey] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [destinationsLoading, setDestinationsLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [progress, setProgress] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -220,21 +231,16 @@ export function OccurrenceCenter() {
   const [fieldErrors, setFieldErrors] = useState<OccurrenceFieldErrors>({});
 
   async function loadOccurrenceData() {
-    const [nextCategories, nextDestinations, nextOccurrences] = await Promise.all([
+    const [nextCategories, nextOccurrences] = await Promise.all([
       listOccurrenceCategories(),
-      listInstitutionalDestinations(),
       listMyOccurrences(1, 10),
     ]);
 
     setCategories(nextCategories);
-    setDestinations(nextDestinations);
     setOccurrences(nextOccurrences);
     setForm((current) => ({
       ...current,
       categoryId: current.categoryId || nextCategories[0]?.id || '',
-      institutionId: nextDestinations.some((destination) => destination.id === current.institutionId)
-        ? current.institutionId
-        : '',
     }));
   }
 
@@ -259,6 +265,59 @@ export function OccurrenceCenter() {
       active = false;
     };
   }, []);
+
+  useEffect(() => {
+    const city = form.city.trim();
+    const stateCode = form.stateCode.trim().toUpperCase();
+    const postalCode = form.postalCode.trim();
+
+    if (!city || stateCode.length !== 2) {
+      setDestinations([]);
+      setDestinationsLoading(false);
+      setForm((current) => current.masterUserId || current.institutionId
+        ? { ...current, masterUserId: '', institutionId: '' }
+        : current);
+      return;
+    }
+
+    let active = true;
+    const timer = window.setTimeout(() => {
+      setDestinationsLoading(true);
+
+      void listOccurrenceDestinations({
+        postalCode: postalCode || undefined,
+        city,
+        stateCode,
+      })
+        .then((nextDestinations) => {
+          if (!active) return;
+
+          setDestinations(nextDestinations);
+          setForm((current) => {
+            const selectedStillExists = nextDestinations.some((destination) =>
+              (destination.kind === 'MASTER' && destination.id === current.masterUserId)
+              || (destination.kind === 'INSTITUTION' && destination.id === current.institutionId));
+
+            return selectedStillExists
+              ? current
+              : { ...current, masterUserId: '', institutionId: '' };
+          });
+        })
+        .catch((requestError) => {
+          if (!active) return;
+          setDestinations([]);
+          setError(getErrorMessage(requestError));
+        })
+        .finally(() => {
+          if (active) setDestinationsLoading(false);
+        });
+    }, 250);
+
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [form.city, form.postalCode, form.stateCode]);
 
   function clearFieldError(field: OccurrenceRequiredField) {
     setFieldErrors((current) => {
@@ -318,12 +377,12 @@ export function OccurrenceCenter() {
         mediaIds.push(media.id);
       }
 
-      setProgress('Registrando ocorrência e encaminhando para a instituição...');
+      setProgress('Registrando ocorrência e encaminhando para o destinatário...');
       const occurrence = await createOccurrence({
         categoryId: form.categoryId,
-        masterUserId: null,
-        institutionId: form.institutionId,
-        addressee: form.addressee.trim() || null,
+        masterUserId: form.masterUserId || null,
+        institutionId: form.institutionId || null,
+        addressee: form.institutionId ? (form.addressee.trim() || null) : null,
         title: form.title.trim(),
         description: form.description.trim() || null,
         street: form.street.trim(),
@@ -340,7 +399,7 @@ export function OccurrenceCenter() {
         mediaIds,
       });
 
-      setMessage(`Ocorrência ${occurrence.publicCode} registrada e compartilhada com a instituição selecionada.`);
+      setMessage(`Ocorrência ${occurrence.publicCode} registrada e encaminhada para o destinatário selecionado.`);
       setForm({
         ...INITIAL_FORM,
         categoryId: categories[0]?.id || '',
@@ -349,6 +408,7 @@ export function OccurrenceCenter() {
       setFiles([]);
       setFileInputKey((value) => value + 1);
       await loadOccurrenceData();
+      onCreated?.();
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -357,21 +417,33 @@ export function OccurrenceCenter() {
     }
   }
 
+  const destinationValue = form.masterUserId
+    ? `MASTER:${form.masterUserId}`
+    : form.institutionId
+      ? `INSTITUTION:${form.institutionId}`
+      : '';
+  const locationReadyForDestinations = Boolean(
+    form.city.trim() && form.stateCode.trim().length === 2,
+  );
+  const showingLocalMasters = destinations.some((destination) => destination.kind === 'MASTER');
+
   return (
     <section className="dashboard-section occurrence-center" id="dashboard-occurrences" aria-labelledby="occurrence-center-title">
-      <SectionHeading
-        title="Minhas ocorrências"
-        subtitle="Registre uma nova demanda, compartilhe com uma instituição e acompanhe o andamento."
-      />
+      {!formOnly && (
+        <SectionHeading
+          title="Minhas ocorrências"
+          subtitle="Registre uma nova demanda, escolha quem deve receber e acompanhe o andamento."
+        />
+      )}
 
-      <div className="occurrence-center__grid">
+      <div className={formOnly ? 'occurrence-center__grid occurrence-center__grid--form-only' : 'occurrence-center__grid'}>
         <Card className="occurrence-form-card">
           <CardBody>
             <div className="occurrence-form-card__header">
               <div>
                 <span className="occurrence-eyebrow">Nova ocorrência</span>
                 <h3 id="occurrence-center-title">Conte o que está acontecendo</h3>
-                <p>Escolha o órgão ou instituição que receberá a demanda. Endereço completo, protocolo e ao menos uma foto são obrigatórios.</p>
+                <p>Informe o endereço primeiro. Depois, o CIDADEMDIA mostra as Masters da região ou os destinos públicos disponíveis.</p>
               </div>
             </div>
 
@@ -415,37 +487,6 @@ export function OccurrenceCenter() {
                 </select>
               </label>
 
-              <label className={`occurrence-form__paired-field${fieldErrors.institutionId ? ' occurrence-required-invalid' : ''}`}>
-                Destino institucional <span className="occurrence-required-marker" aria-hidden="true">*</span>
-                <select
-                  required
-                  className={fieldErrors.institutionId ? 'occurrence-required-input-invalid' : undefined}
-                  aria-invalid={fieldErrors.institutionId ? 'true' : undefined}
-                  value={form.institutionId}
-                  onChange={(event) => updateField('institutionId', event.target.value)}
-                  disabled={loading || destinations.length === 0}
-                >
-                  <option value="">Selecione o órgão ou instituição</option>
-                  {destinations.map((destination) => (
-                    <option key={destination.id} value={destination.id}>
-                      {destination.displayName}
-                    </option>
-                  ))}
-                </select>
-                <small>A ocorrência será compartilhada com a instituição, sem exigir a escolha de uma pessoa específica.</small>
-              </label>
-
-              <label className="occurrence-form__full">
-                Nome ou partido (opcional)
-                <input
-                  value={form.addressee}
-                  maxLength={180}
-                  onChange={(event) => updateField('addressee', event.target.value)}
-                  placeholder="Ex.: nome do representante ou partido"
-                />
-                <small>Use apenas se quiser indicar a quem a mensagem se destina. O campo não é obrigatório.</small>
-              </label>
-
               <label className={`occurrence-form__title-field occurrence-form__full${fieldErrors.title ? ' occurrence-required-invalid' : ''}`}>
                 Título <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
@@ -485,6 +526,62 @@ export function OccurrenceCenter() {
                 onError={setError}
               />
 
+              <label className={`occurrence-form__full${fieldErrors.institutionId ? ' occurrence-required-invalid' : ''}`}>
+                Destinatário <span className="occurrence-required-marker" aria-hidden="true">*</span>
+                <select
+                  required
+                  className={fieldErrors.institutionId ? 'occurrence-required-input-invalid' : undefined}
+                  aria-invalid={fieldErrors.institutionId ? 'true' : undefined}
+                  value={destinationValue}
+                  onChange={(event) => {
+                    const [kind, id] = event.target.value.split(':', 2);
+                    setForm((current) => ({
+                      ...current,
+                      masterUserId: kind === 'MASTER' ? id : '',
+                      institutionId: kind === 'INSTITUTION' ? id : '',
+                    }));
+                    if (id) clearFieldError('institutionId');
+                  }}
+                  disabled={!locationReadyForDestinations || destinationsLoading || destinations.length === 0}
+                >
+                  <option value="">
+                    {!locationReadyForDestinations
+                      ? 'Informe a cidade e a UF primeiro'
+                      : destinationsLoading
+                        ? 'Buscando destinatários...'
+                        : 'Selecione quem receberá a ocorrência'}
+                  </option>
+                  {destinations.map((destination) => (
+                    <option
+                      key={`${destination.kind}:${destination.id}`}
+                      value={`${destination.kind}:${destination.id}`}
+                    >
+                      {destination.displayName}
+                    </option>
+                  ))}
+                </select>
+                <small>
+                  {showingLocalMasters
+                    ? 'Encontramos Contas Master elegíveis para esta região.'
+                    : locationReadyForDestinations && !destinationsLoading && destinations.length > 0
+                      ? 'Nenhuma Master local elegível foi encontrada. Mostramos os destinos públicos padrão do CIDADEMDIA.'
+                      : 'Os destinatários serão liberados depois que o endereço estiver definido.'}
+                </small>
+              </label>
+
+              {form.institutionId ? (
+                <label className="occurrence-form__full">
+                  Nome ou partido (opcional)
+                  <input
+                    value={form.addressee}
+                    maxLength={180}
+                    onChange={(event) => updateField('addressee', event.target.value)}
+                    placeholder="Ex.: nome do representante ou partido"
+                  />
+                  <small>Use apenas se quiser indicar a quem a mensagem se destina. O campo não é obrigatório.</small>
+                </label>
+              ) : null}
+
               <label className={`occurrence-media-field occurrence-form__full${fieldErrors.photo ? ' occurrence-required-invalid' : ''}`}>
                 Fotos ou vídeos <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <input
@@ -518,15 +615,21 @@ export function OccurrenceCenter() {
                 </ul>
               ) : null}
 
-              {destinations.length === 0 && !loading ? (
-                <p className="occurrence-error" role="alert">Nenhuma instituição está disponível para receber ocorrências neste momento.</p>
+              {locationReadyForDestinations && destinations.length === 0 && !destinationsLoading ? (
+                <p className="occurrence-error" role="alert">
+                  Nenhuma Master local nem destino público padrão está disponível para essa região neste momento.
+                </p>
               ) : null}
               {progress ? <p className="occurrence-progress" role="status">{progress}</p> : null}
               {message ? <p className="occurrence-success" role="status">{message}</p> : null}
               {error ? <p className="occurrence-error" role="alert">{error}</p> : null}
 
               <div className="occurrence-form__actions occurrence-form__full">
-                <Button type="submit" size="lg" disabled={submitting || loading || !form.categoryId || destinations.length === 0}>
+                <Button
+                  type="submit"
+                  size="lg"
+                  disabled={submitting || loading || destinationsLoading || !form.categoryId || (!form.masterUserId && !form.institutionId)}
+                >
                   {submitting ? 'Publicando...' : 'Publicar e encaminhar'}
                 </Button>
               </div>
@@ -534,7 +637,7 @@ export function OccurrenceCenter() {
           </CardBody>
         </Card>
 
-        <Card className="occurrence-list-card">
+        {!formOnly && <Card className="occurrence-list-card">
           <CardBody>
             <div className="occurrence-list-card__header">
               <div>
@@ -600,7 +703,7 @@ export function OccurrenceCenter() {
               </small>
             ) : null}
           </CardBody>
-        </Card>
+        </Card>}
       </div>
     </section>
   );
