@@ -100,20 +100,3 @@ echo 'institutional_destination_api=OK'
 echo 'institutional_destination_form=OK'
 echo 'institutional_destination_master_panel=OK'
 echo 'INSTITUTIONAL OCCURRENCE SHARING GUARD: OK'
- "$PROD_SEED" || fail "seed de produção não protege ambiente Production"
-grep -Fq 'camara-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Câmara"
-grep -Fq 'governo-sp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona Governo"
-grep -Fq 'alesp.master@cidademdia.com.br' "$PROD_SEED" || fail "seed de produção não provisiona ALESP"
-if grep -Fq '@hml.cidademdia.invalid' "$PROD_SEED"; then
-  fail "seed de produção contém conta exclusiva de HML"
-fi
-grep -Fq 'PRODUCTION_SP_INSTITUTIONS=OK count=4' "$PROD_SEED" || fail "seed de produção não valida as quatro instituições"
-grep -Fq 'PRODUCTION_SP_INSTITUTIONAL_MASTERS=OK count=4' "$PROD_SEED" || fail "seed de produção não valida as quatro Masters"
-
-echo 'institutional_master_resolution=OK'
-echo 'institutional_destination_domain=OK'
-echo 'institutional_destination_persistence=OK'
-echo 'institutional_destination_api=OK'
-echo 'institutional_destination_form=OK'
-echo 'institutional_destination_master_panel=OK'
-echo 'INSTITUTIONAL OCCURRENCE SHARING GUARD: OK'
