@@ -93,10 +93,16 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             .Where(user =>
                 user.Status == UserStatus.Active
                 && user.Roles.Any(userRole => userRole.Role.Key == IdentityRoleKeys.Master)
-                && dbContext.InstitutionRepresentatives.Any(representative =>
-                    representative.AccountId == user.Id
-                    && representative.ProfileStatus == RepresentativeProfileStatusKeys.Active
-                    && localInstitutionIds.Contains(representative.InstitutionId)))
+                && !user.Email.EndsWith(".master@cidademdia.com.br")
+                && !user.Email.EndsWith("@hml.cidademdia.invalid")
+                && (dbContext.InstitutionMemberships.Any(membership =>
+                        membership.UserId == user.Id
+                        && membership.Status == InstitutionMembershipStatusKeys.Active
+                        && localInstitutionIds.Contains(membership.InstitutionId))
+                    || dbContext.InstitutionRepresentatives.Any(representative =>
+                        representative.AccountId == user.Id
+                        && representative.ProfileStatus == RepresentativeProfileStatusKeys.Active
+                        && localInstitutionIds.Contains(representative.InstitutionId))))
             .Select(user => new
             {
                 user.Id,
