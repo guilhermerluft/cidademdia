@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { requestCommercialSignup } from '../../components/commercialSignup';
 import { Button } from '../../components/ui';
 import {
   getPublicOccurrenceDetails,
@@ -150,6 +151,15 @@ export function PublicOccurrences({
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function handleCreateOccurrence() {
+    if (!canCreateOccurrence) {
+      requestCommercialSignup('create-occurrence');
+      return;
+    }
+
+    setCreateOccurrenceOpen(true);
+  }
+
   async function openOccurrence(occurrence: PublicOccurrenceItem) {
     if (detailLoadingId) return;
     setDetailLoadingId(occurrence.id);
@@ -173,15 +183,13 @@ export function PublicOccurrences({
           <p>Consulte demandas abertas usando apenas cidade, raio ou um ponto escolhido no mapa.</p>
         </div>
         <div className="public-occurrences__intro-side">
-          {canCreateOccurrence && (
-            <Button
-              type="button"
-              size="lg"
-              onClick={() => setCreateOccurrenceOpen(true)}
-            >
-              Nova ocorrência
-            </Button>
-          )}
+          <Button
+            type="button"
+            size="lg"
+            onClick={handleCreateOccurrence}
+          >
+            Registre uma ocorrência
+          </Button>
           <div className="public-occurrences__location-summary">
             <span>Filtro atual</span>
             <strong>{sourceLabel}</strong>
