@@ -100,6 +100,11 @@
   font-weight: 650;
 }
 
+.commercial-signup-modal__actions {
+  display: grid;
+  gap: 10px;
+}
+
 .commercial-signup-modal__benefits li span {
   width: 22px;
   height: 22px;

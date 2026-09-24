@@ -422,6 +422,14 @@
   background: #f0ebff;
 }
 
+.public-home__section-actions {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
 .public-home__see-all {
   flex: 0 0 auto;
   display: inline-flex;
@@ -1024,6 +1032,13 @@
 
   .public-home__section-titlebar {
     align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .public-home__section-actions {
+    width: 100%;
+    justify-content: flex-start;
+    flex-wrap: wrap;
   }
 
   .public-home__section-titlebar p {

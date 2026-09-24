@@ -1,4 +1,4 @@
-export type CommercialSignupIntent = 'support' | 'details';
+export type CommercialSignupIntent = 'support' | 'details' | 'create-occurrence';
 
 const EVENT_NAME = 'cidademdia:commercial-signup';
 

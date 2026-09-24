@@ -30,6 +30,13 @@ if grep -q 'commercial-signup-modal__icon' "$COMMERCIAL_MODAL"; then
 fi
 grep -q 'commercial-signup-modal__brand-header' "$COMMERCIAL_CSS" || fail "header do logotipo comercial sem estilo dedicado"
 grep -q 'commercial-signup-modal__brand' "$COMMERCIAL_CSS" || fail "logotipo comercial sem estilo dedicado"
+grep -q "requestCommercialSignup('create-occurrence')" "$HOME" || fail "CTA da home não abre o gate comercial para usuário anônimo"
+grep -q 'Registre uma ocorrência' "$HOME" || fail "CTA Registre uma ocorrência ausente da home"
+grep -q '.public-home__section-actions {' "$ROOT/apps/web/src/modules/home/home.css" || fail "grupo de ações da seção sem estilo responsivo"
+grep -q 'setCreateOccurrenceOpen(true)' "$HOME" || fail "CTA autenticado da home não abre criação de ocorrência"
+grep -q '<OccurrenceCenter' "$HOME" || fail "formulário de ocorrência não foi reutilizado na home"
+grep -q "create-occurrence" "$COMMERCIAL_MODAL" || fail "modal comercial não possui intent de nova ocorrência"
+grep -q '>Entrar</Button>' "$COMMERCIAL_MODAL" || fail "modal comercial não oferece acesso ao login"
 
 if grep -q "home-benefits-refinement.css" "$MAIN"; then
   fail "stylesheet antigo dos cards de benefício ainda está carregado"
@@ -84,6 +91,9 @@ grep -q '.mobile-app-coming-soon {' "$MOBILE_APP_NOTICE_CSS" || fail "container 
 grep -q 'position: fixed;' "$MOBILE_APP_NOTICE_CSS" || fail "aviso dos apps não está flutuante"
 grep -q 'bottom: 76px;' "$MOBILE_APP_NOTICE_CSS" || fail "aviso mobile não respeita a bottom navigation"
 
+echo "home_create_occurrence_cta=OK"
+echo "home_create_occurrence_anonymous_gate=OK"
+echo "commercial_signup_login_action=OK"
 echo "commercial_signup_brand_header=OK"
 echo "hero_benefit_cards_removed=OK"
 echo "hero_benefit_pseudo_after_removed=OK"
