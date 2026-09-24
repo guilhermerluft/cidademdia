@@ -35,11 +35,18 @@ export function CommercialSignupModal() {
 
   const actionCopy = intent === 'support'
     ? 'apoiar ocorrências e participar das interações'
-    : 'visualizar os detalhes completos das ocorrências';
+    : intent === 'create-occurrence'
+      ? 'registrar uma ocorrência e acompanhar o andamento'
+      : 'visualizar os detalhes completos das ocorrências';
 
   function goToRegistration() {
     setIntent(null);
     navigate('/?auth=register');
+  }
+
+  function goToLogin() {
+    setIntent(null);
+    navigate('/?auth=login');
   }
 
   return (
@@ -82,7 +89,10 @@ export function CommercialSignupModal() {
           <li><span aria-hidden="true">✓</span> Acompanhe detalhes e atualizações</li>
         </ul>
 
-        <Button type="button" size="lg" fullWidth onClick={goToRegistration}>Cadastre-se</Button>
+        <div className="commercial-signup-modal__actions">
+          <Button type="button" size="lg" fullWidth onClick={goToRegistration}>Cadastre-se</Button>
+          <Button type="button" size="lg" variant="soft" fullWidth onClick={goToLogin}>Entrar</Button>
+        </div>
       </section>
     </div>
   );
