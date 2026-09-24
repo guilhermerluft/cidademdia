@@ -542,6 +542,16 @@ export function PublicHome({
                 <span>Comercial</span>
                 <a href="mailto:comercial@cidademdia.com.br">comercial@cidademdia.com.br</a>
               </li>
+              <li>
+                <span>WhatsApp</span>
+                <a
+                  href="https://wa.me/5511973289651"
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  (11) 97328-9651
+                </a>
+              </li>
             </ul>
           </section>
         </div>
