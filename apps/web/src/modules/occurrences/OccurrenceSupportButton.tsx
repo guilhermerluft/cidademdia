@@ -47,9 +47,9 @@ export function OccurrenceSupportButton({
     <button
       type="button"
       className={`public-occurrence-support${supported ? ' is-supported' : ''}${className ? ` ${className}` : ''}`}
-      aria-label={authenticated ? `Apoiar ocorrência. ${count} apoios` : `Entrar para apoiar ocorrência. ${count} apoios`}
+      aria-label={authenticated ? `Apoie essa ocorrência. ${count} apoios` : `Entre para apoiar essa ocorrência. ${count} apoios`}
       aria-pressed={authenticated ? supported : undefined}
-      title={authenticated ? 'Apoiar esta ocorrência' : 'Entre para apoiar esta ocorrência'}
+      title={authenticated ? 'Apoie essa ocorrência' : 'Entre para apoiar essa ocorrência'}
       disabled={submitting}
       onClick={(event) => {
         event.stopPropagation();
@@ -57,8 +57,9 @@ export function OccurrenceSupportButton({
       }}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <span className="public-occurrence-support__icon" aria-hidden="true">↑</span>
-      <span className="public-occurrence-support__count">{count}</span>
+      <span className="public-occurrence-support__icon" aria-hidden="true">👍</span>
+      <span className="public-occurrence-support__label">Apoie essa ocorrência</span>
+      <span className="public-occurrence-support__count" aria-label={`${count} apoios`}>{count}</span>
     </button>
   );
 }
