@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
-import { getUserPanelAccess, useNavigationAccess } from '../../app/layout/AppNavigation';
+import { useNavigationAccess } from '../../app/layout/AppNavigation';
 import { Brand } from '../../components/ui';
 import { useAuth } from '../auth/AuthProvider';
 import { PublicOccurrences } from './PublicOccurrences';
@@ -24,9 +24,6 @@ export function PublicOccurrencesRoute() {
   }
 
   const authenticatedUser = status === 'authenticated' ? user : null;
-  const panelAccess = authenticatedUser
-    ? getUserPanelAccess(authenticatedUser, access.permissions)
-    : null;
 
   return (
     <div className="public-occurrences-page">
@@ -38,7 +35,7 @@ export function PublicOccurrencesRoute() {
         onLogin={authenticatedUser ? undefined : () => navigate('/?auth=login')}
         onRegister={authenticatedUser ? undefined : () => navigate('/?auth=register')}
       />
-      <PublicOccurrences canCreateOccurrence={panelAccess?.mode === 'citizen'} />
+      <PublicOccurrences canCreateOccurrence={Boolean(authenticatedUser)} />
       <AppBottomNavigation
         active="occurrences"
         user={authenticatedUser}

@@ -138,6 +138,26 @@ VALUES
         NULL, NULL, NULL,
         'Fallback padrão do CIDADEMDIA para SUS quando não houver Master local elegível.',
         NULL, NULL, NULL, 'ACTIVE', now(), now()
+    ),
+    (
+        'ad9ec70d-a59b-40f4-b23c-2f52a07ef006'::uuid,
+        'Câmara dos Deputados',
+        'cidademdia-fallback-camara-deputados',
+        'OTHER',
+        'FEDERAL',
+        NULL, NULL, NULL,
+        'Fallback padrão do CIDADEMDIA para Câmara dos Deputados quando não houver Master local elegível.',
+        NULL, NULL, NULL, 'ACTIVE', now(), now()
+    ),
+    (
+        'ad9ec70d-a59b-40f4-b23c-2f52a07ef007'::uuid,
+        'Senado Federal',
+        'cidademdia-fallback-senado-federal',
+        'OTHER',
+        'FEDERAL',
+        NULL, NULL, NULL,
+        'Fallback padrão do CIDADEMDIA para Senado Federal quando não houver Master local elegível.',
+        NULL, NULL, NULL, 'ACTIVE', now(), now()
     )
 ON CONFLICT (slug) DO UPDATE
 SET
@@ -190,6 +210,18 @@ VALUES
         'fallback-sus.master@cidademdia.com.br',
         'FALLBACK-SUS.MASTER@CIDADEMDIA.COM.BR',
         :'master_hash', 'Active', now(), NULL, now(), now()
+    ),
+    (
+        'ad9ec70d-a59b-40f4-b23c-2f52a07ef206'::uuid,
+        'fallback-camara-deputados.master@cidademdia.com.br',
+        'FALLBACK-CAMARA-DEPUTADOS.MASTER@CIDADEMDIA.COM.BR',
+        :'master_hash', 'Active', now(), NULL, now(), now()
+    ),
+    (
+        'ad9ec70d-a59b-40f4-b23c-2f52a07ef207'::uuid,
+        'fallback-senado.master@cidademdia.com.br',
+        'FALLBACK-SENADO.MASTER@CIDADEMDIA.COM.BR',
+        :'master_hash', 'Active', now(), NULL, now(), now()
     )
 ON CONFLICT (normalized_email) DO UPDATE
 SET
@@ -223,7 +255,9 @@ FROM (
         ('FALLBACK-CAMARA.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef302'::uuid, 'Cidademdia — Câmara Municipal'),
         ('FALLBACK-GOVERNO.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef303'::uuid, 'Cidademdia — Governo do Estado'),
         ('FALLBACK-ASSEMBLEIA.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef304'::uuid, 'Cidademdia — Assembleia Legislativa'),
-        ('FALLBACK-SUS.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef305'::uuid, 'Cidademdia — SUS')
+        ('FALLBACK-SUS.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef305'::uuid, 'Cidademdia — SUS'),
+        ('FALLBACK-CAMARA-DEPUTADOS.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef306'::uuid, 'Cidademdia — Câmara dos Deputados'),
+        ('FALLBACK-SENADO.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef307'::uuid, 'Cidademdia — Senado Federal')
 ) AS seed(normalized_email, profile_id, display_name)
 JOIN users user_account
   ON user_account.normalized_email = seed.normalized_email
@@ -275,7 +309,9 @@ FROM (
         ('cidademdia-fallback-camara-municipal', 'FALLBACK-CAMARA.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef402'::uuid),
         ('cidademdia-fallback-governo-estado', 'FALLBACK-GOVERNO.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef403'::uuid),
         ('cidademdia-fallback-assembleia-legislativa', 'FALLBACK-ASSEMBLEIA.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef404'::uuid),
-        ('cidademdia-fallback-sus', 'FALLBACK-SUS.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef405'::uuid)
+        ('cidademdia-fallback-sus', 'FALLBACK-SUS.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef405'::uuid),
+        ('cidademdia-fallback-camara-deputados', 'FALLBACK-CAMARA-DEPUTADOS.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef406'::uuid),
+        ('cidademdia-fallback-senado-federal', 'FALLBACK-SENADO.MASTER@CIDADEMDIA.COM.BR', 'ad9ec70d-a59b-40f4-b23c-2f52a07ef407'::uuid)
 ) AS seed(slug, normalized_email, membership_id)
 JOIN institutions institution
   ON institution.slug = seed.slug
@@ -339,10 +375,10 @@ PAIRS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^pairs=//p')"
 AMBIGUOUS_INSTITUTIONS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_institutions=//p')"
 AMBIGUOUS_MASTERS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_masters=//p')"
 
-test "$PAIRS" = "5" || fail "esperados 5 fallbacks; encontrados ${PAIRS:-0}"
+test "$PAIRS" = "7" || fail "esperados 7 fallbacks; encontrados ${PAIRS:-0}"
 test "$AMBIGUOUS_INSTITUTIONS" = "0" || fail "há fallback com múltiplas Masters"
 test "$AMBIGUOUS_MASTERS" = "0" || fail "há Master de fallback vinculada a múltiplas instituições"
 
-echo "PRODUCTION_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=5"
-echo "PRODUCTION_DEFAULT_OCCURRENCE_MASTERS=OK count=5"
+echo "PRODUCTION_DEFAULT_OCCURRENCE_DESTINATIONS=OK count=7"
+echo "PRODUCTION_DEFAULT_OCCURRENCE_MASTERS=OK count=7"
 echo "PRODUCTION OCCURRENCE FALLBACK SEED: OK"

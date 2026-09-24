@@ -93,6 +93,8 @@ const expectedDestinations = [
   'Governo do Estado',
   'Assembleia Legislativa',
   'SUS',
+  'Câmara dos Deputados',
+  'Senado Federal',
 ];
 
 const browser = await chromium.launch({
@@ -148,7 +150,7 @@ try {
   const city = occurrenceForm.locator('input[autocomplete="address-level2"]');
   const postalCode = occurrenceForm.locator('input[autocomplete="postal-code"]');
   const stateCode = occurrenceForm.locator('input[autocomplete="address-level1"]');
-  const destination = occurrenceForm.getByRole('combobox', { name: /^Destinatário/ });
+  const destination = occurrenceForm.getByRole('combobox', { name: /^Compartilhe com:/ });
 
   await protocol.waitFor({ state: 'visible' });
   await agency.waitFor({ state: 'visible' });
@@ -160,7 +162,7 @@ try {
   await postalCode.fill('01001-000');
   await stateCode.fill('SP');
 
-  await destination.locator('option').nth(5).waitFor({
+  await destination.locator('option').nth(7).waitFor({
     state: 'attached',
     timeout: 15000,
   });
@@ -203,7 +205,7 @@ try {
 
   console.log('institutional_form_protocol_order=OK');
   console.log('institutional_form_address_before_destination=OK');
-  console.log('institutional_form_destinations=OK count=5');
+  console.log('institutional_form_destinations=OK count=7');
 
   await page.screenshot({
     path: '/work/institutional-occurrence-form-desktop.png',
@@ -252,7 +254,7 @@ try {
     timeout: 30000,
   });
 
-  const newOccurrenceButton = page.getByRole('button', { name: 'Nova ocorrência' });
+  const newOccurrenceButton = page.getByRole('button', { name: 'Registre uma ocorrência' });
   await newOccurrenceButton.waitFor({ state: 'visible', timeout: 15000 });
   await newOccurrenceButton.click();
 
@@ -299,7 +301,7 @@ echo "INSTITUTIONAL OCCURRENCE FORM — VISUAL HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
 echo "PROTOCOL AGENCY ORDER: OK"
 echo "ADDRESS BEFORE DESTINATION: OK"
-echo "DESTINATIONS: 5 GENERIC FALLBACKS"
+echo "DESTINATIONS: 7 GENERIC FALLBACKS"
 echo "DESKTOP: OK"
 echo "MOBILE: OK"
 echo "MODAL ENTRYPOINT: OK"

@@ -99,6 +99,8 @@ const names = {
   governo: 'Governo do Estado',
   alesp: 'Assembleia Legislativa',
   sus: 'SUS',
+  camaraDeputados: 'Câmara dos Deputados',
+  senado: 'Senado Federal',
 };
 
 const operationalNames = {
@@ -107,6 +109,8 @@ const operationalNames = {
   governo: 'Governo do Estado',
   alesp: 'Assembleia Legislativa',
   sus: 'SUS',
+  camaraDeputados: 'Câmara dos Deputados',
+  senado: 'Senado Federal',
 };
 
 const emails = {
@@ -115,6 +119,8 @@ const emails = {
   governo: 'fallback-governo.master@hml.cidademdia.invalid',
   alesp: 'fallback-assembleia.master@hml.cidademdia.invalid',
   sus: 'fallback-sus.master@hml.cidademdia.invalid',
+  camaraDeputados: 'fallback-camara-deputados.master@hml.cidademdia.invalid',
+  senado: 'fallback-senado.master@hml.cidademdia.invalid',
 };
 
 async function api(method, path, token, data) {
@@ -206,7 +212,7 @@ const byName = Object.fromEntries(
     return [key, rows[0]];
   }),
 );
-console.log('institutional_destinations=OK count=5');
+console.log('institutional_destinations=OK count=7');
 
 const image = await readyImage(citizenToken);
 console.log('institutional_media=READY');
@@ -290,7 +296,7 @@ console.log('institutional_targets_have_master=OK count=3');
 
 const masters = {};
 for (const [key, email] of Object.entries(emails)) masters[key] = await login(email);
-console.log('institutional_master_logins=OK count=5');
+console.log('institutional_master_logins=OK count=7');
 
 const expected = new Map([
   [masters.prefeitura.user.id, prefeituraTarget.id],
@@ -312,7 +318,7 @@ for (const [key, session] of Object.entries(masters)) {
       throw new Error('nome operacional do destino inválido para Master ' + key);
     }
   } else if (rows.length !== 0) {
-    throw new Error('ALESP enxergou target que não recebeu');
+    throw new Error('Master sem target enxergou ocorrência que não recebeu: ' + key);
   }
 }
 console.log('institutional_master_isolation=OK');

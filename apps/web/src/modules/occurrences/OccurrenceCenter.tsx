@@ -527,7 +527,7 @@ export function OccurrenceCenter({
               />
 
               <label className={`occurrence-form__full${fieldErrors.institutionId ? ' occurrence-required-invalid' : ''}`}>
-                Destinatário <span className="occurrence-required-marker" aria-hidden="true">*</span>
+                Compartilhe com: <span className="occurrence-required-marker" aria-hidden="true">*</span>
                 <select
                   required
                   className={fieldErrors.institutionId ? 'occurrence-required-input-invalid' : undefined}
@@ -546,7 +546,7 @@ export function OccurrenceCenter({
                 >
                   <option value="">
                     {!locationReadyForDestinations
-                      ? 'Informe a cidade e a UF primeiro'
+                      ? 'Informe a localização da ocorrência primeiro'
                       : destinationsLoading
                         ? 'Buscando destinatários...'
                         : 'Selecione quem receberá a ocorrência'}
