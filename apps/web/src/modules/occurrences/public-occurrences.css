@@ -242,12 +242,11 @@
 }
 
 .public-occurrence-support {
-  min-width: 54px;
   min-height: 34px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 5px;
+  gap: 7px;
   border: 1px solid #d4deea;
   border-radius: 999px;
   background: #f7f9fc;
@@ -282,6 +281,24 @@
 .public-occurrence-support__icon {
   font-size: 1.05rem;
   line-height: 1;
+}
+
+.public-occurrence-support__label {
+  white-space: nowrap;
+}
+
+.public-occurrence-support__count {
+  min-width: 1.6em;
+  display: inline-grid;
+  place-items: center;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: rgba(52, 67, 92, 0.08);
+  font-size: 0.76rem;
+}
+
+.public-occurrence-support.is-supported .public-occurrence-support__count {
+  background: rgba(79, 125, 31, 0.12);
 }
 
 .public-occurrence-support--card {
@@ -553,6 +570,10 @@
   .public-occurrence-details__header-actions {
     flex-direction: column-reverse;
     align-items: flex-end;
+  }
+
+  .public-occurrence-support--details {
+    align-self: stretch;
   }
 
   .public-occurrence-details__media {
