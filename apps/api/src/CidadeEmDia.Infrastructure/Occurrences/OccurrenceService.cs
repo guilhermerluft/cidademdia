@@ -124,14 +124,16 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             dbContext,
             cancellationToken);
 
-        static string? GetFallbackLabel(string type) =>
-            type switch
+        static string? GetFallbackLabel(string slug) =>
+            slug switch
             {
-                InstitutionTypeKeys.CityHall => "Prefeitura",
-                InstitutionTypeKeys.CityCouncil => "Câmara Municipal",
-                InstitutionTypeKeys.PublicAgency => "Governo do Estado",
-                InstitutionTypeKeys.Assembly => "Assembleia Legislativa",
-                InstitutionTypeKeys.PublicService => "SUS",
+                "cidademdia-fallback-prefeitura" => "Prefeitura",
+                "cidademdia-fallback-camara-municipal" => "Câmara Municipal",
+                "cidademdia-fallback-governo-estado" => "Governo do Estado",
+                "cidademdia-fallback-assembleia-legislativa" => "Assembleia Legislativa",
+                "cidademdia-fallback-sus" => "SUS",
+                "cidademdia-fallback-camara-deputados" => "Câmara dos Deputados",
+                "cidademdia-fallback-senado-federal" => "Senado Federal",
                 _ => null
             };
 
@@ -143,6 +145,8 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
                 "Governo do Estado" => 3,
                 "Assembleia Legislativa" => 4,
                 "SUS" => 5,
+                "Câmara dos Deputados" => 6,
+                "Senado Federal" => 7,
                 _ => 99
             };
 
@@ -153,7 +157,7 @@ internal sealed class OccurrenceService(AppDbContext dbContext) : IOccurrenceSer
             .Select(item => new
             {
                 Destination = item,
-                Label = GetFallbackLabel(item.Type)
+                Label = GetFallbackLabel(item.Slug)
             })
             .Where(item => item.Label is not null)
             .GroupBy(item => item.Label!, StringComparer.Ordinal)
