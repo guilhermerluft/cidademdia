@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 EXPECTED_HEAD="${1:-}"
+EXPECTED_BRANCH="${CIDADEMDIA_EXPECTED_BRANCH:-main}"
 ROOT="${CIDADEMDIA_ROOT:-/opt/cidademdia}"
 ENV_FILE="${CIDADEMDIA_ENV_FILE:-$ROOT/.env}"
 BASE="${CIDADEMDIA_BASE_URL:-https://homolog.cidademdia.com.br}"
@@ -24,7 +25,7 @@ done
 
 test -n "$EXPECTED_HEAD" || fail "informe o HEAD esperado"
 test "$(git -C "$WT" rev-parse HEAD)" = "$EXPECTED_HEAD" || fail "worktree fora do HEAD esperado"
-test "$(git -C "$ROOT" branch --show-current)" = "main" || fail "repo principal não está na main"
+test "$(git -C "$ROOT" branch --show-current)" = "$EXPECTED_BRANCH" || fail "repo principal não está na branch esperada: $EXPECTED_BRANCH"
 test -z "$(git -C "$ROOT" status --porcelain)" || fail "main local está suja"
 test -f "$ENV_FILE" || fail ".env não encontrado"
 
@@ -382,10 +383,13 @@ try {
 
   await card.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
   const authenticatedSupportButton = card.getByRole('button', {
-    name: 'Apoiar ocorrência. 1 apoios',
+    name: 'Apoie essa ocorrência. 1 apoios',
     exact: true,
   });
   await authenticatedSupportButton.waitFor({ state: 'visible', timeout: 10000 });
+  await authenticatedSupportButton.getByText('👍', { exact: true }).waitFor({ state: 'visible' });
+  await authenticatedSupportButton.getByText('Apoie essa ocorrência', { exact: true }).waitFor({ state: 'visible' });
+  console.log('public_occurrence_support_cta_visible=OK');
 
   if (await card.getByRole('button', { name: /^Abrir ocorrência / }).count() !== 0) {
     throw new Error('card público ainda exibe botão Abrir');
@@ -429,7 +433,10 @@ try {
   await dialog.waitFor({ state: 'visible', timeout: 15000 });
   await dialog.getByRole('heading', { name: title, exact: true }).waitFor({ state: 'visible' });
   await dialog.getByText(`Protocolo ${protocolNumber}`, { exact: true }).waitFor({ state: 'visible' });
-  await dialog.getByRole('button', { name: 'Apoiar ocorrência. 1 apoios', exact: true }).waitFor({ state: 'visible' });
+  const detailSupportButton = dialog.getByRole('button', { name: /Apoie essa ocorrência./ });
+  await detailSupportButton.waitFor({ state: 'visible' });
+  await detailSupportButton.getByText('👍', { exact: true }).waitFor({ state: 'visible' });
+  await detailSupportButton.getByText('Apoie essa ocorrência', { exact: true }).waitFor({ state: 'visible' });
   console.log('public_occurrence_row_click_opens_detail=OK');
 
   const galleryImages = dialog.locator('.public-occurrence-details__media img');
@@ -457,7 +464,7 @@ try {
     const anonymousCard = anonymousPage.locator(`.public-occurrences__card[data-occurrence-id="${occurrence.id}"]`);
     await anonymousCard.waitFor({ state: 'visible', timeout: 20000 });
     await anonymousCard.getByRole('button', {
-      name: 'Entrar para apoiar ocorrência. 1 apoios',
+      name: 'Entre para apoiar essa ocorrência. 1 apoios',
       exact: true,
     }).waitFor({ state: 'visible', timeout: 10000 });
 
@@ -469,7 +476,7 @@ try {
     const anonymousDialog = anonymousPage.getByRole('dialog');
     await anonymousDialog.waitFor({ state: 'visible', timeout: 15000 });
     await anonymousDialog.getByRole('button', {
-      name: 'Entrar para apoiar ocorrência. 1 apoios',
+      name: 'Entre para apoiar essa ocorrência. 1 apoios',
       exact: true,
     }).waitFor({ state: 'visible', timeout: 10000 });
     console.log('public_occurrence_anonymous_support_visible=OK');
@@ -520,6 +527,7 @@ echo "PUBLIC PROTOCOL: OK"
 echo "PUBLIC SUPPORT COUNT: OK"
 echo "AUTHENTICATED SUPPORT: OK"
 echo "AUTHENTICATED SUPPORT UI: OK"
+echo "SUPPORT CTA 👍 + APOIE ESSA OCORRÊNCIA: OK"
 echo "ANONYMOUS SUPPORT UI: OK"
 echo "PUBLIC DETAIL SANITIZED: OK"
 echo "FULL PHOTO GALLERY: OK"
