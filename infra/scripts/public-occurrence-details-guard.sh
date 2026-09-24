@@ -108,7 +108,7 @@ CATEGORY_LINE="$(grep -n -F 'Categoria <span className="occurrence-required-mark
 TITLE_LINE="$(grep -n -F 'Título <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
 DESCRIPTION_LINE="$(grep -n -F 'Descrição' "$CENTER" | head -n1 | cut -d: -f1)"
 LOCATION_LINE="$(grep -n -F '<OccurrenceLocationPicker' "$CENTER" | head -n1 | cut -d: -f1)"
-DESTINATION_LINE="$(grep -n -F 'Destinatário <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
+DESTINATION_LINE="$(grep -n -F 'Compartilhe com: <span className="occurrence-required-marker"' "$CENTER" | head -n1 | cut -d: -f1)"
 
 test -n "$PROTOCOL_LINE" && test -n "$AGENCY_LINE" && test -n "$CATEGORY_LINE" && test -n "$TITLE_LINE" \
   && test -n "$DESCRIPTION_LINE" && test -n "$LOCATION_LINE" && test -n "$DESTINATION_LINE" \
@@ -174,6 +174,10 @@ if grep -q 'role={interactive ? .button.' "$CARD"; then
   fail "card público não pode ser um botão lógico contendo o botão de apoio"
 fi
 grep -q 'PublicOccurrenceDetailsModal' "$LIST" || fail "listagem pública não abre detalhe"
+grep -q 'Registre uma ocorrência' "$LIST" || fail "listagem pública não exibe CTA de registro"
+grep -q "requestCommercialSignup('create-occurrence')" "$LIST" || fail "CTA anônimo de /ocorrencias não abre gate comercial"
+grep -q 'Compartilhe com:' "$CENTER" || fail "formulário não usa o rótulo Compartilhe com"
+grep -q 'Informe a localização da ocorrência primeiro' "$CENTER" || fail "placeholder do compartilhamento não orienta preencher localização"
 grep -q 'onOpen={openOccurrence}' "$HOME" || fail "listagem da Home não abre detalhe"
 grep -q 'getPublicOccurrenceDetails' "$HOME" || fail "Home não carrega detalhe público"
 grep -q 'PublicOccurrenceDetailsModal' "$HOME" || fail "Home não reutiliza modal público de ocorrência"
