@@ -464,23 +464,34 @@ try {
 
     const anonymousCard = anonymousPage.locator(`.public-occurrences__card[data-occurrence-id="${occurrence.id}"]`);
     await anonymousCard.waitFor({ state: 'visible', timeout: 20000 });
-    await anonymousCard.getByRole('button', {
+
+    const anonymousSupportButton = anonymousCard.getByRole('button', {
       name: 'Entre para apoiar essa ocorrência. 1 apoios',
       exact: true,
-    }).waitFor({ state: 'visible', timeout: 10000 });
+    });
+    await anonymousSupportButton.waitFor({ state: 'visible', timeout: 10000 });
+    await anonymousSupportButton.getByText('👍', { exact: true }).waitFor({ state: 'visible' });
+    await anonymousSupportButton.getByText('Apoie essa ocorrência', { exact: true }).waitFor({ state: 'visible' });
+    console.log('public_occurrence_anonymous_support_visible=OK');
 
     if (await anonymousCard.getByRole('button', { name: /^Abrir ocorrência / }).count() !== 0) {
       throw new Error('card público anônimo ainda exibe botão Abrir');
     }
 
-    await anonymousCard.getByRole('heading', { name: title, exact: true }).click();
-    const anonymousDialog = anonymousPage.getByRole('dialog');
-    await anonymousDialog.waitFor({ state: 'visible', timeout: 15000 });
-    await anonymousDialog.getByRole('button', {
-      name: 'Entre para apoiar essa ocorrência. 1 apoios',
-      exact: true,
-    }).waitFor({ state: 'visible', timeout: 10000 });
-    console.log('public_occurrence_anonymous_support_visible=OK');
+    await anonymousSupportButton.click();
+
+    const signupDialog = anonymousPage.getByRole('dialog');
+    await signupDialog.waitFor({ state: 'visible', timeout: 15000 });
+    await signupDialog.getByText('Crie sua conta gratuita para interagir', { exact: false }).waitFor({
+      state: 'visible',
+      timeout: 10000,
+    });
+
+    if (await signupDialog.getByText('Apoie essa ocorrência', { exact: true }).count() !== 0) {
+      throw new Error('modal comercial anônimo não deve ser tratado como detalhe da ocorrência');
+    }
+
+    console.log('public_occurrence_anonymous_support_signup_gate=OK');
   } finally {
     await anonymousContext.close();
   }
@@ -530,6 +541,7 @@ echo "AUTHENTICATED SUPPORT: OK"
 echo "AUTHENTICATED SUPPORT UI: OK"
 echo "SUPPORT CTA 👍 + APOIE ESSA OCORRÊNCIA: OK"
 echo "ANONYMOUS SUPPORT UI: OK"
+echo "ANONYMOUS SUPPORT SIGNUP GATE: OK"
 echo "PUBLIC DETAIL SANITIZED: OK"
 echo "FULL PHOTO GALLERY: OK"
 echo "DESKTOP DETAIL: OK"
