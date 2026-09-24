@@ -31,6 +31,16 @@ for (const [label, email] of contacts) {
   assert.match(footer, new RegExp(`<span>${label}<\\/span>\\s*${exact.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`));
 }
 assert.equal((footer.match(/href="mailto:/g) ?? []).length, 3);
+assert.equal(
+  footer.split('href="https://wa.me/5511973289651"').length - 1,
+  1,
+  'Link de WhatsApp ausente ou duplicado.',
+);
+assert.match(
+  footer,
+  /<span>WhatsApp<\/span>[\s\S]*?href="https:\/\/wa\.me\/5511973289651"[\s\S]*?\(11\) 97328-9651[\s\S]*?<\/a>/,
+);
+assert.match(css, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
 assert.match(css, /overflow-wrap:\s*anywhere/);
 assert.match(css, /@media\s*\(max-width:\s*720px\)/);
 assert.match(css, /grid-template-columns:\s*minmax\(0,\s*1fr\)/);
