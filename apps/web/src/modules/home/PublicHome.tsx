@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppBottomNavigation, AppHeader } from '../../app/layout/AppHeader';
+import { requestCommercialSignup } from '../../components/commercialSignup';
 import { Brand, Button } from '../../components/ui';
 import type { AuthenticatedUser } from '../auth/types';
 import { PublicOccurrenceCard } from '../occurrences/PublicOccurrenceCard';
+import { OccurrenceCenter } from '../occurrences/OccurrenceCenter';
 import { PublicOccurrenceDetailsModal } from '../occurrences/PublicOccurrenceDetailsModal';
 import {
   DEFAULT_PUBLIC_OCCURRENCE_CITY,
@@ -156,6 +158,7 @@ export function PublicHome({
   const [selectedOccurrence, setSelectedOccurrence] = useState<PublicOccurrenceDetails | null>(null);
   const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [occurrenceDetailError, setOccurrenceDetailError] = useState<string | null>(null);
+  const [createOccurrenceOpen, setCreateOccurrenceOpen] = useState(false);
   const [plans, setPlans] = useState<PublicPlanOffer[]>([]);
   const slidesPerView = useSlidesPerView();
 
@@ -279,6 +282,15 @@ export function PublicHome({
   const handlePlanStart = user
     ? () => navigate('/planos')
     : (onRegister ?? (() => navigate('/planos')));
+
+  function handleCreateOccurrence() {
+    if (!user) {
+      requestCommercialSignup('create-occurrence');
+      return;
+    }
+
+    setCreateOccurrenceOpen(true);
+  }
 
   function goToMediaPage(direction: number) {
     if (mediaPages.length <= 1) return;
@@ -437,11 +449,16 @@ export function PublicHome({
                 <p>Últimas demandas abertas {occurrenceLocationLabel === 'próximas a você' ? 'próximas à sua localização.' : `em ${occurrenceLocationLabel}.`}</p>
               </div>
             </div>
-            {occurrences.length > 3 && (
-              <button className="public-home__see-all" type="button" onClick={() => navigate('/ocorrencias')}>
-                Ver todas <span aria-hidden="true">›</span>
-              </button>
-            )}
+            <div className="public-home__section-actions">
+              <Button type="button" onClick={handleCreateOccurrence}>
+                Registre uma ocorrência
+              </Button>
+              {occurrences.length > 3 && (
+                <button className="public-home__see-all" type="button" onClick={() => navigate('/ocorrencias')}>
+                  Ver todas <span aria-hidden="true">›</span>
+                </button>
+              )}
+            </div>
           </div>
 
           {occurrencesLoading ? (
@@ -556,6 +573,44 @@ export function PublicHome({
           </section>
         </div>
       </footer>
+
+      {createOccurrenceOpen && (
+        <div
+          className="occurrence-create-modal"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setCreateOccurrenceOpen(false);
+          }}
+        >
+          <section
+            className="occurrence-create-modal__dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="home-occurrence-create-modal-title"
+          >
+            <header className="occurrence-create-modal__header">
+              <div>
+                <span>Ocorrências</span>
+                <h2 id="home-occurrence-create-modal-title">Nova ocorrência</h2>
+              </div>
+              <button
+                type="button"
+                className="occurrence-create-modal__close"
+                aria-label="Fechar nova ocorrência"
+                onClick={() => setCreateOccurrenceOpen(false)}
+              >
+                ×
+              </button>
+            </header>
+            <div className="occurrence-create-modal__body">
+              <OccurrenceCenter
+                formOnly
+                onCreated={() => setCreateOccurrenceOpen(false)}
+              />
+            </div>
+          </section>
+        </div>
+      )}
 
       {selectedOccurrence && (
         <PublicOccurrenceDetailsModal
