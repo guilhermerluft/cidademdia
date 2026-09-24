@@ -1,7 +1,7 @@
 .public-home__occurrence-card .public-home__occurrence-main {
   position: relative;
   box-sizing: border-box;
-  padding: 10px 78px 10px 0;
+  padding: 10px 210px 10px 0;
 }
 
 .public-home__occurrence-card .public-home__occurrence-meta {
@@ -37,6 +37,12 @@
 
 @media (max-width: 720px) {
   .public-home__occurrence-card .public-home__occurrence-main {
-    padding-right: 78px;
+    padding-right: 0;
+  }
+
+  .public-home__occurrence-card .public-home__occurrence-main .public-occurrence-support--card {
+    position: static;
+    width: fit-content;
+    margin-bottom: 10px;
   }
 }
