@@ -242,6 +242,7 @@ try {
       email: process.env.QA_EMAIL,
       password: process.env.QA_PASSWORD,
       displayName: process.env.QA_NAME,
+      termsAccepted: true,
     },
   });
   if (register.status() !== 201) {
