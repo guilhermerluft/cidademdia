@@ -49,14 +49,54 @@
   text-transform: uppercase;
 }
 
+.posts-composer__form > label,
+.posts-order-grid > label {
+  display: grid;
+  gap: 0.45rem;
+  color: var(--ced-color-navy-900);
+  font-size: var(--ced-font-size-sm);
+  font-weight: 800;
+}
+
 .posts-composer__form input,
 .posts-composer__form select,
 .posts-composer__form textarea {
   width: 100%;
+  min-height: 46px;
+  border: 1px solid var(--ced-color-border);
+  border-radius: var(--ced-radius-md);
+  padding: 0.75rem 0.9rem;
+  color: var(--ced-color-text);
+  background: #fff;
+  font: inherit;
+  font-weight: 500;
+  outline: none;
+  transition: border-color var(--ced-transition-fast), box-shadow var(--ced-transition-fast);
 }
 
 .posts-composer__form textarea {
+  min-height: 112px;
   resize: vertical;
+}
+
+.posts-composer__form input:focus,
+.posts-composer__form select:focus,
+.posts-composer__form textarea:focus {
+  border-color: var(--ced-color-primary-300);
+  box-shadow: 0 0 0 3px rgba(25, 98, 169, 0.1);
+}
+
+.posts-composer__form input:disabled,
+.posts-composer__form select:disabled,
+.posts-composer__form textarea:disabled {
+  cursor: not-allowed;
+  opacity: 0.62;
+  background: var(--ced-color-canvas);
+}
+
+.posts-composer__form input[type='file'] {
+  padding: 0.65rem;
+  background: var(--ced-color-canvas);
 }
 
 .posts-composer__form small,
