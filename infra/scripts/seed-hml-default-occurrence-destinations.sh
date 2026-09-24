@@ -375,7 +375,7 @@ PAIRS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^pairs=//p')"
 AMBIGUOUS_INSTITUTIONS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_institutions=//p')"
 AMBIGUOUS_MASTERS="$(printf '%s\n' "$VALIDATION" | sed -n 's/^ambiguous_masters=//p')"
 
-[ "$PAIRS" = "5" ] || fail "Esperados 5 fallbacks; encontrados ${PAIRS:-0}."
+[ "$PAIRS" = "7" ] || fail "Esperados 7 fallbacks; encontrados ${PAIRS:-0}."
 [ "$AMBIGUOUS_INSTITUTIONS" = "0" ] || fail "Há fallback com múltiplas Masters."
 [ "$AMBIGUOUS_MASTERS" = "0" ] || fail "Há Master de fallback vinculada a múltiplas instituições."
 
