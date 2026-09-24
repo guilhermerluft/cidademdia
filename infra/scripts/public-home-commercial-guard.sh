@@ -32,6 +32,7 @@ grep -q 'commercial-signup-modal__brand-header' "$COMMERCIAL_CSS" || fail "heade
 grep -q 'commercial-signup-modal__brand' "$COMMERCIAL_CSS" || fail "logotipo comercial sem estilo dedicado"
 grep -q "requestCommercialSignup('create-occurrence')" "$HOME" || fail "CTA da home não abre o gate comercial para usuário anônimo"
 grep -q 'Registre uma ocorrência' "$HOME" || fail "CTA Registre uma ocorrência ausente da home"
+grep -q '.public-home__section-actions {' "$ROOT/apps/web/src/modules/home/home.css" || fail "grupo de ações da seção sem estilo responsivo"
 grep -q 'setCreateOccurrenceOpen(true)' "$HOME" || fail "CTA autenticado da home não abre criação de ocorrência"
 grep -q '<OccurrenceCenter' "$HOME" || fail "formulário de ocorrência não foi reutilizado na home"
 grep -q "create-occurrence" "$COMMERCIAL_MODAL" || fail "modal comercial não possui intent de nova ocorrência"
