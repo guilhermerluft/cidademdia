@@ -26,10 +26,17 @@ public static class OccurrenceEndpoints
         });
 
         occurrences.MapGet("/destinations", async (
+            string? postalCode,
+            string? city,
+            string? stateCode,
             IOccurrenceService occurrenceService,
             CancellationToken cancellationToken) =>
         {
-            var destinations = await occurrenceService.GetInstitutionalDestinationsAsync(cancellationToken);
+            var destinations = await occurrenceService.GetDestinationsAsync(
+                postalCode,
+                city,
+                stateCode,
+                cancellationToken);
             return Results.Ok(destinations);
         });
 

@@ -2,6 +2,7 @@
 set -Eeuo pipefail
 
 EXPECTED_HEAD="${1:-}"
+EXPECTED_BRANCH="${CIDADEMDIA_EXPECTED_BRANCH:-}"
 ROOT="${CIDADEMDIA_ROOT:-/opt/cidademdia}"
 ENV_FILE="${CIDADEMDIA_ENV_FILE:-$ROOT/.env}"
 BASE="${CIDADEMDIA_BASE_URL:-https://homolog.cidademdia.com.br}"
@@ -10,6 +11,12 @@ QA_SUFFIX="$(date +%s)-$$"
 QA_EMAIL="qa-institutional-${QA_SUFFIX}@cidademdia.local"
 QA_PASSWORD="QaInstitutional#${QA_SUFFIX}!"
 QA_NAME="QA Compartilhamento Institucional ${QA_SUFFIX}"
+LOCAL_MASTER_EMAIL="qa-local-master-${QA_SUFFIX}@cidademdia.local"
+LOCAL_MASTER_NAME="QA Master Local São Paulo ${QA_SUFFIX}"
+LOCAL_MASTER_PASSWORD="QaLocalMaster#${QA_SUFFIX}!"
+LOCAL_MASTER_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+LOCAL_PROFILE_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
+LOCAL_REPRESENTATIVE_ID="$(python3 -c 'import uuid; print(uuid.uuid4())')"
 
 fail() {
   echo
@@ -23,7 +30,9 @@ done
 
 test -n "$EXPECTED_HEAD" || fail "informe o HEAD esperado"
 test "$(git -C "$ROOT" rev-parse HEAD)" = "$EXPECTED_HEAD" || fail "repo fora do HEAD esperado"
-test "$(git -C "$ROOT" branch --show-current)" = "feat/institutional-occurrence-sharing" || fail "branch inesperada"
+if [ -n "$EXPECTED_BRANCH" ]; then
+  test "$(git -C "$ROOT" branch --show-current)" = "$EXPECTED_BRANCH" || fail "branch inesperada"
+fi
 test -z "$(git -C "$ROOT" status --porcelain)" || fail "worktree está suja"
 test -f "$ENV_FILE" || fail ".env não encontrado"
 : "${HML_INSTITUTION_MASTER_PASSWORD:?Defina HML_INSTITUTION_MASTER_PASSWORD com a senha das Masters institucionais.}"
@@ -36,12 +45,20 @@ cleanup_qa() {
 DO \$\$
 DECLARE
   uid uuid;
+  local_master_id uuid;
 BEGIN
   SELECT id INTO uid FROM users WHERE email = '$QA_EMAIL';
   IF uid IS NOT NULL THEN
     DELETE FROM occurrences WHERE author_user_id = uid;
     DELETE FROM occurrence_media WHERE uploader_user_id = uid;
     DELETE FROM users WHERE id = uid;
+  END IF;
+
+  SELECT id INTO local_master_id FROM users WHERE email = '$LOCAL_MASTER_EMAIL';
+  IF local_master_id IS NOT NULL THEN
+    DELETE FROM representatives WHERE account_id = local_master_id;
+    DELETE FROM institution_memberships WHERE user_id = local_master_id;
+    DELETE FROM users WHERE id = local_master_id;
   END IF;
 END
 \$\$;
@@ -77,17 +94,27 @@ const png = Buffer.from(
 );
 
 const names = {
-  prefeitura: 'Prefeitura de São Paulo',
-  camara: 'Câmara Municipal de São Paulo',
-  governo: 'Governo do Estado de São Paulo',
-  alesp: 'Assembleia Legislativa do Estado de São Paulo',
+  prefeitura: 'Prefeitura',
+  camara: 'Câmara Municipal',
+  governo: 'Governo do Estado',
+  alesp: 'Assembleia Legislativa',
+  sus: 'SUS',
+};
+
+const operationalNames = {
+  prefeitura: 'Prefeitura',
+  camara: 'Câmara Municipal',
+  governo: 'Governo do Estado',
+  alesp: 'Assembleia Legislativa',
+  sus: 'SUS',
 };
 
 const emails = {
-  prefeitura: 'prefeitura-sp.master@hml.cidademdia.invalid',
-  camara: 'camara-sp.master@hml.cidademdia.invalid',
-  governo: 'governo-sp.master@hml.cidademdia.invalid',
-  alesp: 'alesp.master@hml.cidademdia.invalid',
+  prefeitura: 'fallback-prefeitura.master@hml.cidademdia.invalid',
+  camara: 'fallback-camara.master@hml.cidademdia.invalid',
+  governo: 'fallback-governo.master@hml.cidademdia.invalid',
+  alesp: 'fallback-assembleia.master@hml.cidademdia.invalid',
+  sus: 'fallback-sus.master@hml.cidademdia.invalid',
 };
 
 async function api(method, path, token, data) {
@@ -160,7 +187,11 @@ expect(categories, 200, 'categorias');
 const category = categories.body?.[0];
 if (!category?.id) throw new Error('nenhuma categoria ativa');
 
-const destinationResponse = await api('GET', '/api/v1/occurrences/destinations', citizenToken);
+const destinationResponse = await api(
+  'GET',
+  '/api/v1/occurrences/destinations?postalCode=01001-000&city=S%C3%A3o%20Paulo&stateCode=SP',
+  citizenToken,
+);
 expect(destinationResponse, 200, 'destinos');
 const destinations = destinationResponse.body;
 if (!Array.isArray(destinations)) throw new Error('destinos não retornaram lista');
@@ -169,13 +200,13 @@ const byName = Object.fromEntries(
   Object.entries(names).map(([key, name]) => {
     const rows = destinations.filter(item => item.displayName === name);
     if (rows.length !== 1) throw new Error('destino deve existir uma vez: ' + name);
-    if (Object.prototype.hasOwnProperty.call(rows[0], 'masterUserId')) {
-      throw new Error('destino expôs masterUserId: ' + name);
+    if (rows[0].kind !== 'INSTITUTION') {
+      throw new Error('fallback deveria ser institucional: ' + name);
     }
     return [key, rows[0]];
   }),
 );
-console.log('institutional_destinations=OK count=4');
+console.log('institutional_destinations=OK count=5');
 
 const image = await readyImage(citizenToken);
 console.log('institutional_media=READY');
@@ -259,7 +290,7 @@ console.log('institutional_targets_have_master=OK count=3');
 
 const masters = {};
 for (const [key, email] of Object.entries(emails)) masters[key] = await login(email);
-console.log('institutional_master_logins=OK count=4');
+console.log('institutional_master_logins=OK count=5');
 
 const expected = new Map([
   [masters.prefeitura.user.id, prefeituraTarget.id],
@@ -277,8 +308,8 @@ for (const [key, session] of Object.entries(masters)) {
     if (rows.length !== 1 || rows[0].targetId !== targetId) {
       throw new Error('isolamento inválido para Master ' + key);
     }
-    if (rows[0].destinationDisplayName !== names[key]) {
-      throw new Error('nome do destino inválido para Master ' + key);
+    if (rows[0].destinationDisplayName !== operationalNames[key]) {
+      throw new Error('nome operacional do destino inválido para Master ' + key);
     }
   } else if (rows.length !== 0) {
     throw new Error('ALESP enxergou target que não recebeu');
@@ -412,7 +443,192 @@ echo "institutional_target_db_state=$DB_STATE"
 test "$DB_STATE" = "3|3|3|1" || fail "estado de persistência inesperado"
 
 echo
-echo "=== 4. LIMPEZA + SMOKE ==="
+echo "=== 4. MASTER LOCAL POR ENDEREÇO ==="
+
+LOCAL_MASTER_HASH="$(
+  PASSWORD_TO_HASH="$LOCAL_MASTER_PASSWORD" python3 - <<'PY'
+import base64
+import hashlib
+import os
+
+password = os.environ["PASSWORD_TO_HASH"].encode("utf-8")
+salt = os.urandom(16)
+iterations = 210_000
+digest = hashlib.pbkdf2_hmac("sha256", password, salt, iterations, dklen=32)
+print(
+    "pbkdf2-sha256$"
+    + str(iterations)
+    + "$"
+    + base64.b64encode(salt).decode("ascii")
+    + "$"
+    + base64.b64encode(digest).decode("ascii")
+)
+PY
+)"
+
+"${COMPOSE[@]}" exec -T -e LOCAL_MASTER_HASH="$LOCAL_MASTER_HASH" db sh -lc '
+  psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB" \
+    -v master_id="$1" \
+    -v profile_id="$2" \
+    -v representative_id="$3" \
+    -v email="$4" \
+    -v display_name="$5" \
+    -v slug="$6" \
+    -v master_hash="$LOCAL_MASTER_HASH"
+' sh \
+  "$LOCAL_MASTER_ID" \
+  "$LOCAL_PROFILE_ID" \
+  "$LOCAL_REPRESENTATIVE_ID" \
+  "$LOCAL_MASTER_EMAIL" \
+  "$LOCAL_MASTER_NAME" \
+  "qa-master-local-${QA_SUFFIX}" <<'SQL'
+BEGIN;
+
+INSERT INTO users (
+    id, email, normalized_email, password_hash, status,
+    email_confirmed_at, last_login_at, created_at, updated_at
+)
+VALUES (
+    :'master_id'::uuid,
+    :'email',
+    upper(:'email'),
+    :'master_hash',
+    'Active',
+    now(),
+    NULL,
+    now(),
+    now()
+);
+
+INSERT INTO user_profiles (
+    id, user_id, display_name, document, phone, avatar_media_id, created_at, updated_at
+)
+VALUES (
+    :'profile_id'::uuid,
+    :'master_id'::uuid,
+    :'display_name',
+    NULL,
+    NULL,
+    NULL,
+    now(),
+    now()
+);
+
+INSERT INTO user_roles (user_id, role_id, created_at)
+SELECT :'master_id'::uuid, role.id, now()
+FROM roles role
+WHERE role.key = 'MASTER';
+
+INSERT INTO representatives (
+    id,
+    institution_id,
+    name,
+    slug,
+    public_role,
+    official_email,
+    photo_media_id,
+    mandate_start,
+    mandate_end,
+    account_id,
+    profile_status,
+    display_order,
+    created_at,
+    updated_at
+)
+SELECT
+    :'representative_id'::uuid,
+    institution.id,
+    :'display_name',
+    :'slug',
+    'Representante QA',
+    :'email',
+    NULL,
+    NULL,
+    NULL,
+    :'master_id'::uuid,
+    'ACTIVE',
+    999,
+    now(),
+    now()
+FROM institutions institution
+WHERE institution.slug = 'prefeitura-de-sao-paulo';
+
+COMMIT;
+SQL
+
+docker run --rm -i \
+  --network host \
+  -e BASE="$BASE" \
+  -e QA_EMAIL="$QA_EMAIL" \
+  -e QA_PASSWORD="$QA_PASSWORD" \
+  -e LOCAL_MASTER_NAME="$LOCAL_MASTER_NAME" \
+  node:22-alpine \
+  node --input-type=module - <<'JS'
+const BASE = process.env.BASE;
+
+async function api(method, path, token, data) {
+  const headers = {};
+  if (token) headers.Authorization = 'Bearer ' + token;
+  const options = { method, headers };
+  if (data !== undefined) {
+    headers['Content-Type'] = 'application/json';
+    options.body = JSON.stringify(data);
+  }
+
+  const response = await fetch(BASE + path, options);
+  const text = await response.text();
+  let body = null;
+  if (text) {
+    try { body = JSON.parse(text); } catch { body = text; }
+  }
+
+  return { response, body, text };
+}
+
+const login = await api('POST', '/api/v1/auth/login', null, {
+  email: process.env.QA_EMAIL,
+  password: process.env.QA_PASSWORD,
+});
+if (login.response.status !== 200) {
+  throw new Error('login cidadão QA falhou: ' + login.response.status + ' ' + login.text);
+}
+
+const destinations = await api(
+  'GET',
+  '/api/v1/occurrences/destinations?postalCode=01001-000&city=S%C3%A3o%20Paulo&stateCode=SP',
+  login.body.accessToken,
+);
+
+if (destinations.response.status !== 200 || !Array.isArray(destinations.body)) {
+  throw new Error('destinos com Master local falharam: ' + destinations.response.status + ' ' + destinations.text);
+}
+
+if (destinations.body.length === 0 || destinations.body.some(item => item.kind !== 'MASTER')) {
+  throw new Error('com Master local o endpoint deve retornar somente Masters: ' + JSON.stringify(destinations.body));
+}
+
+if (!destinations.body.some(item => item.displayName === process.env.LOCAL_MASTER_NAME)) {
+  throw new Error('Master local QA não foi retornada: ' + JSON.stringify(destinations.body));
+}
+
+const fallbackLabels = new Set([
+  'Prefeitura',
+  'Câmara Municipal',
+  'Governo do Estado',
+  'Assembleia Legislativa',
+  'SUS',
+]);
+
+if (destinations.body.some(item => fallbackLabels.has(item.displayName))) {
+  throw new Error('fallback apareceu mesmo havendo Master local: ' + JSON.stringify(destinations.body));
+}
+
+console.log('institutional_local_master_resolution=OK');
+console.log('institutional_fallback_hidden_when_master_exists=OK');
+JS
+
+echo
+echo "=== 5. LIMPEZA + SMOKE ==="
 cleanup_qa
 QA_LEFT="$(
   "${COMPOSE[@]}" exec -T db sh -lc "
@@ -430,10 +646,12 @@ test -z "$(git -C "$ROOT" status --porcelain)" || fail "worktree ficou suja"
 echo "============================================================"
 echo "INSTITUTIONAL OCCURRENCE SHARING — FEATURE HOMOLOG: OK"
 echo "HEAD: $EXPECTED_HEAD"
-echo "DESTINATIONS: 4 UNIQUE"
+echo "DESTINATIONS: 5 UNIQUE"
 echo "TARGETS: 3 MASTERS"
 echo "ADDRESSEE EMPTY/FILLED: OK"
 echo "DUPLICATE + FOURTH TARGET: BLOCKED"
+echo "LOCAL MASTER RESOLUTION: OK"
+echo "FALLBACK HIDDEN WITH MASTER: OK"
 echo "MASTER ISOLATION: OK"
 echo "ACCEPT + REJECT: OK"
 echo "CHAT + CHAT ISOLATION: OK"

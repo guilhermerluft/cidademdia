@@ -10,11 +10,12 @@ export interface EligibleMaster {
   displayName: string;
 }
 
-export interface InstitutionalDestination {
+export interface OccurrenceDestination {
   id: string;
+  kind: 'MASTER' | 'INSTITUTION';
   displayName: string;
-  type: string;
-  scopeLevel: string;
+  type: string | null;
+  scopeLevel: string | null;
   cityId: string | null;
   stateCode: string | null;
 }

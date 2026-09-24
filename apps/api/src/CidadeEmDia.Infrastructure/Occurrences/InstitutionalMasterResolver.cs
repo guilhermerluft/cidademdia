@@ -8,6 +8,7 @@ namespace CidadeEmDia.Infrastructure.Occurrences;
 internal sealed record InstitutionalMasterDestination(
     Guid InstitutionId,
     Guid MasterUserId,
+    string Slug,
     string DisplayName,
     string Type,
     string ScopeLevel,
@@ -33,6 +34,7 @@ internal static class InstitutionalMasterResolver
             .Select(link => new InstitutionalMasterDestination(
                 link.InstitutionId,
                 link.UserId,
+                link.Institution.Slug,
                 link.Institution.Name,
                 link.Institution.Type,
                 link.Institution.ScopeLevel,
