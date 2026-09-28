@@ -84,6 +84,29 @@
   border-radius: 2px;
 }
 
+
+.public-home__footer-contact-list .public-home__footer-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  color: #25d366;
+  border-radius: 50%;
+}
+
+.public-home__footer-contact-list .public-home__footer-whatsapp svg {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+}
+
+.public-home__footer-contact-list .public-home__footer-whatsapp:hover,
+.public-home__footer-contact-list .public-home__footer-whatsapp:focus-visible {
+  color: #1ebe5d;
+  text-decoration: none;
+}
+
 @media (max-width: 900px) {
   .public-home__footer-contact-list {
     grid-template-columns: repeat(2, minmax(0, 1fr));
