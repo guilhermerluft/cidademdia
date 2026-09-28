@@ -72,6 +72,28 @@
   text-underline-offset: 3px;
 }
 
+.public-home__footer-whatsapp-link {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  color: #25d366 !important;
+}
+
+.public-home__footer-whatsapp-icon {
+  width: 28px;
+  height: 28px;
+  fill: currentColor;
+}
+
+.public-home__footer-whatsapp-link:hover,
+.public-home__footer-whatsapp-link:focus-visible {
+  color: #128c7e !important;
+  text-decoration: none !important;
+}
+
 .public-home__footer-contact-list a:hover,
 .public-home__footer-contact-list a:focus-visible {
   color: #0649b8;
