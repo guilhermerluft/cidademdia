@@ -38,8 +38,11 @@ assert.equal(
 );
 assert.match(
   footer,
-  /<span>WhatsApp<\/span>[\s\S]*?href="https:\/\/wa\.me\/5511973289651"[\s\S]*?\(11\) 97328-9651[\s\S]*?<\/a>/,
+  /<span>WhatsApp<\/span>[\s\S]*?className="public-home__footer-whatsapp-link"[\s\S]*?href="https:\/\/wa\.me\/5511973289651"[\s\S]*?aria-label="Abrir WhatsApp"[\s\S]*?<svg[\s\S]*?className="public-home__footer-whatsapp-icon"[\s\S]*?<\/svg>[\s\S]*?<\/a>/,
 );
+assert.doesNotMatch(footer, /\(11\) 97328-9651/);
+assert.match(css, /\.public-home__footer-whatsapp-icon\s*\{/);
+assert.match(css, /color:\s*#25d366\s*!important/);
 assert.match(css, /grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\)/);
 assert.match(css, /overflow-wrap:\s*anywhere/);
 assert.match(css, /@media\s*\(max-width:\s*720px\)/);
