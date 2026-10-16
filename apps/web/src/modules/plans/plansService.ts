@@ -23,6 +23,20 @@ export interface BillingCheckoutResponse {
   providerStatus: string;
 }
 
+export interface BillingEntitlements {
+  subscriptionId: string;
+  planVersionId: string;
+  planKey: string;
+  planName: string;
+  categoryKey: string;
+  categoryName: string;
+  subscriptionStatus: string;
+  accessAllowed: boolean;
+  currentPeriodStart: string;
+  currentPeriodEnd: string;
+  cancelAtPeriodEnd: boolean;
+}
+
 export async function listPublicPlanOffers() {
   const { data } = await api.get<PublicPlanOffer[]>('/billing/catalog');
   return data;
@@ -33,5 +47,10 @@ export async function createBillingCheckout(planVersionId: string) {
     planVersionId,
   });
 
+  return data;
+}
+
+export async function getBillingEntitlements() {
+  const { data } = await api.get<BillingEntitlements>('/billing/me');
   return data;
 }
