@@ -17,6 +17,7 @@ import { RepresentativesRoute } from './modules/institutions/RepresentativesRout
 import { PublicOccurrencesRoute } from './modules/occurrences/PublicOccurrencesRoute';
 import { installOccurrenceFormValidationUi } from './modules/occurrences/occurrenceFormValidationUi';
 import { UserPanelRoute } from './modules/panel/UserPanelRoute';
+import { BillingReturnRoute } from './modules/plans/BillingReturnRoute';
 import { PlansRoute } from './modules/plans/PlansRoute';
 import { ProfileRoute } from './modules/profile/ProfileRoute';
 import '@fortawesome/fontawesome-free/css/all.min.css';
@@ -80,6 +81,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
             <Route path="/painel" element={<UserPanelRoute />} />
             <Route path="/perfil" element={<ProfileRoute />} />
             <Route path="/planos" element={<PlansRoute />} />
+            <Route path="/billing/return" element={<BillingReturnRoute />} />
             <Route path="*" element={<AppRoute />} />
           </Routes>
         </AuthProvider>
