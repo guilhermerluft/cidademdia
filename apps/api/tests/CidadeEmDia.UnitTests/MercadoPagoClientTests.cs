@@ -388,7 +388,8 @@ public sealed class MercadoPagoClientTests
             AccessToken: string.Empty,
             WebhookSecret: "secret",
             ApiBaseUrl: "https://api.mercadopago.test",
-            BackUrl: "https://homolog.example/billing/return");
+            BackUrl: "https://homolog.example/billing/return",
+            RecurringAmountLimitCents: 0);
 
         var client = new MercadoPagoClient(
             httpClient,
@@ -470,7 +471,8 @@ public sealed class MercadoPagoClientTests
             AccessToken: "test-access-token",
             WebhookSecret: "test-secret",
             ApiBaseUrl: "https://api.mercadopago.test",
-            BackUrl: "https://homolog.example/billing/return");
+            BackUrl: "https://homolog.example/billing/return",
+            RecurringAmountLimitCents: 0);
 
         return new MercadoPagoClient(
             httpClient,
