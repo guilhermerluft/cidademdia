@@ -14,7 +14,8 @@ public sealed class MercadoPagoWebhookSignatureValidatorTests
             AccessToken: string.Empty,
             WebhookSecret: secret,
             ApiBaseUrl: MercadoPagoOptions.DefaultApiBaseUrl,
-            BackUrl: "https://example.com/billing/return");
+            BackUrl: "https://example.com/billing/return",
+            RecurringAmountLimitCents: 0);
 
         return new MercadoPagoWebhookSignatureValidator(options);
     }
