@@ -229,9 +229,10 @@ internal sealed class MercadoPagoCheckoutService(
         {
             logger.LogWarning(
                 exception,
-                "Mercado Pago rejected checkout for subscription {SubscriptionId}. Status={StatusCode}.",
+                "Mercado Pago rejected checkout for subscription {SubscriptionId}. Status={StatusCode}. Response={ProviderResponse}.",
                 subscription.Id,
-                exception.StatusCode);
+                exception.StatusCode,
+                exception.ResponseBody);
 
             await RemovePendingSubscriptionAsync(
                 subscription,
