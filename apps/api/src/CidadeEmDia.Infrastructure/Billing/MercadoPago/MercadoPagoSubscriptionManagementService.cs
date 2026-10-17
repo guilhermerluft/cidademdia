@@ -98,6 +98,13 @@ internal sealed class MercadoPagoSubscriptionManagementService(
                 "plan_version_not_current");
         }
 
+        if (options.RecurringAmountLimitCents > 0 &&
+            target.PriceCents > options.RecurringAmountLimitCents)
+        {
+            return BillingSubscriptionManagementResult.Failure(
+                "provider_amount_limit");
+        }
+
         if (target.Id ==
                 subscription.PlanVersionId &&
             !subscription.PendingPlanVersionId.HasValue)
@@ -259,6 +266,13 @@ internal sealed class MercadoPagoSubscriptionManagementService(
         {
             return BillingSubscriptionManagementResult.Failure(
                 "plan_version_not_current");
+        }
+
+        if (options.RecurringAmountLimitCents > 0 &&
+            target.PriceCents > options.RecurringAmountLimitCents)
+        {
+            return BillingSubscriptionManagementResult.Failure(
+                "provider_amount_limit");
         }
 
         var scheduled =
