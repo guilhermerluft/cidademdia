@@ -145,7 +145,12 @@ function PaymentOption({
 }) {
   const isAnnual = definition.months === 12;
   const referencePrice = offer && isAnnual ? getReferenceAnnualPrice(offer, monthlyOffer) : null;
-  const isCurrent = Boolean(offer && currentBilling?.planVersionId === offer.planVersionId);
+  const isCurrent = Boolean(
+    offer &&
+    currentBilling &&
+    currentBilling.planKey === offer.planKey &&
+    currentBilling.categoryKey === offer.categoryKey
+  );
   const subscriptionActive = currentBilling?.subscriptionStatus.toLowerCase() === 'active';
   const subscriptionPending = Boolean(currentBilling && !subscriptionActive);
   const isChanging = Boolean(offer && changingPlanVersionId === offer.planVersionId);
