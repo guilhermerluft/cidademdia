@@ -453,6 +453,25 @@ internal sealed class MercadoPagoWebhookService(
             return;
         }
 
+        var subscription =
+            await dbContext.Subscriptions
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.MasterUserId == masterUserId &&
+                        x.PlanVersionId == planVersionId &&
+                        x.Status == SubscriptionStatus.Pending,
+                    cancellationToken);
+
+        if (subscription is null)
+        {
+            logger.LogWarning(
+                "Signup fee payment {ProviderPaymentId} has no matching pending subscription for master {MasterUserId} and plan version {PlanVersionId}.",
+                providerPayment.Id,
+                masterUserId,
+                planVersionId);
+            return;
+        }
+
         var customer =
             await dbContext.BillingCustomers
                 .FirstOrDefaultAsync(
@@ -465,8 +484,46 @@ internal sealed class MercadoPagoWebhookService(
             dbContext.BillingCustomers.Add(customer);
         }
 
-        customer.MarkSignupFeePaid(
-            providerPayment.DateApproved ?? now);
+        var providerPaymentId =
+            providerPayment.Id.ToString(
+                CultureInfo.InvariantCulture);
+
+        var approvedAt =
+            (providerPayment.DateApproved ?? now).ToUniversalTime();
+
+        var existingPayment =
+            await dbContext.BillingPayments
+                .FirstOrDefaultAsync(
+                    x =>
+                        x.Provider == BillingProviders.MercadoPago &&
+                        x.ProviderPaymentId == providerPaymentId,
+                    cancellationToken);
+
+        if (existingPayment is null)
+        {
+            dbContext.BillingPayments.Add(
+                new BillingPayment(
+                    subscription.Id,
+                    BillingProviders.MercadoPago,
+                    providerPaymentId,
+                    null,
+                    amountCents,
+                    providerPayment.CurrencyId,
+                    providerPayment.Status,
+                    providerPayment.StatusDetail,
+                    approvedAt));
+        }
+        else
+        {
+            existingPayment.UpdateFromProvider(
+                amountCents,
+                providerPayment.CurrencyId,
+                providerPayment.Status,
+                providerPayment.StatusDetail,
+                approvedAt);
+        }
+
+        customer.MarkSignupFeePaid(approvedAt);
 
         logger.LogInformation(
             "Mercado Pago signup fee approved for master {MasterUserId}, plan version {PlanVersionId}, payment {ProviderPaymentId}.",
@@ -617,7 +674,7 @@ internal sealed class MercadoPagoWebhookService(
                     providerPayment.CurrencyId,
                     providerPayment.Status,
                     providerPayment.StatusDetail,
-                    providerPayment.DateApproved);
+                    providerPayment.DateApproved?.ToUniversalTime());
 
             dbContext.BillingPayments.Add(
                 existingPayment);
@@ -629,7 +686,7 @@ internal sealed class MercadoPagoWebhookService(
                 providerPayment.CurrencyId,
                 providerPayment.Status,
                 providerPayment.StatusDetail,
-                providerPayment.DateApproved,
+                providerPayment.DateApproved?.ToUniversalTime(),
                 providerAuthorizedPaymentId);
         }
 
@@ -675,8 +732,8 @@ internal sealed class MercadoPagoWebhookService(
             }
 
             var approvedAt =
-                providerPayment.DateApproved ??
-                now;
+                (providerPayment.DateApproved ??
+                 now).ToUniversalTime();
 
             if (subscription.Status ==
                 SubscriptionStatus.Pending)
