@@ -198,7 +198,7 @@ internal sealed class MercadoPagoCheckoutService(
                         ExternalReference:
                             externalReference,
                         PayerEmail:
-                            master.Email,
+                            ResolvePayerEmail(master.Email),
                         Frequency:
                             category.BillingIntervalMonths,
                         FrequencyType:
@@ -416,6 +416,17 @@ internal sealed class MercadoPagoCheckoutService(
                 "Failed to compensate Mercado Pago subscription {ProviderSubscriptionId}.",
                 providerSubscriptionId);
         }
+    }
+
+    private static string ResolvePayerEmail(string masterEmail)
+    {
+        var testPayerEmail =
+            Environment.GetEnvironmentVariable(
+                "MERCADOPAGO_TEST_PAYER_EMAIL")?.Trim();
+
+        return string.IsNullOrWhiteSpace(testPayerEmail)
+            ? masterEmail
+            : testPayerEmail;
     }
 
     private static decimal ToCurrency(
