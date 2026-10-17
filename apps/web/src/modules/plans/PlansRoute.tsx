@@ -7,9 +7,11 @@ import { toast } from '../../components/toast';
 import { useAuth } from '../auth/AuthProvider';
 import { PublicPlans } from './PublicPlans';
 import {
+  cancelBillingSubscription,
   changeBillingPlan,
   createBillingCheckout,
   getBillingEntitlements,
+  reactivateBillingSubscription,
   type BillingEntitlements,
   type PublicPlanOffer,
 } from './plansService';
@@ -38,6 +40,7 @@ export function PlansRoute() {
   const [checkoutPlanVersionId, setCheckoutPlanVersionId] = useState<string | null>(null);
   const [billing, setBilling] = useState<BillingEntitlements | null>(null);
   const [billingLoading, setBillingLoading] = useState(false);
+  const [subscriptionAction, setSubscriptionAction] = useState<'cancel' | 'reactivate' | null>(null);
 
   async function refreshBilling() {
     if (status !== 'authenticated' || !user) {
@@ -64,10 +67,66 @@ export function PlansRoute() {
     void refreshBilling();
   }, [status, user?.id]);
 
+  async function handleCancellation() {
+    if (!billing || subscriptionAction) return;
+    if (!window.confirm('Deseja cancelar a renovação automática ao fim do período atual?')) return;
+
+    setSubscriptionAction('cancel');
+    try {
+      const result = await cancelBillingSubscription();
+      const effectiveAt = result.effectiveAt ? formatDate(result.effectiveAt) : formatDate(billing.currentPeriodEnd);
+      toast.success(`Cancelamento programado para ${effectiveAt}. O acesso continua até essa data.`);
+      await refreshBilling();
+    } catch (error) {
+      console.error('Falha ao programar cancelamento da assinatura.', error);
+      const errorCode = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      if (errorCode === 'cancellation_pending') {
+        toast.info('O cancelamento já está programado.');
+        await refreshBilling();
+      } else {
+        toast.error('Não foi possível programar o cancelamento agora.');
+      }
+    } finally {
+      setSubscriptionAction(null);
+    }
+  }
+
+  async function handleReactivation() {
+    if (!billing || subscriptionAction) return;
+
+    setSubscriptionAction('reactivate');
+    try {
+      const result = await reactivateBillingSubscription();
+      if (result.requiresAuthorization && result.checkoutUrl) {
+        window.location.assign(result.checkoutUrl);
+        return;
+      }
+      toast.success('Renovação da assinatura reativada.');
+      await refreshBilling();
+    } catch (error) {
+      console.error('Falha ao reativar assinatura.', error);
+      const errorCode = (error as { response?: { data?: { error?: string } } })?.response?.data?.error;
+      if (errorCode === 'reactivation_not_required') {
+        toast.info('A renovação da assinatura já está ativa.');
+        await refreshBilling();
+      } else if (errorCode === 'reactivation_authorization_pending') {
+        toast.info('A reativação já está aguardando autorização no Mercado Pago.');
+      } else {
+        toast.error('Não foi possível reativar a assinatura agora.');
+      }
+    } finally {
+      setSubscriptionAction(null);
+    }
+  }
+
   async function handleOfferSelection(offer: PublicPlanOffer) {
     if (checkoutPlanVersionId) return;
 
-    if (billing?.planVersionId === offer.planVersionId) return;
+    if (
+      billing &&
+      billing.planKey === offer.planKey &&
+      billing.categoryKey === offer.categoryKey
+    ) return;
 
     if (billing && billing.subscriptionStatus.toLowerCase() !== 'active') {
       toast.info('Sua assinatura atual ainda está em ativação. Aguarde a confirmação antes de alterar o plano.');
@@ -166,6 +225,30 @@ export function PlansRoute() {
                   <p className="plans-page__account-plan-note">
                     <i className="fa-solid fa-clock" /> Há uma alteração de plano programada para o próximo ciclo.
                   </p>
+                )}
+
+                {['active', 'pastdue', 'past_due'].includes(billing.subscriptionStatus.toLowerCase()) && (
+                  <div className="plans-page__account-plan-actions">
+                    {billing.cancelAtPeriodEnd ? (
+                      <button
+                        type="button"
+                        className="plans-page__account-plan-action plans-page__account-plan-action--primary"
+                        disabled={subscriptionAction !== null}
+                        onClick={handleReactivation}
+                      >
+                        {subscriptionAction === 'reactivate' ? 'Reativando...' : 'Reativar renovação'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="plans-page__account-plan-action"
+                        disabled={subscriptionAction !== null}
+                        onClick={handleCancellation}
+                      >
+                        {subscriptionAction === 'cancel' ? 'Programando...' : 'Cancelar renovação'}
+                      </button>
+                    )}
+                  </div>
                 )}
               </section>
             ) : (
