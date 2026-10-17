@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Brand } from '../../components/ui';
-import { listPublicPlanOffers, type PublicPlanOffer } from './plansService';
+import { listPublicPlanOffers, type BillingEntitlements, type PublicPlanOffer } from './plansService';
 import './plans-commercial-highlights.css';
 
 interface PublicPlansProps {
   embedded?: boolean;
+  currentBilling?: BillingEntitlements | null;
+  changingPlanVersionId?: string | null;
   onSelectOffer?: (offer: PublicPlanOffer) => void;
   onContact?: () => void;
 }
@@ -130,15 +132,45 @@ function PaymentOption({
   definition,
   offer,
   monthlyOffer,
+  currentBilling,
+  changingPlanVersionId,
   onSelectOffer,
 }: {
   definition: PaymentDefinition;
   offer?: PublicPlanOffer;
   monthlyOffer?: PublicPlanOffer;
+  currentBilling?: BillingEntitlements | null;
+  changingPlanVersionId?: string | null;
   onSelectOffer?: (offer: PublicPlanOffer) => void;
 }) {
   const isAnnual = definition.months === 12;
   const referencePrice = offer && isAnnual ? getReferenceAnnualPrice(offer, monthlyOffer) : null;
+  const isCurrent = Boolean(offer && currentBilling?.planVersionId === offer.planVersionId);
+  const subscriptionActive = currentBilling?.subscriptionStatus.toLowerCase() === 'active';
+  const subscriptionPending = Boolean(currentBilling && !subscriptionActive);
+  const isChanging = Boolean(offer && changingPlanVersionId === offer.planVersionId);
+
+  let buttonLabel = 'Escolher esse plano';
+  if (isCurrent) {
+    buttonLabel = subscriptionActive ? 'Plano atual' : 'Ativação em andamento';
+  } else if (offer && currentBilling && subscriptionActive) {
+    const hasMoreCapacity =
+      offer.subaccountLimit > currentBilling.subaccountLimit ||
+      offer.monthlyPublicationLimit > currentBilling.monthlyPublicationLimit;
+    const hasLessCapacity =
+      offer.subaccountLimit < currentBilling.subaccountLimit ||
+      offer.monthlyPublicationLimit < currentBilling.monthlyPublicationLimit;
+
+    buttonLabel = hasMoreCapacity
+      ? 'Fazer upgrade'
+      : hasLessCapacity
+        ? 'Alterar plano'
+        : 'Alterar modalidade';
+  } else if (subscriptionPending) {
+    buttonLabel = 'Aguarde ativação';
+  }
+
+  if (isChanging) buttonLabel = 'Processando...';
 
   return (
     <div className={`plans-page__payment plans-page__payment--${definition.tone}`}>
@@ -166,11 +198,14 @@ function PaymentOption({
           )}
 
           <button
-            className="plans-page__choose-button"
+            className={`plans-page__choose-button${isCurrent ? ' plans-page__choose-button--current' : ''}`}
             type="button"
+            disabled={isCurrent || subscriptionPending || isChanging}
             onClick={() => onSelectOffer?.(offer)}
           >
-            Escolher esse plano
+            {isCurrent && <i className="fa-solid fa-circle-check" aria-hidden="true" />}
+            {isChanging && <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />}
+            {buttonLabel}
           </button>
         </>
       ) : (
@@ -189,10 +224,14 @@ function PaymentOption({
 function PlanCard({
   definition,
   offers,
+  currentBilling,
+  changingPlanVersionId,
   onSelectOffer,
 }: {
   definition: PlanDefinition;
   offers: PublicPlanOffer[];
+  currentBilling?: BillingEntitlements | null;
+  changingPlanVersionId?: string | null;
   onSelectOffer?: (offer: PublicPlanOffer) => void;
 }) {
   const monthlyOffer = getOfferByInterval(offers, 1);
@@ -241,6 +280,8 @@ function PlanCard({
             key={payment.months}
             monthlyOffer={monthlyOffer}
             offer={getOfferByInterval(offers, payment.months)}
+            currentBilling={currentBilling}
+            changingPlanVersionId={changingPlanVersionId}
             onSelectOffer={onSelectOffer}
           />
         ))}
@@ -298,10 +339,12 @@ function MegaPromotion({ offers }: { offers: PublicPlanOffer[] }) {
   );
 }
 
-function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }: {
+function PlansContent({ offers, loading, unavailable, currentBilling, changingPlanVersionId, onSelectOffer, onContact }: {
   offers: PublicPlanOffer[];
   loading: boolean;
   unavailable: boolean;
+  currentBilling?: BillingEntitlements | null;
+  changingPlanVersionId?: string | null;
   onSelectOffer?: (offer: PublicPlanOffer) => void;
   onContact?: () => void;
 }) {
@@ -373,6 +416,8 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
                 definition={definition}
                 key={definition.id}
                 offers={planOffers}
+                currentBilling={currentBilling}
+                changingPlanVersionId={changingPlanVersionId}
                 onSelectOffer={onSelectOffer}
               />
             ))}
@@ -414,6 +459,8 @@ function PlansContent({ offers, loading, unavailable, onSelectOffer, onContact }
 
 export function PublicPlans({
   embedded = false,
+  currentBilling,
+  changingPlanVersionId,
   onSelectOffer,
   onContact,
 }: PublicPlansProps) {
@@ -448,6 +495,8 @@ export function PublicPlans({
       loading={loading}
       offers={offers}
       unavailable={unavailable}
+      currentBilling={currentBilling}
+      changingPlanVersionId={changingPlanVersionId}
       onSelectOffer={onSelectOffer}
       onContact={onContact}
     />
