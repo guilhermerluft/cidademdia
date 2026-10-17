@@ -8,6 +8,10 @@ namespace CidadeEmDia.Infrastructure.Billing.MercadoPago;
 
 public interface IMercadoPagoClient
 {
+    Task<MercadoPagoPreferenceResponse> CreatePreferenceAsync(
+        MercadoPagoCreatePreferenceRequest request,
+        CancellationToken cancellationToken = default);
+
     Task<MercadoPagoPreapprovalResponse> CreatePreapprovalAsync(
         MercadoPagoCreatePreapprovalRequest request,
         CancellationToken cancellationToken = default);
@@ -34,6 +38,21 @@ public interface IMercadoPagoClient
         string paymentId,
         CancellationToken cancellationToken = default);
 }
+
+public sealed record MercadoPagoCreatePreferenceRequest(
+    string Title,
+    string ExternalReference,
+    string PayerEmail,
+    decimal UnitPrice,
+    string CurrencyId,
+    string BackUrl);
+
+public sealed record MercadoPagoPreferenceResponse(
+    [property: JsonPropertyName("id")]
+    string Id,
+
+    [property: JsonPropertyName("init_point")]
+    string InitPoint);
 
 public sealed record MercadoPagoCreatePreapprovalRequest(
     string Reason,
@@ -157,6 +176,59 @@ public sealed class MercadoPagoClient(
 {
     private static readonly JsonSerializerOptions JsonOptions =
         new(JsonSerializerDefaults.Web);
+
+    public async Task<MercadoPagoPreferenceResponse> CreatePreferenceAsync(
+        MercadoPagoCreatePreferenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(request.Title) ||
+            string.IsNullOrWhiteSpace(request.ExternalReference) ||
+            string.IsNullOrWhiteSpace(request.PayerEmail) ||
+            request.UnitPrice <= 0 ||
+            string.IsNullOrWhiteSpace(request.CurrencyId) ||
+            !Uri.TryCreate(request.BackUrl, UriKind.Absolute, out _))
+        {
+            throw new ArgumentException(
+                "Invalid Mercado Pago preference request.");
+        }
+
+        var payload = new
+        {
+            items = new[]
+            {
+                new
+                {
+                    id = "signup-fee",
+                    title = request.Title.Trim(),
+                    quantity = 1,
+                    unit_price = request.UnitPrice,
+                    currency_id = request.CurrencyId.Trim().ToUpperInvariant()
+                }
+            },
+            payer = new
+            {
+                email = request.PayerEmail.Trim()
+            },
+            external_reference = request.ExternalReference.Trim(),
+            back_urls = new
+            {
+                success = request.BackUrl,
+                pending = request.BackUrl,
+                failure = request.BackUrl
+            },
+            auto_return = "approved"
+        };
+
+        using var message = CreateRequest(
+            HttpMethod.Post,
+            "/checkout/preferences");
+
+        message.Content = JsonContent.Create(payload);
+
+        return await SendAsync<MercadoPagoPreferenceResponse>(
+            message,
+            cancellationToken);
+    }
 
     public async Task<MercadoPagoPreapprovalResponse> CreatePreapprovalAsync(
         MercadoPagoCreatePreapprovalRequest request,

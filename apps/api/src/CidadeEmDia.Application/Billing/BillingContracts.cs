@@ -132,6 +132,7 @@ public interface IBillingCheckoutService
     Task<BillingCheckoutResult> CreateCheckoutAsync(
         Guid masterUserId,
         Guid planVersionId,
+        bool resumeAfterSignupFee = false,
         DateTimeOffset? at = null,
         CancellationToken cancellationToken = default);
 }

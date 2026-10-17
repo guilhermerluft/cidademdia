@@ -47,6 +47,8 @@ public static class BillingEndpoints
                 await service.CreateCheckoutAsync(
                     masterUserId,
                     request.PlanVersionId,
+                    resumeAfterSignupFee:
+                        request.ResumeAfterSignupFee,
                     cancellationToken:
                         cancellationToken);
 
@@ -262,6 +264,10 @@ public static class BillingEndpoints
                 Results.Conflict(
                     new { error = result.ErrorCode }),
 
+            "provider_amount_limit" =>
+                Results.UnprocessableEntity(
+                    new { error = result.ErrorCode }),
+
             "provider_not_configured" =>
                 Results.Json(
                     new { error = result.ErrorCode },
@@ -307,8 +313,13 @@ public static class BillingEndpoints
                     new { error = result.ErrorCode }),
 
             "plan_version_not_current"
-                or "subscription_already_exists" =>
+                or "subscription_already_exists"
+                or "signup_fee_pending" =>
                 Results.Conflict(
+                    new { error = result.ErrorCode }),
+
+            "provider_amount_limit" =>
+                Results.UnprocessableEntity(
                     new { error = result.ErrorCode }),
 
             "provider_not_configured" =>
@@ -357,7 +368,8 @@ public static class BillingEndpoints
     }
 
     public sealed record BillingCheckoutRequest(
-        Guid PlanVersionId);
+        Guid PlanVersionId,
+        bool ResumeAfterSignupFee = false);
 
 
     public sealed record BillingPlanChangeRequest(

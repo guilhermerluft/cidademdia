@@ -414,6 +414,67 @@ internal sealed class MercadoPagoWebhookService(
             cancellationToken);
     }
 
+    private async Task ProcessSignupFeePaymentAsync(
+        MercadoPagoPaymentResponse providerPayment,
+        Guid masterUserId,
+        Guid planVersionId,
+        DateTimeOffset now,
+        CancellationToken cancellationToken)
+    {
+        if (!MercadoPagoPaymentStatuses.IsApproved(
+                providerPayment.Status))
+        {
+            return;
+        }
+
+        var expectedSignupFeeCents =
+            await dbContext.PlanVersions
+                .AsNoTracking()
+                .Where(x => x.Id == planVersionId)
+                .Select(x => x.SignupFeeCents)
+                .SingleOrDefaultAsync(cancellationToken);
+
+        var amountCents =
+            ToCents(providerPayment.TransactionAmount);
+
+        if (expectedSignupFeeCents <= 0 ||
+            !providerPayment.CurrencyId.Equals(
+                "BRL",
+                StringComparison.OrdinalIgnoreCase) ||
+            amountCents != expectedSignupFeeCents)
+        {
+            logger.LogWarning(
+                "Signup fee payment {ProviderPaymentId} has unexpected amount/currency. Expected={ExpectedAmountCents} Actual={ActualAmountCents} Currency={Currency}.",
+                providerPayment.Id,
+                expectedSignupFeeCents,
+                amountCents,
+                providerPayment.CurrencyId);
+
+            return;
+        }
+
+        var customer =
+            await dbContext.BillingCustomers
+                .FirstOrDefaultAsync(
+                    x => x.MasterUserId == masterUserId,
+                    cancellationToken);
+
+        if (customer is null)
+        {
+            customer = new BillingCustomer(masterUserId);
+            dbContext.BillingCustomers.Add(customer);
+        }
+
+        customer.MarkSignupFeePaid(
+            providerPayment.DateApproved ?? now);
+
+        logger.LogInformation(
+            "Mercado Pago signup fee approved for master {MasterUserId}, plan version {PlanVersionId}, payment {ProviderPaymentId}.",
+            masterUserId,
+            planVersionId,
+            providerPayment.Id);
+    }
+
     private async Task ProcessPaymentAsync(
         MercadoPagoPaymentResponse providerPayment,
         string? providerAuthorizedPaymentId,
@@ -424,6 +485,21 @@ internal sealed class MercadoPagoWebhookService(
         var providerPaymentId =
             providerPayment.Id.ToString(
                 CultureInfo.InvariantCulture);
+
+        if (MercadoPagoSignupFeeExternalReference.TryParse(
+                providerPayment.ExternalReference,
+                out var signupFeeMasterUserId,
+                out var signupFeePlanVersionId))
+        {
+            await ProcessSignupFeePaymentAsync(
+                providerPayment,
+                signupFeeMasterUserId,
+                signupFeePlanVersionId,
+                now,
+                cancellationToken);
+
+            return;
+        }
 
         BillingProviderSubscription? binding =
             null;

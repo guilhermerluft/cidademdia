@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardShell } from '../../app/layout/DashboardShell';
 import { Brand } from '../../components/ui';
 import { useAuth } from '../auth/AuthProvider';
-import { getBillingEntitlements } from './plansService';
+import { createBillingCheckout, getBillingEntitlements } from './plansService';
 
-type ReturnState = 'checking' | 'active' | 'pending' | 'error';
+type ReturnState = 'checking' | 'authorizing' | 'active' | 'pending' | 'error';
 
 const MAX_ATTEMPTS = 8;
 const POLL_DELAY_MS = 2_000;
@@ -25,6 +25,44 @@ export function BillingReturnRoute() {
     let cancelled = false;
 
     async function confirmSubscription() {
+      const params = new URLSearchParams(window.location.search);
+      const stage = params.get('stage');
+      const planVersionId = params.get('planVersionId');
+
+      if (stage === 'signup' && planVersionId) {
+        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
+          try {
+            const checkout = await createBillingCheckout(planVersionId, true);
+
+            if (cancelled) return;
+
+            if (checkout.checkoutUrl) {
+              setReturnState('authorizing');
+              window.location.assign(checkout.checkoutUrl);
+              return;
+            }
+          } catch (error) {
+            const errorCode = (error as { response?: { data?: { error?: string } } })
+              ?.response?.data?.error;
+
+            if (errorCode !== 'signup_fee_pending') {
+              console.error('Falha ao continuar assinatura após taxa de adesão.', error);
+              if (!cancelled) setReturnState('error');
+              return;
+            }
+          }
+
+          if (attempt < MAX_ATTEMPTS) {
+            await wait(POLL_DELAY_MS);
+          }
+        }
+
+        if (!cancelled) {
+          setReturnState('pending');
+        }
+        return;
+      }
+
       for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
         try {
           const billing = await getBillingEntitlements();
@@ -87,6 +125,13 @@ export function BillingReturnRoute() {
           <>
             <h1>Confirmando sua assinatura</h1>
             <p>Recebemos o retorno do Mercado Pago e estamos aguardando a confirmação da cobrança.</p>
+          </>
+        )}
+
+        {returnState === 'authorizing' && (
+          <>
+            <h1>Taxa de adesão confirmada</h1>
+            <p>Agora vamos abrir a autorização da cobrança recorrente do seu plano.</p>
           </>
         )}
 
