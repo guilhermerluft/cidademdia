@@ -32,9 +32,24 @@ export interface BillingEntitlements {
   categoryName: string;
   subscriptionStatus: string;
   accessAllowed: boolean;
+  subaccountLimit: number;
+  monthlyPublicationLimit: number;
+  usedPublications: number;
+  usageWindowStart: string;
+  usageWindowEnd: string;
   currentPeriodStart: string;
   currentPeriodEnd: string;
+  gracePeriodEndsAt?: string | null;
   cancelAtPeriodEnd: boolean;
+  pendingPlanVersionId?: string | null;
+}
+
+export interface BillingPlanChangeResponse {
+  planVersionId?: string | null;
+  requiresAuthorization: boolean;
+  checkoutUrl?: string | null;
+  effectiveAt?: string | null;
+  providerStatus?: string | null;
 }
 
 export async function listPublicPlanOffers() {
@@ -58,5 +73,13 @@ export async function createBillingCheckout(
 
 export async function getBillingEntitlements() {
   const { data } = await api.get<BillingEntitlements>('/billing/me');
+  return data;
+}
+
+export async function changeBillingPlan(planVersionId: string) {
+  const { data } = await api.put<BillingPlanChangeResponse>('/billing/plan', {
+    planVersionId,
+  });
+
   return data;
 }
