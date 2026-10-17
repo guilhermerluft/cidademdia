@@ -28,11 +28,17 @@ export function BillingReturnRoute() {
       const params = new URLSearchParams(window.location.search);
       const stage = params.get('stage');
       const planVersionId = params.get('planVersionId');
+      const signupFeePaymentId =
+        params.get('payment_id') ?? params.get('collection_id');
 
       if (stage === 'signup' && planVersionId) {
         for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt += 1) {
           try {
-            const checkout = await createBillingCheckout(planVersionId, true);
+            const checkout = await createBillingCheckout(
+              planVersionId,
+              true,
+              signupFeePaymentId,
+            );
 
             if (cancelled) return;
 
