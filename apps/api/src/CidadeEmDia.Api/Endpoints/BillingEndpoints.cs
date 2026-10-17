@@ -388,5 +388,5 @@ public static class BillingEndpoints
     public sealed record AdminMarkPastDueRequest(DateTimeOffset FailedAt);
     public sealed record AdminSchedulePlanChangeRequest(Guid PlanVersionId);
     public sealed record AdminRenewSubscriptionRequest(DateTimeOffset PeriodStart, DateTimeOffset PeriodEnd);
-    public sealed record AdminCancelSubscriptionRequest(Guid PlanVersionId, DateTimeOffset CanceledAt);
+    public sealed record AdminCancelSubscriptionRequest(DateTimeOffset CanceledAt);
 }
