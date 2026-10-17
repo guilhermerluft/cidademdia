@@ -133,6 +133,7 @@ public interface IBillingCheckoutService
         Guid masterUserId,
         Guid planVersionId,
         bool resumeAfterSignupFee = false,
+        string? signupFeePaymentId = null,
         DateTimeOffset? at = null,
         CancellationToken cancellationToken = default);
 }
