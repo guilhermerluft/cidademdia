@@ -85,6 +85,12 @@ internal sealed class MercadoPagoCheckoutService(
                         existingProvider.ProviderStatus);
                 }
 
+                if (existingSubscription.PlanVersionId != planVersionId)
+                {
+                    return BillingCheckoutResult.Failure(
+                        "subscription_already_exists");
+                }
+
                 pendingSubscription = existingSubscription;
             }
             else
@@ -160,9 +166,8 @@ internal sealed class MercadoPagoCheckoutService(
             dbContext.BillingCustomers.Add(customer);
         }
 
-        const long mercadoPagoRecurringLimitCents = 400_000;
-
-        if (version.PriceCents > mercadoPagoRecurringLimitCents)
+        if (options.RecurringAmountLimitCents > 0 &&
+            version.PriceCents > options.RecurringAmountLimitCents)
         {
             logger.LogWarning(
                 "Mercado Pago recurring amount exceeds provider limit. PlanVersionId={PlanVersionId} AmountCents={AmountCents}.",
@@ -245,8 +250,46 @@ internal sealed class MercadoPagoCheckoutService(
                             "signup_fee_pending");
                     }
 
-                    customer.MarkSignupFeePaid(
-                        signupFeePayment.DateApproved ?? now);
+                    var signupFeeProviderPaymentId =
+                        signupFeePayment.Id.ToString(
+                            System.Globalization.CultureInfo.InvariantCulture);
+
+                    var existingSignupFeePayment =
+                        await dbContext.BillingPayments
+                            .FirstOrDefaultAsync(
+                                x =>
+                                    x.Provider == BillingProviders.MercadoPago &&
+                                    x.ProviderPaymentId == signupFeeProviderPaymentId,
+                                cancellationToken);
+
+                    var signupFeeApprovedAt =
+                        (signupFeePayment.DateApproved ?? now).ToUniversalTime();
+
+                    if (existingSignupFeePayment is null)
+                    {
+                        dbContext.BillingPayments.Add(
+                            new BillingPayment(
+                                subscription.Id,
+                                BillingProviders.MercadoPago,
+                                signupFeeProviderPaymentId,
+                                null,
+                                version.SignupFeeCents,
+                                signupFeePayment.CurrencyId,
+                                signupFeePayment.Status,
+                                signupFeePayment.StatusDetail,
+                                signupFeeApprovedAt));
+                    }
+                    else
+                    {
+                        existingSignupFeePayment.UpdateFromProvider(
+                            version.SignupFeeCents,
+                            signupFeePayment.CurrencyId,
+                            signupFeePayment.Status,
+                            signupFeePayment.StatusDetail,
+                            signupFeeApprovedAt);
+                    }
+
+                    customer.MarkSignupFeePaid(signupFeeApprovedAt);
 
                     await dbContext.SaveChangesAsync(
                         cancellationToken);
@@ -255,10 +298,9 @@ internal sealed class MercadoPagoCheckoutService(
                 {
                     logger.LogWarning(
                         exception,
-                        "Mercado Pago signup fee payment lookup failed. Payment={ProviderPaymentId} Status={StatusCode} Response={ProviderResponse}.",
+                        "Mercado Pago signup fee payment lookup failed. Payment={ProviderPaymentId} Status={StatusCode}.",
                         signupFeePaymentId,
-                        exception.StatusCode,
-                        exception.ResponseBody);
+                        exception.StatusCode);
 
                     return BillingCheckoutResult.Failure(
                         "signup_fee_pending");
@@ -316,10 +358,9 @@ internal sealed class MercadoPagoCheckoutService(
                 {
                     logger.LogWarning(
                         exception,
-                        "Mercado Pago rejected signup fee checkout for subscription {SubscriptionId}. Status={StatusCode}. Response={ProviderResponse}.",
+                        "Mercado Pago rejected signup fee checkout for subscription {SubscriptionId}. Status={StatusCode}.",
                         subscription.Id,
-                        exception.StatusCode,
-                        exception.ResponseBody);
+                        exception.StatusCode);
 
                     await RemovePendingSubscriptionAsync(
                         subscription,
@@ -327,6 +368,48 @@ internal sealed class MercadoPagoCheckoutService(
 
                     return BillingCheckoutResult.Failure(
                         "provider_rejected");
+                }
+                catch (MercadoPagoConfigurationException exception)
+                {
+                    logger.LogWarning(
+                        exception,
+                        "Mercado Pago is not configured for signup fee checkout.");
+
+                    await RemovePendingSubscriptionAsync(
+                        subscription,
+                        cancellationToken);
+
+                    return BillingCheckoutResult.Failure(
+                        "provider_not_configured");
+                }
+                catch (HttpRequestException exception)
+                {
+                    logger.LogWarning(
+                        exception,
+                        "Mercado Pago unavailable while creating signup fee checkout for subscription {SubscriptionId}.",
+                        subscription.Id);
+
+                    await RemovePendingSubscriptionAsync(
+                        subscription,
+                        cancellationToken);
+
+                    return BillingCheckoutResult.Failure(
+                        "provider_unavailable");
+                }
+                catch (TaskCanceledException exception)
+                    when (!cancellationToken.IsCancellationRequested)
+                {
+                    logger.LogWarning(
+                        exception,
+                        "Mercado Pago timed out while creating signup fee checkout for subscription {SubscriptionId}.",
+                        subscription.Id);
+
+                    await RemovePendingSubscriptionAsync(
+                        subscription,
+                        cancellationToken);
+
+                    return BillingCheckoutResult.Failure(
+                        "provider_unavailable");
                 }
             }
         }
@@ -378,10 +461,9 @@ internal sealed class MercadoPagoCheckoutService(
         {
             logger.LogWarning(
                 exception,
-                "Mercado Pago rejected checkout for subscription {SubscriptionId}. Status={StatusCode}. Response={ProviderResponse}.",
+                "Mercado Pago rejected checkout for subscription {SubscriptionId}. Status={StatusCode}.",
                 subscription.Id,
-                exception.StatusCode,
-                exception.ResponseBody);
+                exception.StatusCode);
 
             await RemovePendingSubscriptionAsync(
                 subscription,
