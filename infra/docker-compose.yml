@@ -51,6 +51,7 @@ services:
       MERCADOPAGO_WEBHOOK_SECRET: ${MERCADOPAGO_WEBHOOK_SECRET:-}
       MERCADOPAGO_API_BASE_URL: ${MERCADOPAGO_API_BASE_URL:-https://api.mercadopago.com}
       MERCADOPAGO_BACK_URL: ${MERCADOPAGO_BACK_URL:-https://homolog.cidademdia.com.br/billing/return}
+      MERCADOPAGO_TEST_PAYER_EMAIL: ${MERCADOPAGO_TEST_PAYER_EMAIL:-}
     depends_on:
       db:
         condition: service_healthy
