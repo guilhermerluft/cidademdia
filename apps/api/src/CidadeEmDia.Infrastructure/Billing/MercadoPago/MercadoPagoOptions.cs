@@ -6,7 +6,8 @@ public sealed record MercadoPagoOptions(
     string AccessToken,
     string WebhookSecret,
     string ApiBaseUrl,
-    string BackUrl)
+    string BackUrl,
+    long RecurringAmountLimitCents)
 {
     public const string DefaultApiBaseUrl = "https://api.mercadopago.com";
 
@@ -27,10 +28,22 @@ public sealed record MercadoPagoOptions(
 
         var backUrl = configuration["MERCADOPAGO_BACK_URL"]?.Trim() ?? string.Empty;
 
+        var recurringAmountLimitCents = 0L;
+        var recurringAmountLimitRaw =
+            configuration["MERCADOPAGO_RECURRING_AMOUNT_LIMIT_CENTS"]?.Trim();
+
+        if (!string.IsNullOrWhiteSpace(recurringAmountLimitRaw) &&
+            long.TryParse(recurringAmountLimitRaw, out var parsedLimit) &&
+            parsedLimit > 0)
+        {
+            recurringAmountLimitCents = parsedLimit;
+        }
+
         return new MercadoPagoOptions(
             accessToken,
             webhookSecret,
             apiBaseUrl,
-            backUrl);
+            backUrl,
+            recurringAmountLimitCents);
     }
 }
