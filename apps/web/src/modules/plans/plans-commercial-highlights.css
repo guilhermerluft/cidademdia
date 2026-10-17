@@ -210,6 +210,36 @@
   margin-right: 7px;
 }
 
+
+.plans-page__account-plan-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.plans-page__account-plan-action {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 1px solid rgba(163, 58, 44, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #8f3428;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.plans-page__account-plan-action--primary {
+  border-color: rgba(76, 143, 25, 0.28);
+  color: #3e7d13;
+}
+
+.plans-page__account-plan-action:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+
 .plans-page__account-plan--loading,
 .plans-page__account-plan--empty {
   color: #526276;
@@ -253,4 +283,12 @@
     width: 100%;
     text-align: center;
   }
+  .plans-page__account-plan-actions {
+    justify-content: stretch;
+  }
+
+  .plans-page__account-plan-action {
+    width: 100%;
+  }
+
 }
