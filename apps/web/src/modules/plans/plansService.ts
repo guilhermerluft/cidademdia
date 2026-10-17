@@ -83,3 +83,12 @@ export async function changeBillingPlan(planVersionId: string) {
 
   return data;
 }
+export async function cancelBillingSubscription() {
+  const { data } = await api.post<BillingPlanChangeResponse>('/billing/cancellation');
+  return data;
+}
+
+export async function reactivateBillingSubscription() {
+  const { data } = await api.post<BillingPlanChangeResponse>('/billing/reactivation');
+  return data;
+}
