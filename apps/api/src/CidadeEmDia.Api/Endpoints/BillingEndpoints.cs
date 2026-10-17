@@ -49,6 +49,8 @@ public static class BillingEndpoints
                     request.PlanVersionId,
                     resumeAfterSignupFee:
                         request.ResumeAfterSignupFee,
+                    signupFeePaymentId:
+                        request.SignupFeePaymentId,
                     cancellationToken:
                         cancellationToken);
 
@@ -369,7 +371,8 @@ public static class BillingEndpoints
 
     public sealed record BillingCheckoutRequest(
         Guid PlanVersionId,
-        bool ResumeAfterSignupFee = false);
+        bool ResumeAfterSignupFee = false,
+        string? SignupFeePaymentId = null);
 
 
     public sealed record BillingPlanChangeRequest(
@@ -385,5 +388,5 @@ public static class BillingEndpoints
     public sealed record AdminMarkPastDueRequest(DateTimeOffset FailedAt);
     public sealed record AdminSchedulePlanChangeRequest(Guid PlanVersionId);
     public sealed record AdminRenewSubscriptionRequest(DateTimeOffset PeriodStart, DateTimeOffset PeriodEnd);
-    public sealed record AdminCancelSubscriptionRequest(DateTimeOffset CanceledAt);
+    public sealed record AdminCancelSubscriptionRequest(Guid PlanVersionId, DateTimeOffset CanceledAt);
 }
