@@ -45,10 +45,12 @@ export async function listPublicPlanOffers() {
 export async function createBillingCheckout(
   planVersionId: string,
   resumeAfterSignupFee = false,
+  signupFeePaymentId?: string | null,
 ) {
   const { data } = await api.post<BillingCheckoutResponse>('/billing/checkout', {
     planVersionId,
     resumeAfterSignupFee,
+    signupFeePaymentId,
   });
 
   return data;
