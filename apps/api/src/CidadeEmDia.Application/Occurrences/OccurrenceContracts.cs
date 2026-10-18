@@ -40,6 +40,7 @@ public sealed record OccurrenceTargetItem(
     Guid? InstitutionId,
     string DestinationDisplayName,
     string? Addressee,
+    bool IsPrimary,
     string Status,
     DateTimeOffset SentAt,
     DateTimeOffset? AcceptedAt,
