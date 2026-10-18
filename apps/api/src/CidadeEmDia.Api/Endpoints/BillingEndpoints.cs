@@ -27,7 +27,7 @@ public static class BillingEndpoints
             return entitlements is null
                 ? Results.NotFound(new { error = "subscription_not_found" })
                 : Results.Ok(entitlements);
-        }).RequireAuthorization(AuthorizationPolicies.MasterScope);
+        }).RequireAuthorization();
 
         billing.MapPost("/checkout", async (
             BillingCheckoutRequest request,
@@ -72,8 +72,7 @@ public static class BillingEndpoints
                 statusCode:
                     StatusCodes.Status201Created);
         })
-        .RequireAuthorization(
-            AuthorizationPolicies.MasterScope);
+        .RequireAuthorization();
 
         billing.MapPut("/plan", async (
             BillingPlanChangeRequest request,
