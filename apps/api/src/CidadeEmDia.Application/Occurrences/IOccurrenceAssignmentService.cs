@@ -41,6 +41,7 @@ public sealed record MasterOccurrenceTargetItem(
     Guid? InstitutionId,
     string DestinationDisplayName,
     string? Addressee,
+    bool IsPrimary,
     string OccurrenceStatus,
     string TargetStatus,
     DateTimeOffset UpdatedAt,
@@ -58,6 +59,7 @@ public sealed record AssignedOccurrenceItem(
     string AddressText,
     string OccurrenceStatus,
     string TargetStatus,
+    bool IsPrimary,
     bool CanChangeStatus,
     DateTimeOffset AssignedAt,
     DateTimeOffset UpdatedAt);
