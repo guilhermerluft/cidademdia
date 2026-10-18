@@ -1,0 +1,62 @@
+services:
+  loki:
+    image: grafana/loki:3.7.0
+    restart: unless-stopped
+    command:
+      - -config.file=/etc/loki/config.yml
+    volumes:
+      - ./observability/loki-config.yml:/etc/loki/config.yml:ro
+      - loki_data:/loki
+    networks: [observability]
+
+  alloy:
+    image: grafana/alloy:v1.20.0
+    restart: unless-stopped
+    command:
+      - run
+      - --server.http.listen-addr=0.0.0.0:12345
+      - --storage.path=/var/lib/alloy/data
+      - /etc/alloy/config.alloy
+    environment:
+      TARGET_COMPOSE_PROJECT: ${TARGET_COMPOSE_PROJECT:?TARGET_COMPOSE_PROJECT is required}
+      OBS_ENV: ${OBS_ENV:?OBS_ENV is required}
+    volumes:
+      - ./observability/alloy-config.alloy:/etc/alloy/config.alloy:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - alloy_data:/var/lib/alloy/data
+    depends_on: [loki]
+    networks: [observability]
+
+  grafana:
+    image: grafana/grafana:13.2.4
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD__FILE: /run/secrets/grafana_admin_password
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:?GRAFANA_ROOT_URL is required}
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+      GF_SECURITY_COOKIE_SECURE: "true"
+    secrets:
+      - grafana_admin_password
+    ports:
+      - "127.0.0.1:${GRAFANA_HTTP_PORT:?GRAFANA_HTTP_PORT is required}:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./observability/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [loki]
+    networks: [observability]
+
+networks:
+  observability:
+
+volumes:
+  loki_data:
+  alloy_data:
+  grafana_data:
+
+secrets:
+  grafana_admin_password:
+    file: ${GRAFANA_ADMIN_PASSWORD_FILE:?GRAFANA_ADMIN_PASSWORD_FILE is required}
